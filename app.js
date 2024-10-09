@@ -4,6 +4,8 @@ import carRouter from './routes/car.js'
 import apartmentRoutes from './routes/apartment.js'
 import yachtRoutes from './routes/yacht.js'
 import villaRoutes from './routes/villa.js'
+import adminRoutes from './routes/admin.js'
+import userRoutes from './routes/user.js'
 
 dotenv.config()
 
@@ -17,6 +19,8 @@ app.use('/api/cars', carRouter)
 app.use('/api/apartments', apartmentRoutes)
 app.use('/api/yachts', yachtRoutes)
 app.use('/api/villas', villaRoutes)
+app.use('/api/admins', adminRoutes)
+app.use('/api/users', userRoutes)
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)
