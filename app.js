@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv'
+import dotenv from 'dotenv'
 import express, { json } from 'express'
 import carRouter from './routes/car.js'
 import apartmentRoutes from './routes/apartment.js'
