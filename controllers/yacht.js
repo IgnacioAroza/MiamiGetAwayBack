@@ -1,5 +1,6 @@
 import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
+import cloudinary from '../utils/cloudinaryConfig.js'
 
 class YachtController {
     static async getAllYachts(req, res) {
@@ -27,12 +28,38 @@ class YachtController {
 
     static async createYacht(req, res) {
         try {
+            const yachtData = {
+                name: req.body.name,
+                description: req.body.description,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
             const result = validateYacht(req.body)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const newYacht = await YachtModel.createYacht(req.body)
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'yachts' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                yachtData.images = await Promise.all(uploadPromises)
+            } else {
+                yachtData.images = []
+            }
+
+            const newYacht = await YachtModel.createYacht(yachtData)
             res.status(201).json(newYacht)
         } catch (error) {
             console.error('Error in createYacht:', error)
@@ -42,13 +69,37 @@ class YachtController {
 
     static async updateYacht(req, res) {
         try {
+            const { id } = req.params
+            const yachtData = {
+                name: req.body.name,
+                description: req.body.description,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
             const result = validatePartialYacht(req.body)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const { id } = req.params
-            const updatedYacht = await YachtModel.updateYacht({ id, input: result.data })
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'yachts' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                yachtData.images = await Promise.all(uploadPromises)
+            }
+
+            const updatedYacht = await YachtModel.updateYacht({ id, yachtData })
             res.status(200).json(updatedYacht)
         } catch (error) {
             console.error('Error in updateYacht:', error)

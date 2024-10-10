@@ -1,5 +1,4 @@
 import db from '../utils/db.js'
-import { validateApartment } from '../schemas/apartmentSchema.js'
 
 export default class AparmentModel {
     static async getAll() {

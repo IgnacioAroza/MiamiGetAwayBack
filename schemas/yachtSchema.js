@@ -3,8 +3,14 @@ import { z } from 'zod'
 export const yachtSchema = z.object({
     name: z.string().min(1, "Name is mandatory"),
     description: z.string().optional(),
-    capacity: z.number().int().positive("Capacity must be a positive integer"),
-    price: z.number().positive("Price must be a positive number"),
+    capacity: z.preprocess(
+        (val) => (typeof val === 'string' ? parseInt(val) : val),
+        z.number().positive("Price must be a positive number")
+    ),
+    price: z.preprocess(
+        (val) => (typeof val === 'string' ? parseFloat(val) : val),
+        z.number().positive("Price must be a positive number")
+    ),
     images: z.array(z.string().url()).optional()
 })
 
