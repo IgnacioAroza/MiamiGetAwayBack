@@ -21,7 +21,6 @@ export default class AparmentModel {
 
     static async createApartment(apartmentData) {
         const { name, description, address, capacity, price, images } = apartmentData
-        console.log('apartment data:', apartmentData);
         const imagesJson = JSON.stringify(images || [])
 
         try {
@@ -35,7 +34,6 @@ export default class AparmentModel {
                 'INSERT INTO apartments (name, description, address, capacity, price, images) VALUES (?, ?, ?, ?, ?, ?);',
                 [name, safeDescription, address, capacity, price, imagesJson]
             )
-            console.log(imagesJson)
             return { id: result.insertId, ...apartmentData, images: images || [] }
         } catch (error) {
             console.log('Error creating apartment:', error)

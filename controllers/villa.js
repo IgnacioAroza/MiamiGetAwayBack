@@ -1,5 +1,6 @@
 import VillaModel from '../models/villa.js'
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js'
+import cloudinary from '../utils/cloudinaryConfig.js'
 
 class VillaController {
     static async getAllVillas(req, res) {
@@ -27,12 +28,39 @@ class VillaController {
 
     static async createVilla(req, res) {
         try {
-            const result = validateVilla(req.body)
+            const villaData = {
+                name: req.body.name,
+                description: req.body.description,
+                address: req.body.address,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
+            const result = validateVilla(villaData)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const newVilla = await VillaModel.createVilla(req.body)
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'villas' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                villaData.images = await Promise.all(uploadPromises)
+            } else {
+                villaData.images = []
+            }
+
+            const newVilla = await VillaModel.createVilla(villaData)
             res.status(201).json(newVilla)
         } catch (error) {
             console.error('Error in createVilla:', error)
@@ -42,13 +70,38 @@ class VillaController {
 
     static async updateVilla(req, res) {
         try {
+            const { id } = req.params
+            const villaData = {
+                name: req.body.name,
+                description: req.body.description,
+                address: req.body.address,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
             const result = validatePartialVilla(req.body)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const { id } = req.params
-            const updatedVilla = await VillaModel.updateVilla({ id, input: result.data })
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'villas' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                villaData.images = await Promise.all(uploadPromises)
+            }
+
+            const updatedVilla = await VillaModel.updateVilla({ id, villaData })
             res.status(200).json(updatedVilla)
         } catch (error) {
             console.error('Error in updateVilla:', error)
