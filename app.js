@@ -1,23 +1,26 @@
-require('dotenv').config()
-const express = require('express')
-const db = require('./utils/db.js')
+import * as dotenv from 'dotenv'
+import express, { json } from 'express'
+import carRouter from './routes/car.js'
+import apartmentRoutes from './routes/apartment.js'
+import yachtRoutes from './routes/yacht.js'
+import villaRoutes from './routes/villa.js'
+import adminRoutes from './routes/admin.js'
+import userRoutes from './routes/user.js'
+
+dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3000
 
-app.get('/test-db', async (req, res) => {
-    try {
-        const [rows, fields] = await db.promise().query('SELECT 1 + 1 AS solution')
-        res.send(`La solucion es: ${rows[0].solution}`)
-    } catch (error) {
-        console.log('error al conectar a la base de datos: ', error)
-        res.status(500).send('error al conectar a la base de datos')
-    }
-})
+app.use(json())
 
-app.get('/', (req, res) => {
-    res.send('servidor funcionando correctamente')
-})
+//Usa las rutas
+app.use('/api/cars', carRouter)
+app.use('/api/apartments', apartmentRoutes)
+app.use('/api/yachts', yachtRoutes)
+app.use('/api/villas', villaRoutes)
+app.use('/api/admins', adminRoutes)
+app.use('/api/users', userRoutes)
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)
