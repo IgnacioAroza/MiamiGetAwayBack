@@ -8,9 +8,10 @@ class CarController {
     static async getAllCars(req, res) {
         try {
             const cars = await CarModel.getAll()
-            res.send(cars)
+            res.status(200).json({ cars })
         } catch (error) {
-            res.status(500).send(error.message)
+            console.error('Error in getAllCars:', error)
+            res.status(500).json({ error: 'An error occurred while fetching cars' })
         }
     }
 
@@ -26,9 +27,6 @@ class CarController {
 
     static async createCar(req, res) {
         try {
-            console.log('Received data:', req.body)
-            console.log('Received files:', req.files)
-
             const carData = {
                 brand: req.body.brand,
                 model: req.body.model,
@@ -59,8 +57,6 @@ class CarController {
             } else {
                 carData.images = []
             }
-
-            console.log('Processed car data:', carData)
 
             const newCar = await CarModel.createCar(carData)
             res.status(201).json(newCar)
@@ -112,34 +108,29 @@ class CarController {
 
     static async deleteCar(req, res) {
         try {
-            await CarModel.deleteCar(req.params.id)
-            res.status(200).send('Car deleted')
+            const { id } = req.params
+            const result = await CarModel.deleteCar(id)
+
+            if (result.success) {
+                if (result.images && result.images.length > 0) {
+                    for (const imageUrl of image) {
+                        const publicId = this.getPublicIdFromUrl(imageUrl)
+                        await cloudinary.uploader.destroy(publicId)
+                    }
+                }
+                res.status(200).json({ message: 'Car and associated images deleted successfully' })
+            } else {
+                res.status(404).json({ message: result.message })
+            }
         } catch (error) {
-            res.status(500).send(error.message)
+            console.error('Error in deleteCar:', error)
+            res.status(500).json({ error: error.message || 'An error occurred while deleting the car' })
         }
     }
 
-    static async uploadImage(file) {
-        const maxLength = 200 // Maximum length for the entire filename
-        const ext = path.extname(file.originalname)
-        const baseFilename = path.basename(file.originalname, ext)
-
-        // Generate a short hash
-        const hash = crypto.createHash('md5').update(baseFilename + Date.now()).digest('hex').substring(0, 8)
-
-        // Truncate the original filename if necessary
-        const truncatedFilename = baseFilename.length > (maxLength - hash.length - ext.length - 1)
-            ? baseFilename.substring(0, maxLength - hash.length - ext.length - 1)
-            : baseFilename
-
-        // Construct the new filename
-        const newFilename = `${truncatedFilename}-${hash}${ext}`.toLowerCase()
-
-        return cloudinary.uploader.upload(file.buffer.toString('base64'), {
-            folder: 'cars',
-            resource_type: 'auto',
-            public_id: newFilename
-        })
+    static getPublicIdFromUrl(url) {
+        const parts = url.split('/')
+        return parts[parts.length - 1].split('.')[0]
     }
 }
 

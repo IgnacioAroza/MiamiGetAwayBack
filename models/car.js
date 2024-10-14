@@ -4,8 +4,16 @@ export default class CarModel {
     static async getAll() {
         try {
             const [rows] = await db.execute('SELECT * FROM cars')
-            return rows.map(car => ({ ...car, images: JSON.parse(car.images) }))
+            return rows.map(car => {
+                try {
+                    car.images = JSON.parse(car.images)
+                } catch (error) {
+                    car.images = car.images ? [car.images] : []
+                }
+                return car
+            })
         } catch (error) {
+            console.log('Error in getAll:', error)
             throw error
         }
     }
@@ -14,17 +22,22 @@ export default class CarModel {
         try {
             const [rows] = await db.execute('SELECT * FROM cars WHERE id = ?', [id])
             if (rows[0]) {
-                rows[0].images = JSON.parse(rows[0].images)
+                try {
+                    rows[0].images = JSON.parse(rows[0].images)
+                } catch (error) {
+                    rows[0].images = rows[0].images ? [rows[0].images] : []
+                }
+                return rows[0]
             }
             return rows[0]
         } catch (error) {
+            console.log('Error in getById:', error)
             throw error
         }
     }
 
     static async createCar(carData) {
         const { brand, model, price, description, images } = carData
-        console.log('cardata:', carData);
         const imagesJson = JSON.stringify(images || [])
 
         try {
@@ -32,7 +45,6 @@ export default class CarModel {
                 'INSERT INTO cars (brand, model, price, description, images) VALUES (?, ?, ?, ?, ?);',
                 [brand, model, price, description, imagesJson]
             )
-            console.log(imagesJson)
             return { id: result.insertId, ...carData, images: images || [] }
         } catch (error) {
             console.error('Error in createCar:', error)
@@ -90,6 +102,11 @@ export default class CarModel {
 
     static async deleteCar(id) {
         try {
+            const [car] = await db.execute('SELECT images FROM cars WHERE id = ?;', [id])
+            if (car.length === 0) {
+                return { success: false, message: 'Car not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM cars WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {
