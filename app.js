@@ -6,6 +6,8 @@ import yachtRoutes from './routes/yacht.js'
 import villaRoutes from './routes/villa.js'
 import adminRoutes from './routes/admin.js'
 import userRoutes from './routes/user.js'
+import authRoutes from './routes/auth.js'
+import { authMiddleware } from './middleware/authMiddleware.js'
 
 dotenv.config()
 
@@ -14,8 +16,11 @@ const port = process.env.PORT || 3000
 
 app.use(json())
 
+//Rutas publicas
+app.use('/api/auth', authRoutes)
+
 //Usa las rutas
-app.use('/api/cars', carRouter)
+app.use('/api/cars', authMiddleware, carRouter)
 app.use('/api/apartments', apartmentRoutes)
 app.use('/api/yachts', yachtRoutes)
 app.use('/api/villas', villaRoutes)
