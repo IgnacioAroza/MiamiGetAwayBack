@@ -34,6 +34,15 @@ export default class AdminModel {
                 throw new Error('Missing required fields')
             }
 
+            const [existingAdmin] = await db.execute('SELECT id FROM admins WHERE username = ? OR email = ?;', [username, email])
+            if (existingAdmin.length > 0) {
+                throw new Error('username o main already exists')
+            }
+
+            if (typeof password !== 'string' || password.length === 0) {
+                throw new Error('Invalid password format')
+            }
+
             const hashedPassword = await bcrypt.hash(password, 10)
 
             const [result] = await db.execute(

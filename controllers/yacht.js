@@ -1,5 +1,7 @@
 import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
+import cloudinary from '../utils/cloudinaryConfig.js'
+import path from 'path'
 
 class YachtController {
     static async getAllYachts(req, res) {
@@ -27,12 +29,38 @@ class YachtController {
 
     static async createYacht(req, res) {
         try {
+            const yachtData = {
+                name: req.body.name,
+                description: req.body.description,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
             const result = validateYacht(req.body)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const newYacht = await YachtModel.createYacht(req.body)
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'yachts' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                yachtData.images = await Promise.all(uploadPromises)
+            } else {
+                yachtData.images = []
+            }
+
+            const newYacht = await YachtModel.createYacht(yachtData)
             res.status(201).json(newYacht)
         } catch (error) {
             console.error('Error in createYacht:', error)
@@ -42,13 +70,37 @@ class YachtController {
 
     static async updateYacht(req, res) {
         try {
+            const { id } = req.params
+            const yachtData = {
+                name: req.body.name,
+                description: req.body.description,
+                capacity: parseInt(req.body.capacity),
+                price: parseFloat(req.body.price)
+            }
+
             const result = validatePartialYacht(req.body)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
             }
-            const { id } = req.params
-            const updatedYacht = await YachtModel.updateYacht({ id, input: result.data })
+
+            if (req.files && req.files.length > 0) {
+                const uploadPromises = req.files.map(file =>
+                    new Promise((resolve, reject) => {
+                        const uploadStream = cloudinary.uploader.upload_stream(
+                            { folder: 'yachts' },
+                            (error, result) => {
+                                if (error) reject(error)
+                                else resolve(result.secure_url)
+                            }
+                        )
+                        uploadStream.end(file.buffer)
+                    })
+                )
+                yachtData.images = await Promise.all(uploadPromises)
+            }
+
+            const updatedYacht = await YachtModel.updateYacht({ id, yachtData })
             res.status(200).json(updatedYacht)
         } catch (error) {
             console.error('Error in updateYacht:', error)
@@ -59,14 +111,49 @@ class YachtController {
     static async deleteYacht(req, res) {
         try {
             const { id } = req.params
+            const yacht = await YachtModel.getYachtById(id)
+
+            if (!yacht) {
+                return res.status(404).json({ message: 'Yacht not found' })
+            }
+
+            // Eliminar imágenes de Cloudinary
+            if (yacht.images && Array.isArray(yacht.images)) {
+                const deletePromises = yacht.images.map(async imageUrl => {
+                    const publicId = YachtController.getPublicIdFromUrl(imageUrl)
+                    try {
+                        await cloudinary.uploader.destroy(publicId)
+                        return console.log(`Image deleted from Cloudinary: ${publicId}`)
+                    } catch (error) {
+                        return console.error(`Error deleting image from Cloudinary: ${error.message}`)
+                    }
+                })
+                await Promise.all(deletePromises)
+            }
+
             const result = await YachtModel.deleteYacht(id)
+
             if (result.success) {
-                res.status(200).json({ message: result.message })
+                res.status(200).json({ message: 'Yacht and associated images deleted successfully' })
             } else {
-                res.status(404).json({ message: result.message })
+                res.status(500).json({ message: 'Error deleting yacht from database' })
             }
         } catch (error) {
-            res.status(500).json({ error: error.message })
+            console.error('Error in deleteCar:', error)
+            res.status(500).json({ error: error.message || 'An error occurred while deleting the yacht' })
+        }
+    }
+
+    static getPublicIdFromUrl(url) {
+        try {
+            const parsedUrl = new URL(url)
+            const pathnameParts = parsedUrl.pathname.split('/')
+            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
+            const filename = path.parse(filenameWithExtension).name
+            return `yachts/${filename}`
+        } catch (error) {
+            console.log('Erro parsing URL:', error)
+            return null
         }
     }
 }

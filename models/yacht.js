@@ -20,9 +20,10 @@ export default class YachtModel {
         }
     }
 
-    static async createYacht(body) {
-        const { name, description, capacity, price, images } = body
-        const validateResult = validateYacht(body)
+    static async createYacht(yachtData) {
+        const { name, description, capacity, price, images } = yachtData
+        const imagesJson = JSON.stringify(images || [])
+        const validateResult = validateYacht(yachtData)
 
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error))
@@ -34,27 +35,20 @@ export default class YachtModel {
             }
 
             const safeDescription = description || null
-            const safeImages = images ? JSON.stringify(images) : null
 
             const [result] = await db.execute(
                 'INSERT INTO yachts (name, description, capacity, price, images) VALUES (?, ?, ?, ?, ?);',
-                [name, safeDescription, capacity, price, safeImages]
+                [name, safeDescription, capacity, price, imagesJson]
             )
-
-            if (result.affectedRows === 1) {
-                const [yachts] = await db.execute('SELECT * FROM yachts WHERE id = LAST_INSERT_ID();')
-                return yachts[0]
-            } else {
-                throw new Error('Error creating yacht')
-            }
+            return { id: result.insertId, ...yachtData, images: images || [] }
         } catch (error) {
             console.log('Error creating yacht:', error)
             throw error
         }
     }
 
-    static async updateYacht({ id, input }) {
-        const { name, description, capacity, price, images } = input
+    static async updateYacht({ id, yachtData }) {
+        const { name, description, capacity, price, images } = yachtData
         const updateFields = []
         const updatedValues = []
 
@@ -76,7 +70,7 @@ export default class YachtModel {
         }
         if (images !== undefined) {
             updateFields.push('images = ?')
-            updatedValues.push(JSON.stringify(images))
+            updatedValues.push(JSON.stringify(yachtData.images))
         }
         if (updateFields.length === 0) {
             throw new Error('No valid fields to update')
@@ -87,7 +81,11 @@ export default class YachtModel {
             const [result] = await db.execute(`UPDATE yachts SET ${updateFields.join(', ')} WHERE id = ?;`, updatedValues)
 
             if (result.affectedRows > 0) {
-                return { message: 'Yacht updated successfully' }
+                const [updatedYacht] = await db.execute('SELECT * FROM yachts WHERE id = ?;', [id])
+                if (updatedYacht[0].images !== null && updatedYacht[0].images !== undefined) {
+                    updatedYacht[0].images = updatedYacht[0].images
+                }
+                return updatedYacht[0]
             } else {
                 return { message: 'Yacht not found' }
             }
@@ -99,6 +97,11 @@ export default class YachtModel {
 
     static async deleteYacht(id) {
         try {
+            const [car] = await db.execute('SELECT images FROM yachts WHERE id = ?;', [id])
+            if (car.length === 0) {
+                return { success: false, message: 'Yachts not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM yachts WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {

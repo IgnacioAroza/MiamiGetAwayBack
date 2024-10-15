@@ -1,12 +1,19 @@
 import db from '../utils/db.js'
-import { validateCar } from '../schemas/carSchema.js'
 
 export default class CarModel {
     static async getAll() {
         try {
             const [rows] = await db.execute('SELECT * FROM cars')
-            return rows
+            return rows.map(car => {
+                try {
+                    car.images = JSON.parse(car.images)
+                } catch (error) {
+                    car.images = car.images ? [car.images] : []
+                }
+                return car
+            })
         } catch (error) {
+            console.log('Error in getAll:', error)
             throw error
         }
     }
@@ -14,44 +21,39 @@ export default class CarModel {
     static async getCarById(id) {
         try {
             const [rows] = await db.execute('SELECT * FROM cars WHERE id = ?', [id])
+            if (rows[0]) {
+                try {
+                    rows[0].images = JSON.parse(rows[0].images)
+                } catch (error) {
+                    rows[0].images = rows[0].images ? [rows[0].images] : []
+                }
+                return rows[0]
+            }
             return rows[0]
         } catch (error) {
+            console.log('Error in getById:', error)
             throw error
         }
     }
 
-    static async createCar(body) {
-        const { brand, model, description, price, images } = body
-        const validateResult = validateCar(body)
-
-        if (!validateResult.success) {
-            throw new Error(JSON.stringify(validateResult.error))
-        }
+    static async createCar(carData) {
+        const { brand, model, price, description, images } = carData
+        const imagesJson = JSON.stringify(images || [])
 
         try {
-            if (!brand || !model || price === undefined) {
-                throw new Error('Missing required fields')
-            }
-
-            const safeDescription = description || null
-            const safeImages = images ? JSON.stringify(images) : null
-
-            const [result] = await db.execute('INSERT INTO cars (brand, model,description, price, images) VALUES (?, ?, ?, ?, ?);', [brand, model, safeDescription, price, safeImages])
-
-            if (result.affectedRows === 1) {
-                const [cars] = await db.execute('SELECT * FROM cars WHERE id = LAST_INSERT_ID();')
-                return cars[0]
-            } else {
-                throw new Error('Error creating car')
-            }
+            const [result] = await db.query(
+                'INSERT INTO cars (brand, model, price, description, images) VALUES (?, ?, ?, ?, ?);',
+                [brand, model, price, description, imagesJson]
+            )
+            return { id: result.insertId, ...carData, images: images || [] }
         } catch (error) {
-            console.log('Error creating car:', error)
-            throw new Error('Error:', error)
+            console.error('Error in createCar:', error)
+            throw new Error('Failed to create car: ' + error.message)
         }
     }
 
-    static async updateCar({ id, input }) {
-        const { brand, model, description, price, images } = input
+    static async updateCar({ id, carData }) {
+        const { brand, model, description, price, images } = carData
         const updateFields = []
         const updatedValues = []
 
@@ -73,9 +75,9 @@ export default class CarModel {
         }
         if (images !== undefined) {
             updateFields.push('images = ?')
-            updatedValues.push(images)
+            updatedValues.push(JSON.stringify(carData.images))
         }
-        if (updateFields === 0) {
+        if (updateFields.length === 0) {
             throw new Error('No valid fields to update')
         }
 
@@ -84,7 +86,11 @@ export default class CarModel {
             const [result] = await db.execute(`UPDATE cars SET ${updateFields.join(', ')} WHERE id = ?;`, updatedValues)
 
             if (result.affectedRows > 0) {
-                return { message: 'Car updated successfully' }
+                const [updatedCar] = await db.execute('SELECT * FROM cars WHERE id = ?;', [id])
+                if (updatedCar[0].images !== null && updatedCar[0].images !== undefined) {
+                    updatedCar[0].images = updatedCar[0].images
+                }
+                return updatedCar[0]
             } else {
                 return { message: 'Car not found' }
             }
@@ -96,6 +102,11 @@ export default class CarModel {
 
     static async deleteCar(id) {
         try {
+            const [car] = await db.execute('SELECT images FROM cars WHERE id = ?;', [id])
+            if (car.length === 0) {
+                return { success: false, message: 'Car not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM cars WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {
