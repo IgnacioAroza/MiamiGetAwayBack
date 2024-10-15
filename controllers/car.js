@@ -109,18 +109,30 @@ class CarController {
     static async deleteCar(req, res) {
         try {
             const { id } = req.params
+            const car = await CarModel.getCarById(id)
+
+            if (!car) {
+                return res.status(404).json({ message: 'Car not found' })
+            }
+
+            // Eliminar imágenes de Cloudinary
+            if (car.images && Array.isArray(car.images)) {
+                const deletePromises = car.images.map(imageUrl => {
+                    const publicId = CarController.getPublicIdFromUrl(imageUrl)
+                    return cloudinary.uploader.destroy(publicId)
+                        .then(() => console.log(`Image deleted from Cloudinary: ${publicId}`))
+                        .catch(error => console.error(`Error deleting image from Cloudinary: ${error.message}`))
+                })
+
+                await Promise.all(deletePromises)
+            }
+
             const result = await CarModel.deleteCar(id)
 
             if (result.success) {
-                if (result.images && result.images.length > 0) {
-                    for (const imageUrl of image) {
-                        const publicId = this.getPublicIdFromUrl(imageUrl)
-                        await cloudinary.uploader.destroy(publicId)
-                    }
-                }
                 res.status(200).json({ message: 'Car and associated images deleted successfully' })
             } else {
-                res.status(404).json({ message: result.message })
+                res.status(500).json({ message: 'Error deleting car from database' })
             }
         } catch (error) {
             console.error('Error in deleteCar:', error)
@@ -129,8 +141,16 @@ class CarController {
     }
 
     static getPublicIdFromUrl(url) {
-        const parts = url.split('/')
-        return parts[parts.length - 1].split('.')[0]
+        try {
+            const parsedUrl = new URL(url)
+            const pathnameParts = parsedUrl.pathname.split('/')
+            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
+            const filename = path.parse(filenameWithExtension).name
+            return `cars/${filename}`
+        } catch (error) {
+            console.log('Erro parsing URL:', error)
+            return null
+        }
     }
 }
 

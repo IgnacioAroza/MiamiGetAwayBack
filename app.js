@@ -21,9 +21,9 @@ app.use('/api/auth', authRoutes)
 
 //Usa las rutas
 app.use('/api/cars', authMiddleware, carRouter)
-app.use('/api/apartments', apartmentRoutes)
-app.use('/api/yachts', yachtRoutes)
-app.use('/api/villas', villaRoutes)
+app.use('/api/apartments', authMiddleware, apartmentRoutes)
+app.use('/api/yachts', authMiddleware, yachtRoutes)
+app.use('/api/villas', authMiddleware, villaRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/users', userRoutes)
 
