@@ -97,6 +97,11 @@ export default class YachtModel {
 
     static async deleteYacht(id) {
         try {
+            const [car] = await db.execute('SELECT images FROM yachts WHERE id = ?;', [id])
+            if (car.length === 0) {
+                return { success: false, message: 'Yachts not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM yachts WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {

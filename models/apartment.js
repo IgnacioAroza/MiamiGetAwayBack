@@ -96,6 +96,11 @@ export default class AparmentModel {
 
     static async deleteApartment(id) {
         try {
+            const [apartment] = await db.execute('SELECT images FROM apartments WHERE id = ?;', [id])
+            if (apartment.length === 0) {
+                return { success: false, message: 'Apartment not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM apartments WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {

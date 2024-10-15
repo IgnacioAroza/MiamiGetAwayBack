@@ -1,6 +1,7 @@
 import VillaModel from '../models/villa.js'
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
+import path from 'path'
 
 class VillaController {
     static async getAllVillas(req, res) {
@@ -112,14 +113,49 @@ class VillaController {
     static async deleteVilla(req, res) {
         try {
             const { id } = req.params
+            const villa = await VillaModel.getVillaById(id)
+
+            if (!villa) {
+                return res.status(404).json({ message: 'Villa not found' })
+            }
+
+            // Eliminar imágenes de Cloudinary
+            if (villa.images && Array.isArray(villa.images)) {
+                const deletePromises = villa.images.map(async imageUrl => {
+                    const publicId = VillaController.getPublicIdFromUrl(imageUrl)
+                    try {
+                        await cloudinary.uploader.destroy(publicId)
+                        return console.log(`Image deleted from Cloudinary: ${publicId}`)
+                    } catch (error) {
+                        return console.error(`Error deleting image from Cloudinary: ${error.message}`)
+                    }
+                })
+                await Promise.all(deletePromises)
+            }
+
             const result = await VillaModel.deleteVilla(id)
+
             if (result.success) {
-                res.status(200).json({ message: result.message })
+                res.status(200).json({ message: 'Villa and associated images deleted successfully' })
             } else {
-                res.status(404).json({ message: result.message })
+                res.status(500).json({ message: 'Error deleting Villa from database' })
             }
         } catch (error) {
-            res.status(500).json({ error: error.message })
+            console.error('Error in deleteVilla:', error)
+            res.status(500).json({ error: error.message || 'An error occurred while deleting the villa' })
+        }
+    }
+
+    static getPublicIdFromUrl(url) {
+        try {
+            const parsedUrl = new URL(url)
+            const pathnameParts = parsedUrl.pathname.split('/')
+            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
+            const filename = path.parse(filenameWithExtension).name
+            return `villas/${filename}`
+        } catch (error) {
+            console.log('Erro parsing URL:', error)
+            return null
         }
     }
 }

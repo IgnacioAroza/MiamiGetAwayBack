@@ -102,6 +102,11 @@ export default class VillaModel {
 
     static async deleteVilla(id) {
         try {
+            const [car] = await db.execute('SELECT images FROM villas WHERE id = ?;', [id])
+            if (car.length === 0) {
+                return { success: false, message: 'Villa not found' }
+            }
+
             const [result] = await db.execute('DELETE FROM villas WHERE id = ?;', [id])
 
             if (result.affectedRows > 0) {

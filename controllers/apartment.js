@@ -1,6 +1,8 @@
+import AparmentModel from '../models/apartment.js'
 import ApartmentModel from '../models/apartment.js'
 import { validateApartment, validatePartialApartment } from '../schemas/apartmentSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
+import path from 'path'
 
 class ApartmentController {
     static async getAllApartments(req, res) {
@@ -112,14 +114,49 @@ class ApartmentController {
     static async deleteApartment(req, res) {
         try {
             const { id } = req.params
-            const result = await ApartmentModel.deleteApartment(id)
+            const apartment = await AparmentModel.getApartmentById(id)
+
+            if (!apartment) {
+                return res.status(404).json({ message: 'Apartment not found' })
+            }
+
+            // Eliminar imágenes de Cloudinary
+            if (apartment.images && Array.isArray(apartment.images)) {
+                const deletePromises = apartment.images.map(async imageUrl => {
+                    const publicId = ApartmentController.getPublicIdFromUrl(imageUrl)
+                    try {
+                        await cloudinary.uploader.destroy(publicId)
+                        return console.log(`Image deleted from Cloudinary: ${publicId}`)
+                    } catch (error) {
+                        return console.error(`Error deleting image from Cloudinary: ${error.message}`)
+                    }
+                })
+                await Promise.all(deletePromises)
+            }
+
+            const result = await AparmentModel.deleteApartment(id)
+
             if (result.success) {
-                res.status(200).json({ message: result.message })
+                res.status(200).json({ message: 'Car and associated images deleted successfully' })
             } else {
-                res.status(404).json({ message: result.message })
+                res.status(500).json({ message: 'Error deleting car from database' })
             }
         } catch (error) {
-            res.status(500).json({ error: error.message })
+            console.error('Error in deleteCar:', error)
+            res.status(500).json({ error: error.message || 'An error occurred while deleting the car' })
+        }
+    }
+
+    static getPublicIdFromUrl(url) {
+        try {
+            const parsedUrl = new URL(url)
+            const pathnameParts = parsedUrl.pathname.split('/')
+            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
+            const filename = path.parse(filenameWithExtension).name
+            return `apartments/${filename}`
+        } catch (error) {
+            console.log('Erro parsing URL:', error)
+            return null
         }
     }
 }

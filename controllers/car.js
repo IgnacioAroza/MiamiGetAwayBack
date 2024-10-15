@@ -2,7 +2,6 @@ import CarModel from '../models/car.js'
 import { validateCar, validatePartialCar } from '../schemas/carSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
-import crypto from 'crypto'
 
 class CarController {
     static async getAllCars(req, res) {
@@ -117,13 +116,15 @@ class CarController {
 
             // Eliminar imágenes de Cloudinary
             if (car.images && Array.isArray(car.images)) {
-                const deletePromises = car.images.map(imageUrl => {
+                const deletePromises = car.images.map(async imageUrl => {
                     const publicId = CarController.getPublicIdFromUrl(imageUrl)
-                    return cloudinary.uploader.destroy(publicId)
-                        .then(() => console.log(`Image deleted from Cloudinary: ${publicId}`))
-                        .catch(error => console.error(`Error deleting image from Cloudinary: ${error.message}`))
+                    try {
+                        await cloudinary.uploader.destroy(publicId)
+                        return console.log(`Image deleted from Cloudinary: ${publicId}`)
+                    } catch (error) {
+                        return console.error(`Error deleting image from Cloudinary: ${error.message}`)
+                    }
                 })
-
                 await Promise.all(deletePromises)
             }
 
