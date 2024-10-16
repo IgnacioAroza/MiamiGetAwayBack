@@ -1,10 +1,10 @@
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 import { validateYacht } from '../schemas/yachtSchema.js'
 
 export default class YachtModel {
     static async getAll() {
         try {
-            const [rows] = await db.execute('SELECT * FROM yachts')
+            const { rows } = await db.query('SELECT * FROM yachts')
             return rows
         } catch (error) {
             throw error
@@ -13,7 +13,7 @@ export default class YachtModel {
 
     static async getYachtById(id) {
         try {
-            const [rows] = await db.execute('SELECT * FROM yachts WHERE id = ?', [id])
+            const { rows } = await db.query('SELECT * FROM yachts WHERE id = $1', [id])
             return rows[0]
         } catch (error) {
             throw error
@@ -36,11 +36,11 @@ export default class YachtModel {
 
             const safeDescription = description || null
 
-            const [result] = await db.execute(
-                'INSERT INTO yachts (name, description, capacity, price, images) VALUES (?, ?, ?, ?, ?);',
+            const { rows } = await db.query(
+                'INSERT INTO yachts (name, description, capacity, price, images) VALUES ($1, $2, $3, $4, $5);',
                 [name, safeDescription, capacity, price, imagesJson]
             )
-            return { id: result.insertId, ...yachtData, images: images || [] }
+            return { id: rows.insertId, ...yachtData, images: images || [] }
         } catch (error) {
             console.log('Error creating yacht:', error)
             throw error
@@ -51,26 +51,27 @@ export default class YachtModel {
         const { name, description, capacity, price, images } = yachtData
         const updateFields = []
         const updatedValues = []
+        let paramCount = 1
 
         if (name !== undefined) {
-            updateFields.push('name = ?')
+            updateFields.push(`name = $${paramCount++}`)
             updatedValues.push(name)
         }
         if (description !== undefined) {
-            updateFields.push('description = ?')
+            updateFields.push(`description = $${paramCount++}`)
             updatedValues.push(description)
         }
         if (capacity !== undefined) {
-            updateFields.push('capacity = ?')
+            updateFields.push(`capacity = $${paramCount++}`)
             updatedValues.push(capacity)
         }
         if (price !== undefined) {
-            updateFields.push('price = ?')
+            updateFields.push(`price = $${paramCount++}`)
             updatedValues.push(price)
         }
         if (images !== undefined) {
-            updateFields.push('images = ?')
-            updatedValues.push(JSON.stringify(yachtData.images))
+            updateFields.push(`images = $${paramCount++}`)
+            updatedValues.push(JSON.stringify(images))
         }
         if (updateFields.length === 0) {
             throw new Error('No valid fields to update')
@@ -78,14 +79,26 @@ export default class YachtModel {
 
         try {
             updatedValues.push(id)
-            const [result] = await db.execute(`UPDATE yachts SET ${updateFields.join(', ')} WHERE id = ?;`, updatedValues)
+            const query = `UPDATE yachts SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
+            await db.query(query, updatedValues)
 
-            if (result.affectedRows > 0) {
-                const [updatedYacht] = await db.execute('SELECT * FROM yachts WHERE id = ?;', [id])
-                if (updatedYacht[0].images !== null && updatedYacht[0].images !== undefined) {
-                    updatedYacht[0].images = updatedYacht[0].images
+            const { rows } = await db.query('SELECT * FROM yachts WHERE id = $1;', [id])
+
+            if (rows.length > 0) {
+                const updatedYacht = rows[0]
+                if (updatedYacht.images) {
+                    if (typeof updatedYacht.images === 'string') {
+                        try {
+                            updatedYacht.images = JSON.parse(updatedYacht.images)
+                        } catch (error) {
+                            console.error('Error parsing images:', error)
+                            updatedYacht.images = []
+                        }
+                    } else if (!Array.isArray(updatedYacht.images)) {
+                        updatedYacht.images = []
+                    }
                 }
-                return updatedYacht[0]
+                return updatedYacht
             } else {
                 return { message: 'Yacht not found' }
             }
@@ -97,14 +110,9 @@ export default class YachtModel {
 
     static async deleteYacht(id) {
         try {
-            const [car] = await db.execute('SELECT images FROM yachts WHERE id = ?;', [id])
-            if (car.length === 0) {
-                return { success: false, message: 'Yachts not found' }
-            }
+            const { rows } = await db.query('DELETE FROM yachts WHERE id = $1 RETURNING *;', [id])
 
-            const [result] = await db.execute('DELETE FROM yachts WHERE id = ?;', [id])
-
-            if (result.affectedRows > 0) {
+            if (rows.length > 0) {
                 return { success: true, message: 'Yacht deleted successfully' }
             } else {
                 return { success: false, message: 'Yacht not found' }

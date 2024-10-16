@@ -74,8 +74,24 @@ class YachtController {
             const yachtData = {
                 name: req.body.name,
                 description: req.body.description,
-                capacity: parseInt(req.body.capacity),
-                price: parseFloat(req.body.price)
+            }
+
+            if (req.body.capacity !== undefined) {
+                const parsedCapacity = parseInt(req.body.capacity);
+                if (!isNaN(parsedCapacity)) {
+                    yachtData.capacity = parsedCapacity;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
+            }
+
+            if (req.body.price !== undefined) {
+                const parsedPrice = parseFloat(req.body.price);
+                if (!isNaN(parsedPrice)) {
+                    yachtData.price = parsedPrice;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
             }
 
             const result = validatePartialYacht(req.body)

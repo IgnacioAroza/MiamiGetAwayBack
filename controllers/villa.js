@@ -76,8 +76,24 @@ class VillaController {
                 name: req.body.name,
                 description: req.body.description,
                 address: req.body.address,
-                capacity: parseInt(req.body.capacity),
-                price: parseFloat(req.body.price)
+            }
+
+            if (req.body.capacity !== undefined) {
+                const parsedCapacity = parseInt(req.body.capacity);
+                if (!isNaN(parsedCapacity)) {
+                    villaData.capacity = parsedCapacity;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
+            }
+
+            if (req.body.price !== undefined) {
+                const parsedPrice = parseFloat(req.body.price);
+                if (!isNaN(parsedPrice)) {
+                    villaData.price = parsedPrice;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
             }
 
             const result = validatePartialVilla(req.body)
