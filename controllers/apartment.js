@@ -1,4 +1,3 @@
-import AparmentModel from '../models/apartment.js'
 import ApartmentModel from '../models/apartment.js'
 import { validateApartment, validatePartialApartment } from '../schemas/apartmentSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
@@ -77,8 +76,24 @@ class ApartmentController {
                 name: req.body.name,
                 description: req.body.description,
                 address: req.body.address,
-                capacity: parseInt(req.body.capacity),
-                price: parseFloat(req.body.price)
+            }
+
+            if (req.body.capacity !== undefined) {
+                const parsedCapacity = parseInt(req.body.capacity);
+                if (!isNaN(parsedCapacity)) {
+                    apartmentData.capacity = parsedCapacity;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
+            }
+
+            if (req.body.price !== undefined) {
+                const parsedPrice = parseFloat(req.body.price);
+                if (!isNaN(parsedPrice)) {
+                    apartmentData.price = parsedPrice;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
             }
 
             const result = validatePartialApartment(req.body)
@@ -114,7 +129,7 @@ class ApartmentController {
     static async deleteApartment(req, res) {
         try {
             const { id } = req.params
-            const apartment = await AparmentModel.getApartmentById(id)
+            const apartment = await ApartmentModel.getApartmentById(id)
 
             if (!apartment) {
                 return res.status(404).json({ message: 'Apartment not found' })
@@ -134,7 +149,7 @@ class ApartmentController {
                 await Promise.all(deletePromises)
             }
 
-            const result = await AparmentModel.deleteApartment(id)
+            const result = await ApartmentModel.deleteApartment(id)
 
             if (result.success) {
                 res.status(200).json({ message: 'Car and associated images deleted successfully' })

@@ -1,11 +1,11 @@
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 import { validateAdmin } from '../schemas/adminSchema.js'
 import bcrypt from 'bcrypt'
 
 export default class AdminModel {
     static async getAll() {
         try {
-            const [rows] = await db.execute('SELECT id, username, email FROM admins')
+            const { rows } = await db.query('SELECT id, username, email FROM admins')
             return rows
         } catch (error) {
             throw error
@@ -14,7 +14,7 @@ export default class AdminModel {
 
     static async getAdminById(id) {
         try {
-            const [rows] = await db.execute('SELECT id, username, email FROM admins WHERE id = ?', [id])
+            const { rows } = await db.query('SELECT id, username, email FROM admins WHERE id = $1', [id])
             return rows[0]
         } catch (error) {
             throw error
@@ -34,8 +34,8 @@ export default class AdminModel {
                 throw new Error('Missing required fields')
             }
 
-            const [existingAdmin] = await db.execute('SELECT id FROM admins WHERE username = ? OR email = ?;', [username, email])
-            if (existingAdmin.length > 0) {
+            const { rows } = await db.query('SELECT id FROM admins WHERE username = $1 OR email = $2;', [username, email])
+            if (rows.length > 0) {
                 throw new Error('username o main already exists')
             }
 
@@ -45,17 +45,12 @@ export default class AdminModel {
 
             const hashedPassword = await bcrypt.hash(password, 10)
 
-            const [result] = await db.execute(
-                'INSERT INTO admins (username, email, password) VALUES (?, ?, ?);',
+            const { rows: newAdmin } = await db.query(
+                'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email;',
                 [username, email, hashedPassword]
             )
 
-            if (result.affectedRows === 1) {
-                const [admins] = await db.execute('SELECT id, username, email FROM admins WHERE id = LAST_INSERT_ID();')
-                return admins[0]
-            } else {
-                throw new Error('Error creating admin')
-            }
+            return newAdmin[0]
         } catch (error) {
             console.log('Error creating admin:', error)
             throw error
@@ -66,19 +61,23 @@ export default class AdminModel {
         const { username, email, password } = input
         const updateFields = []
         const updatedValues = []
+        let countParam = 1
 
         if (username !== undefined) {
-            updateFields.push('username = ?')
+            updateFields.push(`username = $${countParam}`)
             updatedValues.push(username)
+            countParam++
         }
         if (email !== undefined) {
-            updateFields.push('email = ?')
+            updateFields.push(`email = $${countParam}`)
             updatedValues.push(email)
+            countParam++
         }
         if (password !== undefined) {
             const hashedPassword = await bcrypt.hash(password, 10)
-            updateFields.push('password = ?')
+            updateFields.push(`password = $${countParam}`)
             updatedValues.push(hashedPassword)
+            countParam++
         }
 
         if (updateFields.length === 0) {
@@ -87,9 +86,9 @@ export default class AdminModel {
 
         try {
             updatedValues.push(id)
-            const [result] = await db.execute(`UPDATE admins SET ${updateFields.join(', ')} WHERE id = ?;`, updatedValues)
+            const { rowCount } = await db.query(`UPDATE admins SET ${updateFields.join(', ')} WHERE id = $${countParam};`, updatedValues)
 
-            if (result.affectedRows > 0) {
+            if (rowCount > 0) {
                 return { message: 'Admin updated successfully' }
             } else {
                 return { message: 'Admin not found' }
@@ -102,9 +101,9 @@ export default class AdminModel {
 
     static async deleteAdmin(id) {
         try {
-            const [result] = await db.execute('DELETE FROM admins WHERE id = ?;', [id])
+            const { rowCount } = await db.query('DELETE FROM admins WHERE id = $1;', [id])
 
-            if (result.affectedRows > 0) {
+            if (rowCount > 0) {
                 return { success: true, message: 'Admin deleted successfully' }
             } else {
                 return { success: false, message: 'Admin not found' }

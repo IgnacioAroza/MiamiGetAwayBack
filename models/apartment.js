@@ -1,9 +1,9 @@
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 
 export default class AparmentModel {
     static async getAll() {
         try {
-            const [rows] = await db.execute('SELECT * FROM apartments')
+            const { rows } = await db.query('SELECT * FROM apartments')
             return rows
         } catch (error) {
             throw error
@@ -12,7 +12,7 @@ export default class AparmentModel {
 
     static async getApartmentById(id) {
         try {
-            const [rows] = await db.execute('SELECT * FROM apartments WHERE id = ?', [id])
+            const { rows } = await db.query('SELECT * FROM apartments WHERE id = $1', [id])
             return rows[0]
         } catch (error) {
             throw error
@@ -30,11 +30,11 @@ export default class AparmentModel {
 
             const safeDescription = description || null
 
-            const [result] = await db.query(
-                'INSERT INTO apartments (name, description, address, capacity, price, images) VALUES (?, ?, ?, ?, ?, ?);',
+            const { rows } = await db.query(
+                'INSERT INTO apartments (name, description, address, capacity, price, images) VALUES ($1, $2, $3, $4, $5, $6);',
                 [name, safeDescription, address, capacity, price, imagesJson]
             )
-            return { id: result.insertId, ...apartmentData, images: images || [] }
+            return { id: rows.insertId, ...apartmentData, images: images || [] }
         } catch (error) {
             console.log('Error creating apartment:', error)
             throw error
@@ -45,30 +45,31 @@ export default class AparmentModel {
         const { name, description, address, capacity, price, images } = apartmentData
         const updateFields = []
         const updatedValues = []
+        let paramCount = 1
 
         if (name !== undefined) {
-            updateFields.push('name = ?')
+            updateFields.push(`name = $${paramCount++}`)
             updatedValues.push(name)
         }
         if (description !== undefined) {
-            updateFields.push('description = ?')
+            updateFields.push(`description = $${paramCount++}`)
             updatedValues.push(description)
         }
         if (address !== undefined) {
-            updateFields.push('address = ?')
+            updateFields.push(`address = $${paramCount++}`)
             updatedValues.push(address)
         }
         if (capacity !== undefined) {
-            updateFields.push('capacity = ?')
+            updateFields.push(`capacity = $${paramCount++}`)
             updatedValues.push(capacity)
         }
         if (price !== undefined) {
-            updateFields.push('price = ?')
+            updateFields.push(`price = $${paramCount++}`)
             updatedValues.push(price)
         }
         if (images !== undefined) {
-            updateFields.push('images = ?')
-            updatedValues.push(JSON.stringify(apartmentData.images))
+            updateFields.push(`images = $${paramCount++}`)
+            updatedValues.push(JSON.stringify(images))
         }
         if (updateFields.length === 0) {
             throw new Error('No valid fields to update')
@@ -76,15 +77,26 @@ export default class AparmentModel {
 
         try {
             updatedValues.push(id)
-            const [result] = await db.execute(`UPDATE apartments SET ${updateFields.join(', ')} WHERE id = ?;`, updatedValues)
+            const query = `UPDATE apartments SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
+            await db.query(query, updatedValues)
 
-            if (result.affectedRows > 0) {
-                const [updatedApartment] = await db.execute('SELECT * FROM apartments WHERE id = ?;', [id])
-                if (updatedApartment[0].images !== null && updatedApartment[0].images !== undefined) {
-                    updatedApartment[0].images = updatedApartment[0].images
+            const { rows } = await db.query('SELECT * FROM apartments WHERE id = $1', [id])
+
+            if (rows.length > 0) {
+                const updatedApartment = rows[0]
+                if (updatedApartment.images) {
+                    if (typeof updatedApartment.images === 'string') {
+                        try {
+                            updatedApartment.images = JSON.parse(updatedApartment.images)
+                        } catch (error) {
+                            console.error('Error parsing images:', error)
+                            updatedApartment.images = []
+                        }
+                    } else if (!Array.isArray(updatedApartment.images)) {
+                        updatedApartment.images = []
+                    }
                 }
-                console.log(updatedApartment[0]);
-                return updatedApartment[0]
+                return updatedApartment
             } else {
                 return { message: 'Apartment not found' }
             }
@@ -96,14 +108,9 @@ export default class AparmentModel {
 
     static async deleteApartment(id) {
         try {
-            const [apartment] = await db.execute('SELECT images FROM apartments WHERE id = ?;', [id])
-            if (apartment.length === 0) {
-                return { success: false, message: 'Apartment not found' }
-            }
+            const { rows } = await db.query('DELETE FROM apartments WHERE id = $1 RETURNING *;', [id])
 
-            const [result] = await db.execute('DELETE FROM apartments WHERE id = ?;', [id])
-
-            if (result.affectedRows > 0) {
+            if (rows.length > 0) {
                 return { success: true, message: 'Apartment deleted successfully' }
             } else {
                 return { success: false, message: 'Apartment not found' }

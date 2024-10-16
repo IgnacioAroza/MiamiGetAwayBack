@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken'
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 
 dotenv.config()
 
@@ -14,13 +14,13 @@ export const authMiddleware = async (req, res, next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-        const [admin] = await db.execute('SELECT id, username FROM admins WHERE id = ?;', [decoded.id])
+        const { rows } = await db.query('SELECT id, username FROM admins WHERE id = $1;', [decoded.id])
 
-        if (admin.length === 0) {
+        if (rows.length === 0) {
             return res.status(401).json({ message: 'Invalid token' })
         }
 
-        req.admin = admin[0]
+        req.rows = rows[0]
         next()
     } catch (error) {
         console.log('Auth error:', error)

@@ -71,8 +71,16 @@ class CarController {
             const carData = {
                 brand: req.body.brand,
                 model: req.body.model,
-                price: parseFloat(req.body.price),
                 description: req.body.description
+            }
+
+            if (req.body.price !== undefined) {
+                const parsedPrice = parseFloat(req.body.price);
+                if (!isNaN(parsedPrice)) {
+                    carData.price = parsedPrice;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
             }
 
             const result = validatePartialCar(req.body)
