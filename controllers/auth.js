@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 
 dotenv.config()
 
@@ -14,13 +14,13 @@ class AuthController {
                 return res.status(400).json({ message: 'Username and password are required' })
             }
 
-            const [admins] = await db.execute('SELECT * FROM admins WHERE username = ?;', [username])
+            const { rows } = await db.query('SELECT * FROM admins WHERE username = $1;', [username])
 
-            if (admins.length === 0) {
+            if (rows.length === 0) {
                 return res.status(401).json({ message: 'Invalid credentials' })
             }
 
-            const admin = admins[0]
+            const admin = rows[0]
 
             const isPasswordValid = await bcrypt.compare(password, admin.password)
 

@@ -1,10 +1,10 @@
-import db from '../utils/db.js'
+import db from '../utils/db_render.js'
 import { validateUser } from '../schemas/userSchema.js'
 
 export default class UserModel {
     static async getAll() {
         try {
-            const [rows] = await db.execute('SELECT * FROM clients')
+            const { rows } = await db.query('SELECT * FROM clients')
             return rows
         } catch (error) {
             throw error
@@ -24,17 +24,12 @@ export default class UserModel {
                 throw new Error('Missing required fields')
             }
 
-            const [result] = await db.execute(
-                'INSERT INTO clients (name, lastName, email) VALUES ( ?, ?, ?);',
+            const { rows } = await db.query(
+                'INSERT INTO clients (name, lastName, email) VALUES ( $1, $2, $3) RETURNING *;',
                 [name, lastName, email]
             )
 
-            if (result.affectedRows === 1) {
-                const [users] = await db.execute('SELECT * FROM clients WHERE id = LAST_INSERT_ID();')
-                return users[0]
-            } else {
-                throw new Error('Error creating user')
-            }
+            return rows
         } catch (error) {
             console.log('Error creating user:', error)
             throw error
