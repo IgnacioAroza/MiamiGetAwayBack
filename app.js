@@ -25,7 +25,7 @@ app.use('/api/apartments', authMiddleware, apartmentRoutes)
 app.use('/api/yachts', authMiddleware, yachtRoutes)
 app.use('/api/villas', authMiddleware, villaRoutes)
 app.use('/api/admins', authMiddleware, adminRoutes)
-app.use('/api/users', authMiddleware, userRoutes)
+app.use('/api/users', userRoutes)
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)
