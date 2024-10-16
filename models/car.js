@@ -1,4 +1,3 @@
-import db from '../utils/db.js'
 import dbPostgre from '../utils/db_render.js'
 
 export default class CarModel {
@@ -115,7 +114,7 @@ export default class CarModel {
 
     static async deleteCar(id) {
         try {
-            const { rows } = await dbPostgre.query('DELETE FROM cars WHERE id = $1 RETURNING *', [id])
+            const { rows } = await dbPostgre.query('DELETE FROM cars WHERE id = $1 RETURNING *;', [id])
 
             if (rows.length > 0) {
                 return { success: true, message: 'Car deleted successfully' }
