@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import express, { json } from 'express'
+import cors from 'cors'
 import carRouter from './routes/car.js'
 import apartmentRoutes from './routes/apartment.js'
 import yachtRoutes from './routes/yacht.js'
@@ -13,6 +14,19 @@ dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3000
+
+const allowedOrigins = ['http://localhost:5173'];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
+
 
 app.use(json())
 
