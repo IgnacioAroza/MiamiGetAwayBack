@@ -1,13 +1,14 @@
 import express from 'express'
 import YachtController from '../controllers/yacht.js'
 import upload from '../middleware/uploadMiddleware.js'
+import { authMiddleware } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
 router.get('/', YachtController.getAllYachts)
-router.post('/', upload.array('images', 30), YachtController.createYacht)
+router.post('/', authMiddleware, upload.array('images', 30), YachtController.createYacht)
 router.get('/:id', YachtController.getYachtById)
-router.put('/:id', upload.array('images', 30), YachtController.updateYacht)
-router.delete('/:id', YachtController.deleteYacht)
+router.put('/:id', authMiddleware, upload.array('images', 30), YachtController.updateYacht)
+router.delete('/:id', authMiddleware, YachtController.deleteYacht)
 
 export default router

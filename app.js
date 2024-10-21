@@ -20,12 +20,12 @@ app.use(json())
 app.use('/api/auth', authRoutes)
 
 //Usa las rutas
-app.use('/api/cars', authMiddleware, carRouter)
-app.use('/api/apartments', authMiddleware, apartmentRoutes)
-app.use('/api/yachts', authMiddleware, yachtRoutes)
-app.use('/api/villas', authMiddleware, villaRoutes)
+app.use('/api/cars', carRouter)
+app.use('/api/apartments', apartmentRoutes)
+app.use('/api/yachts', yachtRoutes)
+app.use('/api/villas', villaRoutes)
 app.use('/api/admins', authMiddleware, adminRoutes)
-app.use('/api/users', userRoutes)
+app.use('/api/users', authMiddleware, userRoutes)
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)

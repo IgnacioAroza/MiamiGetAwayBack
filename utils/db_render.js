@@ -14,7 +14,6 @@ const pool = new Pool({
     ssl: {
         rejectUnauthorized: false
     },
-    // connectionString: process.env.EXTERNAL_DATABASE_URL,
 })
 
 export default {
