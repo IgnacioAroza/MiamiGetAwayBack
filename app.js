@@ -16,7 +16,7 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 3000
 
-const allowedOrigins = ['http://localhost:5173', 'https://miamigetawayfront.onrender.com/'];
+const allowedOrigins = ['http://localhost:5173', 'https://miamigetawayfront.onrender.com', 'https://api-miamigetaway.onrender.com/auth/login'];
 
 app.use(cors({
     origin: function (origin, callback) {
