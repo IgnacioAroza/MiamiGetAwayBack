@@ -8,6 +8,7 @@ import villaRoutes from './routes/villa.js'
 import adminRoutes from './routes/admin.js'
 import userRoutes from './routes/user.js'
 import authRoutes from './routes/auth.js'
+import reviewRoutes from './routes/review.js'
 import { authMiddleware } from './middleware/authMiddleware.js'
 
 dotenv.config()
@@ -31,15 +32,16 @@ app.use(cors({
 app.use(json())
 
 //Rutas publicas
-app.use('/api/auth', authRoutes)
+app.use('/auth', authRoutes)
 
 //Usa las rutas
-app.use('/api/cars', carRouter)
-app.use('/api/apartments', apartmentRoutes)
-app.use('/api/yachts', yachtRoutes)
-app.use('/api/villas', villaRoutes)
-app.use('/api/admins', authMiddleware, adminRoutes)
-app.use('/api/users', userRoutes)
+app.use('/cars', carRouter)
+app.use('/apartments', apartmentRoutes)
+app.use('/yachts', yachtRoutes)
+app.use('/villas', villaRoutes)
+app.use('/admins', authMiddleware, adminRoutes)
+app.use('/users', userRoutes)
+app.use('/reviews', reviewRoutes)
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)

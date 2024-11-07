@@ -7,7 +7,7 @@ class CarController {
     static async getAllCars(req, res) {
         try {
             const cars = await CarModel.getAll()
-            res.status(200).json({ cars })
+            res.status(200).json(cars)
         } catch (error) {
             console.error('Error in getAllCars:', error)
             res.status(500).json({ error: 'An error occurred while fetching cars' })
@@ -157,7 +157,7 @@ class CarController {
             const filename = path.parse(filenameWithExtension).name
             return `cars/${filename}`
         } catch (error) {
-            console.log('Erro parsing URL:', error)
+            console.log('Error parsing URL:', error)
             return null
         }
     }
