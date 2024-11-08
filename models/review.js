@@ -12,7 +12,7 @@ export default class ReviewModel {
     }
 
     static async createReview(body) {
-        const { name, lastName, rating, comment } = body
+        const { name, comment } = body
         const validateResult = validateReview(body)
 
         if (!validateResult.success) {
@@ -20,12 +20,12 @@ export default class ReviewModel {
         }
 
         try {
-            if (!name || !lastName || !rating || !comment) {
+            if (!name || !comment) {
                 throw new Error('Missing required fields')
             }
 
             const { rows } = await db.query(
-                'INSERT INTO reviews (name, lastName, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *;', [name, lastName, rating, comment]
+                'INSERT INTO reviews (name, comment) VALUES ($1, $2) RETURNING *;', [name, comment]
             )
             return rows
         } catch (error) {
