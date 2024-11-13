@@ -18,9 +18,8 @@ const port = process.env.PORT || 3000
 
 const allowedOrigins = ['http://localhost:5173',
     'https://miamigetawayfront.onrender.com',
-    'https://api-miamigetaway.onrender.com/auth/login',
-    'https://miamigetawayfront.onrender.com/adminPanel',
-    'https://miamigetawayfront-f1bb.onrender.com/'
+    'https://miamigetawayfront-f1bb.onrender.com/',
+    'https://miamigetawayfront-f1bb.onrender.com/reviews'
 ];
 
 app.use(cors({
