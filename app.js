@@ -18,20 +18,33 @@ const port = process.env.PORT || 3000
 
 const allowedOrigins = ['http://localhost:5173',
     'https://miamigetawayfront.onrender.com',
-    'https://miamigetawayfront-f1bb.onrender.com/',
-    'https://miamigetawayfront-f1bb.onrender.com/reviews'
+    'https://miamigetawayfront-f1bb.onrender.com'
 ];
 
-app.use(cors({
+const corsOptions = {
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps, curl, postman)
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        // Remove any trailing slashes from the origin
+        const normalizedOrigin = origin.replace(/\/$/, '');
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
         }
-    }
-}));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
 
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(json())
 
