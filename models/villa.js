@@ -21,7 +21,7 @@ export default class VillaModel {
     }
 
     static async createVilla(villaData) {
-        const { name, description, address, capacity, price, images } = villaData
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = villaData
         const imagesJson = JSON.stringify(images || [])
 
         const validateResult = validateVilla(villaData)
@@ -38,8 +38,8 @@ export default class VillaModel {
             const safeDescription = description || null
 
             const { rows } = await db.query(
-                'INSERT INTO villas (name, description, address, capacity, price, images) VALUES ($1, $2, $3, $4, $5, $6);',
-                [name, safeDescription, address, capacity, price, imagesJson]
+                'INSERT INTO villas (name, description, address, capacity, bathrooms, rooms, price, images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);',
+                [name, safeDescription, address, capacity, bathrooms, rooms, price, imagesJson]
             )
             return { id: rows.insertId, ...villaData, images: images || [] }
         } catch (error) {
@@ -49,7 +49,7 @@ export default class VillaModel {
     }
 
     static async updateVilla({ id, villaData }) {
-        const { name, description, address, capacity, price, images } = villaData
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = villaData
         const updateFields = []
         const updatedValues = []
         let paramCount = 1
@@ -69,6 +69,14 @@ export default class VillaModel {
         if (capacity !== undefined) {
             updateFields.push(`capacity = $${paramCount++}`)
             updatedValues.push(capacity)
+        }
+        if (bathrooms !== undefined) {
+            updateFields.push(`bathrooms = $${paramCount++}`)
+            updatedValues.push(bathrooms)
+        }
+        if (rooms !== undefined) {
+            updateFields.push(`rooms = $${paramCount++}`)
+            updatedValues.push(rooms)
         }
         if (price !== undefined) {
             updateFields.push(`price = $${paramCount++}`)

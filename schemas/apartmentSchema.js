@@ -8,6 +8,14 @@ export const apartmentSchema = z.object({
         (val) => (typeof val === 'string' ? parseInt(val) : val),
         z.number().positive("Price must be a positive number")
     ),
+    bathrooms: z.preprocess(
+        (val) => (typeof val === 'string' ? parseInt(val) : val),
+        z.number().positive("bathrooms must be a positive number")
+    ),
+    rooms: z.preprocess(
+        (val) => (typeof val === 'string' ? parseInt(val) : val),
+        z.number().positive("Rooms must be a positive number")
+    ),
     price: z.preprocess(
         (val) => (typeof val === 'string' ? parseFloat(val) : val),
         z.number().positive("Price must be a positive number")

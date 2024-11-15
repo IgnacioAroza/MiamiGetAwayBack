@@ -20,19 +20,19 @@ export default class AparmentModel {
     }
 
     static async createApartment(apartmentData) {
-        const { name, description, address, capacity, price, images } = apartmentData
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = apartmentData
         const imagesJson = JSON.stringify(images || [])
 
         try {
-            if (!name || !address || capacity === undefined || price === undefined) {
+            if (!name || !address || capacity === undefined || bathrooms === undefined || rooms === undefined || price === undefined) {
                 throw new Error('Missing required fields')
             }
 
             const safeDescription = description || null
 
             const { rows } = await db.query(
-                'INSERT INTO apartments (name, description, address, capacity, price, images) VALUES ($1, $2, $3, $4, $5, $6);',
-                [name, safeDescription, address, capacity, price, imagesJson]
+                'INSERT INTO apartments (name, description, address, capacity, bathrooms, rooms, price, images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);',
+                [name, safeDescription, address, capacity, bathrooms, rooms, price, imagesJson]
             )
             return { id: rows.insertId, ...apartmentData, images: images || [] }
         } catch (error) {
@@ -42,7 +42,7 @@ export default class AparmentModel {
     }
 
     static async updateApartment({ id, apartmentData }) {
-        const { name, description, address, capacity, price, images } = apartmentData
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = apartmentData
         const updateFields = []
         const updatedValues = []
         let paramCount = 1
@@ -62,6 +62,14 @@ export default class AparmentModel {
         if (capacity !== undefined) {
             updateFields.push(`capacity = $${paramCount++}`)
             updatedValues.push(capacity)
+        }
+        if (bathrooms !== undefined) {
+            updateFields.push(`bathrooms = $${paramCount++}`)
+            updatedValues.push(bathrooms)
+        }
+        if (rooms !== undefined) {
+            updateFields.push(`rooms = $${paramCount++}`)
+            updatedValues.push(rooms)
         }
         if (price !== undefined) {
             updateFields.push(`price = $${paramCount++}`)

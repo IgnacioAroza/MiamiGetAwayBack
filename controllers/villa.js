@@ -34,6 +34,8 @@ class VillaController {
                 description: req.body.description,
                 address: req.body.address,
                 capacity: parseInt(req.body.capacity),
+                bathrooms: parseInt(req.body.bathrooms),
+                rooms: parseInt(req.body.rooms),
                 price: parseFloat(req.body.price)
             }
 
@@ -82,6 +84,24 @@ class VillaController {
                 const parsedCapacity = parseInt(req.body.capacity);
                 if (!isNaN(parsedCapacity)) {
                     villaData.capacity = parsedCapacity;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
+            }
+
+            if (req.body.bathrooms !== undefined) {
+                const parsedBathrooms = parseInt(req.body.bathrooms);
+                if (!isNaN(parsedBathrooms)) {
+                    villaData.capacity = parsedBathrooms;
+                } else {
+                    return res.status(400).json({ message: 'Invalid price value' });
+                }
+            }
+
+            if (req.body.rooms !== undefined) {
+                const parsedRooms = parseInt(req.body.rooms);
+                if (!isNaN(parsedRooms)) {
+                    villaData.capacity = parsedRooms;
                 } else {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
