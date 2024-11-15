@@ -16,10 +16,9 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 3000
 
-const allowedOrigins = ['http://localhost:5173',
-    'https://miamigetawayfront.onrender.com',
-    'https://miamigetawayfront-f1bb.onrender.com'
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [];
 
 const corsOptions = {
     origin: function (origin, callback) {
