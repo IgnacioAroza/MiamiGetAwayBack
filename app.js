@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
 import express, { json } from 'express'
 import cors from 'cors'
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
 import carRouter from './routes/car.js'
 import apartmentRoutes from './routes/apartment.js'
 import yachtRoutes from './routes/yacht.js'
@@ -15,6 +17,9 @@ dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3000
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
@@ -58,6 +63,12 @@ app.use('/villas', villaRoutes)
 app.use('/admins', authMiddleware, adminRoutes)
 app.use('/users', userRoutes)
 app.use('/reviews', reviewRoutes)
+
+app.use(express.static(path.join(__dirname, '../MiamiGetAwayFront/dist', 'index.html')))
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../MiamiGetAwayFront/dist', 'index.html'))
+})
 
 app.listen(port, () => {
     console.log(`server running in port ${port}`)
