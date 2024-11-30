@@ -64,10 +64,9 @@ app.use('/admins', authMiddleware, adminRoutes)
 app.use('/users', userRoutes)
 app.use('/reviews', reviewRoutes)
 
-app.use(express.static(path.join(__dirname, '../MiamiGetAwayFront/dist')))
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../MiamiGetAwayFront/dist/index.html'))
+app.use((err, req, res, next) => {
+    console.error('Error:', err)
+    res.status(500).send('Internar server error')
 })
 
 app.listen(port, () => {
