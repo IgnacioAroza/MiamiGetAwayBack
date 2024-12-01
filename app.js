@@ -15,9 +15,6 @@ import { authMiddleware } from './middleware/authMiddleware.js'
 
 dotenv.config()
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -48,7 +45,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(json())
 
@@ -66,7 +62,7 @@ app.use('/reviews', reviewRoutes)
 
 app.use((err, req, res, next) => {
     console.error('Error:', err)
-    res.status(500).send('Internar server error')
+    res.status(500).send('Internal server error')
 })
 
 app.listen(port, () => {
