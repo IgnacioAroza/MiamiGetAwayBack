@@ -92,7 +92,7 @@ class ApartmentController {
             if (req.body.bathrooms !== undefined) {
                 const parsedBathrooms = parseInt(req.body.bathrooms);
                 if (!isNaN(parsedBathrooms)) {
-                    villaData.capacity = parsedBathrooms;
+                    apartmentData.capacity = parsedBathrooms;
                 } else {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
@@ -101,7 +101,7 @@ class ApartmentController {
             if (req.body.rooms !== undefined) {
                 const parsedRooms = parseInt(req.body.rooms);
                 if (!isNaN(parsedRooms)) {
-                    villaData.capacity = parsedRooms;
+                    apartmentData.capacity = parsedRooms;
                 } else {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
