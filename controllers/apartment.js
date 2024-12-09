@@ -92,7 +92,7 @@ class ApartmentController {
             if (req.body.bathrooms !== undefined) {
                 const parsedBathrooms = parseInt(req.body.bathrooms);
                 if (!isNaN(parsedBathrooms)) {
-                    apartmentData.capacity = parsedBathrooms;
+                    apartmentData.bathrooms = parsedBathrooms;
                 } else {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
@@ -101,7 +101,7 @@ class ApartmentController {
             if (req.body.rooms !== undefined) {
                 const parsedRooms = parseInt(req.body.rooms);
                 if (!isNaN(parsedRooms)) {
-                    apartmentData.capacity = parsedRooms;
+                    apartmentData.rooms = parsedRooms;
                 } else {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
@@ -115,7 +115,7 @@ class ApartmentController {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
             }
-
+            console.log(apartmentData);
             const result = validatePartialApartment(req.body)
 
             if (!result.success) {
@@ -139,6 +139,7 @@ class ApartmentController {
             }
 
             const updatedApartment = await ApartmentModel.updateApartment({ id, apartmentData })
+            console.log(updatedApartment);
             res.status(200).json(updatedApartment)
         } catch (error) {
             console.error('Error in updateApartment:', error)
