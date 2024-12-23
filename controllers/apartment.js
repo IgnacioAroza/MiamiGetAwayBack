@@ -74,38 +74,31 @@ class ApartmentController {
     static async updateApartment(req, res) {
         try {
             const { id } = req.params
-            const apartmentData = {
-                name: req.body.name,
-                description: req.body.description,
-                address: req.body.address,
-            }
+            const apartmentData = {}
 
-            if (req.body.capacity !== undefined) {
-                const parsedCapacity = parseInt(req.body.capacity);
-                if (!isNaN(parsedCapacity)) {
-                    apartmentData.capacity = parsedCapacity;
-                } else {
-                    return res.status(400).json({ message: 'Invalid price value' });
-                }
-            }
+            const updatableFields = ['name', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
 
-            if (req.body.bathrooms !== undefined) {
-                const parsedBathrooms = parseInt(req.body.bathrooms);
-                if (!isNaN(parsedBathrooms)) {
-                    apartmentData.bathrooms = parsedBathrooms;
-                } else {
-                    return res.status(400).json({ message: 'Invalid price value' });
+            updatableFields.forEach(field => {
+                if (req.body[field] !== undefined) {
+                    if (['capacity', 'bathrooms', 'rooms'].includes(field)) {
+                        const parsedValue = parseInt(req.body[field]);
+                        if (!isNaN(parsedValue)) {
+                            apartmentData[field] = parsedValue;
+                        } else {
+                            return res.status(400).json({ message: `Valor inválido para ${field}` });
+                        }
+                    } else if (field === 'price') {
+                        const parsedPrice = parseFloat(req.body[field]);
+                        if (!isNaN(parsedPrice)) {
+                            apartmentData[field] = parsedPrice;
+                        } else {
+                            return res.status(400).json({ message: 'Valor de precio inválido' });
+                        }
+                    } else {
+                        apartmentData[field] = req.body[field];
+                    }
                 }
-            }
-
-            if (req.body.rooms !== undefined) {
-                const parsedRooms = parseInt(req.body.rooms);
-                if (!isNaN(parsedRooms)) {
-                    apartmentData.rooms = parsedRooms;
-                } else {
-                    return res.status(400).json({ message: 'Invalid price value' });
-                }
-            }
+            });
 
             if (req.body.price !== undefined) {
                 const parsedPrice = parseFloat(req.body.price);
@@ -115,8 +108,7 @@ class ApartmentController {
                     return res.status(400).json({ message: 'Invalid price value' });
                 }
             }
-            console.log(apartmentData);
-            const result = validatePartialApartment(req.body)
+            const result = validatePartialApartment(apartmentData)
 
             if (!result.success) {
                 return res.status(400).json({ error: JSON.parse(result.error.message) })
@@ -139,7 +131,6 @@ class ApartmentController {
             }
 
             const updatedApartment = await ApartmentModel.updateApartment({ id, apartmentData })
-            console.log(updatedApartment);
             res.status(200).json(updatedApartment)
         } catch (error) {
             console.error('Error in updateApartment:', error)
