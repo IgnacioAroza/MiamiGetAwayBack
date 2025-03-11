@@ -1,6 +1,6 @@
 import db from '../utils/db_render.js';
 import { Apartment } from '../types/index.js';
-import { validateApartment } from '../schemas/aparmentSchema.js';
+import { validateApartment } from '../schemas/apartmentSchema.js';
 
 export default class ApartmentModel {
     static async getAll(): Promise<Apartment[]> {
