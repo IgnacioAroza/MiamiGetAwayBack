@@ -1,0 +1,141 @@
+import db from '../utils/db_render.js';
+import { Apartment } from '../types/index.js';
+import { validateApartment } from '../schemas/aparmentSchema.js';
+
+export default class ApartmentModel {
+    static async getAll(): Promise<Apartment[]> {
+        try {
+            const { rows } = await db.query('SELECT * FROM apartments');
+            return rows;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    static async getApartmentById(id: number): Promise<Apartment | null> {
+        try {
+            const { rows } = await db.query('SELECT * FROM apartments WHERE id = $1', [id]);
+            return rows[0] || null;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async createApartment(apartmentData: Apartment): Promise<Apartment> {
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = apartmentData;
+        const imagesJson = JSON.stringify(images || []);
+
+        const validateResult = validateApartment(apartmentData)
+
+        if (!validateResult.success) {
+            throw new Error(JSON.stringify(validateResult.error))
+        }
+
+        try {
+            if (!name || !address || capacity === undefined || bathrooms === undefined || rooms === undefined || price === undefined) {
+                throw new Error('Missing required fields');
+            }
+
+            const safeDescription = description || null;
+            
+            const { rows } = await db.query(
+                'INSERT INTO apartments (name, description, address, capacity, bathrooms, rooms, price, images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;',
+                [name, safeDescription, address, capacity, bathrooms, rooms, price, imagesJson]
+            );
+
+            const { id, ...dataWithoutId } = apartmentData;
+            return { id: rows[0].id, ...dataWithoutId, images: images || [] };
+        } catch (error) {
+            console.log('Error creating apartment:', error);
+            throw error;
+        }
+    }
+
+    static async updateApartment(id: number, apartmentData: Partial<Apartment>): Promise<Apartment> {
+        const { name, description, address, capacity, bathrooms, rooms, price, images } = apartmentData;
+        const updateFields = [];
+        const updatedValues = [];
+        let paramCount = 1;
+        
+        if (name !== undefined) {
+            updateFields.push(`name = $${paramCount++}`)
+            updatedValues.push(name)
+        }
+        if (description !== undefined) {
+            updateFields.push(`description = $${paramCount++}`)
+            updatedValues.push(description)
+        }
+        if (address !== undefined) {
+            updateFields.push(`address = $${paramCount++}`)
+            updatedValues.push(address)
+        }
+        if (capacity !== undefined) {
+            updateFields.push(`capacity = $${paramCount++}`)
+            updatedValues.push(capacity)
+        }
+        if (bathrooms !== undefined) {
+            updateFields.push(`bathrooms = $${paramCount++}`)
+            updatedValues.push(bathrooms)
+        }
+        if (rooms !== undefined) {
+            updateFields.push(`rooms = $${paramCount++}`)
+            updatedValues.push(rooms)
+        }
+        if (price !== undefined) {
+            updateFields.push(`price = $${paramCount++}`)
+            updatedValues.push(price)
+        }
+        if (images !== undefined) {
+            updateFields.push(`images = $${paramCount++}`)
+            updatedValues.push(JSON.stringify(images))
+        }
+        if (updateFields.length === 0) {
+            throw new Error('No valid fields to update')
+        }
+
+        try {
+            updatedValues.push(id)
+            const query = `UPDATE apartments SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
+            await db.query(query, updatedValues)
+            
+            const { rows } = await db.query('SELECT * FROM apartments WHERE id = $1', [id])
+
+            if (rows.length > 0) {
+                const updatedApartment = rows[0]
+                if (updatedApartment.images) {
+                    if (typeof updatedApartment.images === 'string') {
+                        try {
+                            updatedApartment.images = JSON.parse(updatedApartment.images)
+                        } catch (error) {
+                            console.error('Error parsing images:', error)
+                            updatedApartment.images = []
+                        }
+                    } else if (!Array.isArray(updatedApartment.images)) {
+                        updatedApartment.images = []
+                    }
+                }
+                return updatedApartment
+            } else {
+                throw new Error('Apartment not found')
+            }
+        } catch (error) {
+            console.log(error)
+            throw new Error('Error updating apartment')
+        }
+    }
+    
+    static async deleteApartment(id: number): Promise<{ message: string }> {
+        try {
+            const { rows } = await db.query('DELETE FROM apartments WHERE id = $1 RETURNING *;', [id])
+
+            if (rows.length > 0) {
+                return { message: 'Apartment deleted successfully' }
+            } else {
+                throw new Error('Apartment not found')
+            }
+        } catch (error) {
+            console.log(error)
+            throw new Error('Error deleting apartment');
+        }
+    }
+}
