@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import ApartmentController from '../controllers/aparment.js'
+import ApartmentController from '../controllers/apartment.js'
 import upload from '../middleware/uploadMiddleware.js'
 import { authMiddleware } from '../middleware/authMiddleware.js'
 
