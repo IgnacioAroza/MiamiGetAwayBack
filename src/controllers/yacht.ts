@@ -5,11 +5,6 @@ import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js'
 
-interface MulterFile {
-  buffer: Buffer
-  [key: string]: any
-}
-
 class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
@@ -34,7 +29,7 @@ class YachtController {
         }
     }
 
-    static async createYacht(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async createYacht(req: Request, res: Response): Promise<void> {
         try {
             const yachtData: CreateYachtDTO = {
                 name: req.body.name,
@@ -51,8 +46,8 @@ class YachtController {
                 return
             }
 
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'yachts' },
@@ -75,7 +70,7 @@ class YachtController {
         }
     }
 
-    static async updateYacht(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async updateYacht(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
             const yachtData: UpdateYachtDTO = {
@@ -110,8 +105,8 @@ class YachtController {
                 return
             }
 
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'yachts' },

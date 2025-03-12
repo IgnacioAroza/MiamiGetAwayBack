@@ -5,11 +5,6 @@ import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
 import { Cars, CreateCarsDTO, UpdateCarsDTO } from '../types/index.js'
 
-interface MulterFile {
-  buffer: Buffer
-  [key: string]: any
-}
-
 class CarController {
     static async getAllCars(req: Request, res: Response): Promise<void> {
         try {
@@ -31,7 +26,7 @@ class CarController {
         }
     }
 
-    static async createCar(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async createCar(req: Request, res: Response): Promise<void> {
         try {
             const carData: CreateCarsDTO = {
                 brand: req.body.brand,
@@ -48,8 +43,8 @@ class CarController {
             }
 
             // Handle image uploads
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'cars' },
@@ -72,7 +67,7 @@ class CarController {
         }
     }
 
-    static async updateCar(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async updateCar(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
             const carData: UpdateCarsDTO = {
@@ -98,8 +93,8 @@ class CarController {
                 return
             }
 
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'cars' },

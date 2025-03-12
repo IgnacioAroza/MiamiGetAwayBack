@@ -34,7 +34,7 @@ class VillaController {
         }
     }
 
-    static async createVilla(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async createVilla(req: Request, res: Response): Promise<void> {
         try {
             const villaData: CreateVillaDTO = {
                 name: req.body.name,
@@ -54,8 +54,8 @@ class VillaController {
                 return
             }
 
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'villas' },
@@ -78,7 +78,7 @@ class VillaController {
         }
     }
 
-    static async updateVilla(req: Request & { files?: MulterFile[] }, res: Response): Promise<void> {
+    static async updateVilla(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
             const villaData: UpdateVillaDTO = {
@@ -134,8 +134,8 @@ class VillaController {
                 return
             }
 
-            if (req.files && req.files.length > 0) {
-                const uploadPromises = req.files.map(file =>
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
                     new Promise<string>((resolve, reject) => {
                         const uploadStream = cloudinary.uploader.upload_stream(
                             { folder: 'villas' },
