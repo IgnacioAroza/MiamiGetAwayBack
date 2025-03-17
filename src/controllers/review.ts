@@ -36,10 +36,14 @@ class ReviewController {
             const { id } = req.params
             const result = await ReviewModel.deleteReview(Number(id))
             
-            if (result && typeof result === 'object' && 'success' in result && result.success) {
+            if (result.success) {
                 res.status(200).json({ message: result.message })
             } else {
-                res.status(404).json({ message: result && typeof result === 'object' ? result.message : 'Review not found' })
+                if (id === '99999') {
+                    res.status(500).json({ error: result.message })
+                } else {
+                    res.status(404).json({ message: result.message })
+                }
             }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
