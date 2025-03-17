@@ -68,9 +68,11 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     })
 })
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`)
-})
+// Iniciar el servidor solo si no estamos en modo de prueba
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        console.log(`Servidor corriendo en http://localhost:${PORT}`)
+    })
+}
 
 export default app

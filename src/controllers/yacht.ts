@@ -29,155 +29,197 @@ class YachtController {
         }
     }
 
-    static async createYacht(req: Request, res: Response): Promise<void> {
+    static async createYacht(req: Request, res: Response): Promise<Response> {
         try {
-            const yachtData: CreateYachtDTO = {
-                name: req.body.name,
-                description: req.body.description,
-                capacity: parseInt(req.body.capacity),
-                price: parseFloat(req.body.price),
-                images: []
-            }
-
-            const result = validateYacht(req.body)
-
+            // Validar datos de entrada
+            const result = validateYacht(req.body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
-                return
+                return res.status(400).json({ 
+                    error: JSON.parse(result.error.errors[0].message)
+                });
             }
 
-            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
-                    new Promise<string>((resolve, reject) => {
-                        const uploadStream = cloudinary.uploader.upload_stream(
-                            { folder: 'yachts' },
-                            (error: any, result: any) => {
-                                if (error) reject(error)
-                                else resolve(result.secure_url)
-                            }
-                        )
-                        uploadStream.end(file.buffer)
-                    })
-                )
-                yachtData.images = await Promise.all(uploadPromises)
+            const yachtData = req.body as CreateYachtDTO;
+
+            // Validar que los datos numéricos sean válidos
+            if (isNaN(Number(yachtData.capacity)) || isNaN(Number(yachtData.price))) {
+                return res.status(400).json({ error: 'Invalid numerical values' });
             }
 
-            const newYacht = await YachtModel.createYacht(yachtData as unknown as Yacht)
-            res.status(201).json(newYacht)
-        } catch (error: any) {
-            console.error('Error in createYacht:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while creating the yacht' })
-        }
-    }
+            // Procesar imágenes si se proporcionan
+            if (req.files) {
+                const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+                if (files.length > 0) {
+                    const uploadPromises = files.map((file: any) => {
+                        return new Promise<string>((resolve, reject) => {
+                            const uploadStream = cloudinary.uploader.upload_stream(
+                                { folder: 'yachts' },
+                                (error, result) => {
+                                    if (error) reject(error);
+                                    else resolve(result!.secure_url);
+                                }
+                            );
+                            uploadStream.end(file.buffer);
+                        });
+                    });
 
-    static async updateYacht(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params
-            const yachtData: UpdateYachtDTO = {
-                name: req.body.name,
-                description: req.body.description,
-            }
-
-            if (req.body.capacity !== undefined) {
-                const parsedCapacity = parseInt(req.body.capacity);
-                if (!isNaN(parsedCapacity)) {
-                    yachtData.capacity = parsedCapacity;
-                } else {
-                    res.status(400).json({ message: 'Invalid capacity value' })
-                    return
+                    yachtData.images = await Promise.all(uploadPromises);
                 }
             }
 
-            if (req.body.price !== undefined) {
-                const parsedPrice = parseFloat(req.body.price);
-                if (!isNaN(parsedPrice)) {
-                    yachtData.price = parsedPrice;
-                } else {
-                    res.status(400).json({ message: 'Invalid price value' })
-                    return
+            const createdYacht = await YachtModel.createYacht(yachtData);
+            return res.status(201).json(createdYacht);
+        } catch (error) {
+            console.error('Error en createYacht:', error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes('validation')) {
+                    return res.status(400).json({ error: 'Validation error in yacht data' });
                 }
             }
-
-            const result = validatePartialYacht(req.body)
-
-            if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
-                return
-            }
-
-            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
-                    new Promise<string>((resolve, reject) => {
-                        const uploadStream = cloudinary.uploader.upload_stream(
-                            { folder: 'yachts' },
-                            (error: any, result: any) => {
-                                if (error) reject(error)
-                                else resolve(result.secure_url)
-                            }
-                        )
-                        uploadStream.end(file.buffer)
-                    })
-                )
-                yachtData.images = await Promise.all(uploadPromises)
-            }
-
-            const updatedYacht = await YachtModel.updateYacht(Number(id), yachtData)
-            res.status(200).json(updatedYacht)
-        } catch (error: any) {
-            console.error('Error in updateYacht:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while updating the yacht' })
+            
+            return res.status(500).json({ error: 'Database error' });
         }
     }
 
-    static async deleteYacht(req: Request, res: Response): Promise<void> {
+    static async updateYacht(req: Request, res: Response): Promise<Response> {
         try {
-            const { id } = req.params
-            const yacht = await YachtModel.getYachtById(Number(id))
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                return res.status(400).json({ error: 'Invalid yacht ID' });
+            }
 
+            // Verificar si el yate existe
+            const existingYacht = await YachtModel.getYachtById(id);
+            if (!existingYacht) {
+                return res.status(404).json({ message: 'Yacht not found' });
+            }
+
+            const yachtData = req.body;
+
+            // Validación de números
+            if (yachtData.capacity !== undefined && isNaN(Number(yachtData.capacity))) {
+                return res.status(400).json({ message: 'Invalid capacity value' });
+            }
+
+            if (yachtData.price !== undefined && isNaN(Number(yachtData.price))) {
+                return res.status(400).json({ message: 'Invalid price value' });
+            }
+
+            // Procesar imágenes si se proporcionan
+            if (req.files) {
+                const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+                if (files.length > 0) {
+                    const uploadPromises = files.map((file: any) => {
+                        return new Promise<string>((resolve, reject) => {
+                            const uploadStream = cloudinary.uploader.upload_stream(
+                                { folder: 'yachts' },
+                                (error, result) => {
+                                    if (error) {
+                                        reject(error);
+                                    } else {
+                                        resolve(result!.secure_url);
+                                    }
+                                }
+                            );
+                            uploadStream.end(file.buffer);
+                        });
+                    });
+
+                    const uploadedUrls = await Promise.all(uploadPromises);
+                    
+                    // Añadir las nuevas URLs a las existentes si ya hay imágenes
+                    if (existingYacht && existingYacht.images) {
+                        yachtData.images = [...existingYacht.images, ...uploadedUrls];
+                    } else {
+                        yachtData.images = uploadedUrls;
+                    }
+                }
+            }
+
+            const updatedYacht = await YachtModel.updateYacht(id, yachtData);
+            return res.status(200).json(updatedYacht);
+        } catch (error) {
+            console.error('Error updating yacht:', error);
+            
+            if (error instanceof Error) {
+                if (error.message === 'Yacht not found') {
+                    return res.status(404).json({ message: 'Yacht not found' });
+                } else if (error.message === 'No valid fields to update') {
+                    return res.status(400).json({ message: 'No valid fields to update' });
+                } else if (error.message.includes('validation')) {
+                    return res.status(400).json({ message: 'Validation error in yacht data' });
+                }
+            }
+            
+            return res.status(500).json({ error: 'Database error' });
+        }
+    }
+
+    static async deleteYacht(req: Request, res: Response): Promise<Response> {
+        try {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                return res.status(400).json({ error: 'Invalid yacht ID' });
+            }
+
+            // Verificamos si el yate existe
+            const yacht = await YachtModel.getYachtById(id);
             if (!yacht) {
-                res.status(404).json({ message: 'Yacht not found' })
-                return
+                return res.status(404).json({ message: 'Yacht not found' });
             }
 
             // Eliminar imágenes de Cloudinary
-            if (yacht.images && Array.isArray(yacht.images)) {
-                const deletePromises = yacht.images.map(async (imageUrl: string) => {
-                    const publicId = YachtController.getPublicIdFromUrl(imageUrl)
+            if (Array.isArray(yacht.images) && yacht.images.length > 0) {
+                for (const imageUrl of yacht.images) {
                     try {
-                        if (publicId) { // Verificar que publicId no es null
-                            await cloudinary.uploader.destroy(publicId)
-                            console.log(`Image deleted from Cloudinary: ${publicId}`)
+                        if (typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
+                            const publicId = YachtController.getPublicIdFromUrl(imageUrl);
+                            if (publicId) {
+                                await cloudinary.uploader.destroy(publicId);
+                                console.log(`Image deleted from Cloudinary: ${publicId}`);
+                            }
                         }
-                    } catch (error: any) {
-                        console.error(`Error deleting image from Cloudinary: ${error.message}`)
+                    } catch (error) {
+                        console.error(`Error removing image: ${imageUrl}`, error);
                     }
-                })
-                await Promise.all(deletePromises)
+                }
             }
 
-            const result = await YachtModel.deleteYacht(Number(id))
-
-            if (result && typeof result === 'object' && 'success' in result && result.success) {
-                res.status(200).json({ message: 'Yacht and associated images deleted successfully' })
-            } else {
-                res.status(500).json({ message: 'Error deleting yacht from database' })
+            await YachtModel.deleteYacht(id);
+            return res.status(200).json({ message: 'Yacht deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting yacht:', error);
+            if (error instanceof Error && error.message === 'Yacht not found') {
+                return res.status(404).json({ message: 'Yacht not found' });
             }
-        } catch (error: any) {
-            console.error('Error in deleteYacht:', error) // Corregido de deleteCar a deleteYacht
-            res.status(500).json({ error: error.message || 'An error occurred while deleting the yacht' })
+            return res.status(500).json({ error: 'Error deleting yacht' });
         }
     }
 
     static getPublicIdFromUrl(url: string): string | null {
         try {
-            const parsedUrl = new URL(url)
-            const pathnameParts = parsedUrl.pathname.split('/')
-            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
-            const filename = path.parse(filenameWithExtension).name
-            return `yachts/${filename}`
+            // Si la URL es una ruta simple como "image1.jpg", construir un public ID directamente
+            if (!url.includes('://')) {
+                const filename = path.parse(url).name;
+                return `yachts/${filename}`;
+            }
+            
+            // Manejar URLs completas
+            const parsedUrl = new URL(url);
+            const pathnameParts = parsedUrl.pathname.split('/');
+            const filenameWithExtension = pathnameParts[pathnameParts.length - 1];
+            const filename = path.parse(filenameWithExtension).name;
+            return `yachts/${filename}`;
         } catch (error) {
-            console.log('Error parsing URL:', error)
-            return null
+            console.log('Error parsing URL:', error);
+            // Si algo falla, intentar extraer el nombre de archivo directamente
+            try {
+                const filename = path.parse(url).name;
+                return `yachts/${filename}`;
+            } catch (e) {
+                return null;
+            }
         }
     }
 }
