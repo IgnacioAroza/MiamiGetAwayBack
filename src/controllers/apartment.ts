@@ -80,40 +80,39 @@ class ApartmentController {
             const apartmentData: UpdateApartmentDTO = {}
 
             const updatableFields = ['name', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
-
-            updatableFields.forEach(field => {
+            
+            // Validar campos numéricos primero, antes de procesar cualquier dato
+            for (const field of updatableFields) {
                 if (req.body[field] !== undefined) {
                     if (['capacity', 'bathrooms', 'rooms'].includes(field)) {
                         const parsedValue = parseInt(req.body[field]);
-                        if (!isNaN(parsedValue)) {
-                            (apartmentData as any)[field] = parsedValue;
-                        } else {
-                            res.status(400).json({ message: `Valor inválido para ${field}` })
-                            return
+                        if (isNaN(parsedValue)) {
+                            res.status(400).json({ message: `Valor inválido para ${field}` });
+                            return;
                         }
                     } else if (field === 'price') {
                         const parsedPrice = parseFloat(req.body[field]);
-                        if (!isNaN(parsedPrice)) {
-                            apartmentData.price = parsedPrice;
-                        } else {
-                            res.status(400).json({ message: 'Invalid price value' })
-                            return
+                        if (isNaN(parsedPrice)) {
+                            res.status(400).json({ message: 'Invalid price value' });
+                            return;
                         }
+                    }
+                }
+            }
+            
+            // Una vez validados, añadir los campos al objeto de datos
+            for (const field of updatableFields) {
+                if (req.body[field] !== undefined) {
+                    if (['capacity', 'bathrooms', 'rooms'].includes(field)) {
+                        (apartmentData as any)[field] = parseInt(req.body[field]);
+                    } else if (field === 'price') {
+                        apartmentData.price = parseFloat(req.body[field]);
                     } else {
                         apartmentData[field as keyof UpdateApartmentDTO] = req.body[field];
                     }
                 }
-            });
-
-            if (req.body.price !== undefined) {
-                const parsedPrice = parseFloat(req.body.price);
-                if (!isNaN(parsedPrice)) {
-                    apartmentData.price = parsedPrice;
-                } else {
-                    res.status(400).json({ message: 'Invalid price value' })
-                    return
-                }
             }
+            
             const result = validatePartialApartment(apartmentData)
 
             if (!result.success) {
