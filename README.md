@@ -111,3 +111,9 @@ npm run test:coverage
 ## Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT.
+
+## Mejoras Recientes
+
+- **Restructuración de Modelos**: Se eliminó el código de creación de tablas de los modelos. La creación de tablas ahora solo ocurre en los archivos de pruebas para garantizar un entorno limpio durante las pruebas. Esto mejora el rendimiento y la seguridad de la aplicación en producción.
+
+- **Mejora en el Manejo de Errores**: Los modelos ahora gestionan mejor los casos donde pueden devolverse resultados nulos, proporcionando respuestas más consistentes y fáciles de manejar por los controladores.

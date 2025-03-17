@@ -8,7 +8,9 @@ export default class UserModel {
             const { rows } = await db.query('SELECT * FROM clients');
             return rows;
         } catch (error) {
-            throw error;
+            console.error('Error en getAll:', error);
+            // En lugar de propagar el error, devolvemos un array vacío
+            return [];
         }
     }
 
@@ -17,11 +19,12 @@ export default class UserModel {
             const { rows } = await db.query('SELECT * FROM clients WHERE id = $1', [id]);
             return rows[0] || null;
         } catch (error) {
+            console.error('Error en getUserById:', error);
             throw error;
         }
     }
     
-    static async createUser(userData: Client): Promise<Client> {
+    static async createUser(userData: Client): Promise<Client | null> {
         const { name, lastname, email } = userData;
         const validateResult = validateUser(userData);
 
@@ -39,10 +42,19 @@ export default class UserModel {
                 [name, lastname, email]
             );
 
-            const { id, ...dataWithoutId } = userData;
-            return { id: rows[0].id, ...dataWithoutId };
-        } catch (error) {
-            console.log('Error creating user:', error);
+            // Si no hay filas devueltas, retornamos null en lugar de undefined
+            if (!rows || rows.length === 0) {
+                console.error('No se devolvieron filas al crear el usuario');
+                return null;
+            }
+
+            return rows[0];
+        } catch (error: any) {
+            console.error('Error creating user:', error.message || error);
+            // Si es un error de duplicado (código 23505), dar un mensaje más claro
+            if (error.code === '23505') {
+                throw new Error('El correo electrónico ya está registrado');
+            }
             throw error;
         }
     }
