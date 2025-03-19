@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response } from 'express'
 
 export * from './apartment.js'
 export * from './villas.js'
