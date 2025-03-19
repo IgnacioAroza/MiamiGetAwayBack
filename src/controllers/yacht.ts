@@ -29,21 +29,23 @@ class YachtController {
         }
     }
 
-    static async createYacht(req: Request, res: Response): Promise<Response> {
+    static async createYacht(req: Request, res: Response): Promise<void> {
         try {
             // Validar datos de entrada
             const result = validateYacht(req.body);
             if (!result.success) {
-                return res.status(400).json({ 
+                res.status(400).json({ 
                     error: JSON.parse(result.error.errors[0].message)
                 });
+                return;
             }
 
             const yachtData = req.body as CreateYachtDTO;
 
             // Validar que los datos numéricos sean válidos
             if (isNaN(Number(yachtData.capacity)) || isNaN(Number(yachtData.price))) {
-                return res.status(400).json({ error: 'Invalid numerical values' });
+                res.status(400).json({ error: 'Invalid numerical values' });
+                return;
             }
 
             // Procesar imágenes si se proporcionan
@@ -68,42 +70,46 @@ class YachtController {
             }
 
             const createdYacht = await YachtModel.createYacht(yachtData);
-            return res.status(201).json(createdYacht);
+            res.status(201).json(createdYacht);
         } catch (error) {
             console.error('Error en createYacht:', error);
             
             if (error instanceof Error) {
                 if (error.message.includes('validation')) {
-                    return res.status(400).json({ error: 'Validation error in yacht data' });
+                    res.status(400).json({ error: 'Validation error in yacht data' });
                 }
             }
             
-            return res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Database error' });
         }
     }
 
-    static async updateYacht(req: Request, res: Response): Promise<Response> {
+    static async updateYacht(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
             if (isNaN(id)) {
-                return res.status(400).json({ error: 'Invalid yacht ID' });
+                res.status(400).json({ error: 'Invalid yacht ID' });
+                return;
             }
 
             // Verificar si el yate existe
             const existingYacht = await YachtModel.getYachtById(id);
             if (!existingYacht) {
-                return res.status(404).json({ message: 'Yacht not found' });
+                res.status(404).json({ message: 'Yacht not found' });
+                return;
             }
 
             const yachtData = req.body;
 
             // Validación de números
             if (yachtData.capacity !== undefined && isNaN(Number(yachtData.capacity))) {
-                return res.status(400).json({ message: 'Invalid capacity value' });
+                res.status(400).json({ message: 'Invalid capacity value' });
+                return;
             }
 
             if (yachtData.price !== undefined && isNaN(Number(yachtData.price))) {
-                return res.status(400).json({ message: 'Invalid price value' });
+                res.status(400).json({ message: 'Invalid price value' });
+                return;
             }
 
             // Procesar imágenes si se proporcionan
@@ -138,35 +144,37 @@ class YachtController {
             }
 
             const updatedYacht = await YachtModel.updateYacht(id, yachtData);
-            return res.status(200).json(updatedYacht);
+            res.status(200).json(updatedYacht);
         } catch (error) {
             console.error('Error updating yacht:', error);
             
             if (error instanceof Error) {
                 if (error.message === 'Yacht not found') {
-                    return res.status(404).json({ message: 'Yacht not found' });
+                    res.status(404).json({ message: 'Yacht not found' });
                 } else if (error.message === 'No valid fields to update') {
-                    return res.status(400).json({ message: 'No valid fields to update' });
+                    res.status(400).json({ message: 'No valid fields to update' });
                 } else if (error.message.includes('validation')) {
-                    return res.status(400).json({ message: 'Validation error in yacht data' });
+                    res.status(400).json({ message: 'Validation error in yacht data' });
                 }
             }
             
-            return res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Database error' });
         }
     }
 
-    static async deleteYacht(req: Request, res: Response): Promise<Response> {
+    static async deleteYacht(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
             if (isNaN(id)) {
-                return res.status(400).json({ error: 'Invalid yacht ID' });
+                res.status(400).json({ error: 'Invalid yacht ID' });
+                return;
             }
 
             // Verificamos si el yate existe
             const yacht = await YachtModel.getYachtById(id);
             if (!yacht) {
-                return res.status(404).json({ message: 'Yacht not found' });
+                res.status(404).json({ message: 'Yacht not found' });
+                return;
             }
 
             // Eliminar imágenes de Cloudinary
@@ -187,13 +195,13 @@ class YachtController {
             }
 
             await YachtModel.deleteYacht(id);
-            return res.status(200).json({ message: 'Yacht deleted successfully' });
+            res.status(200).json({ message: 'Yacht deleted successfully' });
         } catch (error) {
             console.error('Error deleting yacht:', error);
             if (error instanceof Error && error.message === 'Yacht not found') {
-                return res.status(404).json({ message: 'Yacht not found' });
+                res.status(404).json({ message: 'Yacht not found' });
             }
-            return res.status(500).json({ error: 'Error deleting yacht' });
+            res.status(500).json({ error: 'Error deleting yacht' });
         }
     }
 

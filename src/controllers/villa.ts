@@ -34,17 +34,18 @@ class VillaController {
         }
     }
 
-    static async createVilla(req: Request, res: Response): Promise<Response> {
+    static async createVilla(req: Request, res: Response): Promise<void> {
         try {
             // Validar datos de entrada
             const result = validateVilla(req.body);
             if (!result.success) {
-                return res.status(400).json({ 
+                res.status(400).json({ 
                     error: {
                         fieldErrors: {},
                         formErrors: ['Missing required fields']
                     }
                 });
+                return;
             }
 
             const villaData = req.body as CreateVillaDTO;
@@ -54,7 +55,8 @@ class VillaController {
                 isNaN(Number(villaData.bathrooms)) || 
                 isNaN(Number(villaData.rooms)) || 
                 isNaN(Number(villaData.price))) {
-                return res.status(400).json({ error: 'Invalid numerical values' });
+                res.status(400).json({ error: 'Invalid numerical values' });
+                return;
             }
 
             // Procesar imágenes si se proporcionan
@@ -79,31 +81,33 @@ class VillaController {
             }
 
             const createdVilla = await VillaModel.createVilla(villaData);
-            return res.status(201).json(createdVilla);
+            res.status(201).json(createdVilla);
         } catch (error) {
             console.error('Error en createVilla:', error);
             
             if (error instanceof Error) {
                 if (error.message.includes('validation')) {
-                    return res.status(400).json({ error: 'Validation error in villa data' });
+                    res.status(400).json({ error: 'Validation error in villa data' });
                 }
             }
             
-            return res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Database error' });
         }
     }
 
-    static async updateVilla(req: Request, res: Response): Promise<Response> {
+    static async updateVilla(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
             if (isNaN(id)) {
-                return res.status(400).json({ message: 'Invalid villa ID' });
+                res.status(400).json({ message: 'Invalid villa ID' });
+                return;
             }
 
             // Verificar si la villa existe
             const existingVilla = await VillaModel.getVillaById(id);
             if (!existingVilla) {
-                return res.status(404).json({ message: 'Villa not found' });
+                res.status(404).json({ message: 'Villa not found' });
+                return;
             }
 
             const villaData = req.body;
@@ -114,11 +118,13 @@ class VillaController {
                 (villaData.bathrooms !== undefined && isNaN(Number(villaData.bathrooms))) ||
                 (villaData.rooms !== undefined && isNaN(Number(villaData.rooms)))
             ) {
-                return res.status(400).json({ message: 'Invalid capacity value' });
+                res.status(400).json({ message: 'Invalid capacity value' });
+                return;
             }
 
             if (villaData.price !== undefined && isNaN(Number(villaData.price))) {
-                return res.status(400).json({ message: 'Invalid price value' });
+                res.status(400).json({ message: 'Invalid price value' });
+                return;
             }
 
             // Procesar imágenes si se proporcionan
@@ -153,34 +159,36 @@ class VillaController {
             }
 
             const updatedVilla = await VillaModel.updateVilla(id, villaData);
-            return res.status(200).json(updatedVilla);
+            res.status(200).json(updatedVilla);
         } catch (error) {
             console.error('Error updating villa:', error);
             
             if (error instanceof Error) {
                 if (error.message === 'Villa not found') {
-                    return res.status(404).json({ message: 'Villa not found' });
+                    res.status(404).json({ message: 'Villa not found' });
                 } else if (error.message === 'No valid fields to update') {
-                    return res.status(400).json({ message: 'No valid fields to update' });
+                    res.status(400).json({ message: 'No valid fields to update' });
                 } else if (error.message.includes('validation')) {
-                    return res.status(400).json({ message: 'Validation error in villa data' });
+                    res.status(400).json({ message: 'Validation error in villa data' });
                 }
             }
             
-            return res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Database error' });
         }
     }
 
-    static async deleteVilla(req: Request, res: Response): Promise<Response> {
+    static async deleteVilla(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
             if (isNaN(id)) {
-                return res.status(400).json({ error: 'Invalid villa ID' });
+                res.status(400).json({ error: 'Invalid villa ID' });
+                return;
             }
 
             const villa = await VillaModel.getVillaById(id);
             if (!villa) {
-                return res.status(404).json({ message: 'Villa not found' });
+                res.status(404).json({ message: 'Villa not found' });
+                return;
             }
 
             // Eliminar imágenes de Cloudinary
@@ -195,13 +203,13 @@ class VillaController {
             }
 
             await VillaModel.deleteVilla(id);
-            return res.status(200).json({ message: 'Villa deleted successfully' });
+            res.status(200).json({ message: 'Villa deleted successfully' });
         } catch (error) {
             console.error('Error deleting villa:', error);
             if (error instanceof Error && error.message === 'Villa not found') {
-                return res.status(404).json({ error: 'Villa not found' });
+                res.status(404).json({ error: 'Villa not found' });
             }
-            return res.status(500).json({ error: 'Error deleting villa' });
+            res.status(500).json({ error: 'Error deleting villa' });
         }
     }
 
