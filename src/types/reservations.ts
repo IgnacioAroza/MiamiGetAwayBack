@@ -40,6 +40,7 @@ export interface CreateReservationDTO {
     parkingFee: number;
     status: 'pendiente' | 'confirmada' | 'en contrato' | 'cerrada';
     paymentStatus: 'pendiente' | 'parcial' | 'completo';
+    createdAt: Date;
 }
 
 export interface UpdateReservationDTO {

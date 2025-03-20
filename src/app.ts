@@ -2,8 +2,6 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import morgan from 'morgan'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
 // Importar rutas
 import apartmentRoutes from './routes/apartment.js'
@@ -14,6 +12,9 @@ import reviewRoutes from './routes/review.js'
 import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
+import reservationRoutes from './routes/reservation.js'
+import reservationPaymentsRoutes from './routes/reservationPayments.js'
+import adminApartmentRoutes from './routes/adminApartment.js'
 
 // Configuración de variables de entorno
 dotenv.config()
@@ -37,6 +38,9 @@ app.use('/api/reviews', reviewRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/reservations', reservationRoutes)
+app.use('/api/reservation-payments', reservationPaymentsRoutes)
+app.use('/api/admin-apartments', adminApartmentRoutes)
 
 // Ruta de inicio
 app.get('/', (req, res) => {
@@ -49,7 +53,10 @@ app.get('/', (req, res) => {
             villas: '/api/villas',
             yachts: '/api/yachts',
             reviews: '/api/reviews',
-            auth: '/api/auth'
+            users: '/api/users',
+            reservations: '/api/reservations',
+            reservationPayments: '/api/reservation-payments',
+            adminApartments: '/api/admin-apartments'
         }
     })
 })

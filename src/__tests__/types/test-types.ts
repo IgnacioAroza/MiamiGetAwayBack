@@ -3,8 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 // Tipos para mocks
 export type MockRequest = Partial<Request>;
 
-// Hacer que MockResponse sea una implementación parcial de Response
-export interface MockResponse extends Partial<Response> {
+// Define MockResponse sin extender Response directamente
+export interface MockResponse {
   status: jest.Mock;
   json: jest.Mock;
   send: jest.Mock;
