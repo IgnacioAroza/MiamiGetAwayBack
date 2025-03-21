@@ -25,7 +25,7 @@ export default class UserModel {
     }
     
     static async createUser(userData: Client): Promise<Client | null> {
-        const { name, lastname, email } = userData;
+        const { name, lastname, email, phone, address, city, country, notes } = userData;
         const validateResult = validateUser(userData);
 
         if (!validateResult.success) {
@@ -33,13 +33,13 @@ export default class UserModel {
         }
 
         try {
-            if (!name || !lastname || !email) {
+            if (!name || !lastname || !email || !phone || !address || !city || !country || !notes) {
                 throw new Error('Missing required fields');
             }
 
             const { rows } = await db.query(
-                'INSERT INTO clients (name, lastname, email) VALUES ($1, $2, $3) RETURNING *;',
-                [name, lastname, email]
+                'INSERT INTO clients (name, lastname, email, phone, address, city, country, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+                [name, lastname, email, phone, address, city, country, notes]
             );
 
             // Si no hay filas devueltas, retornamos null en lugar de undefined
@@ -60,7 +60,7 @@ export default class UserModel {
     }
 
     static async updateUser(id: number, userData: Partial<Client>): Promise<Client> {
-        const { name, lastname, email } = userData;
+        const { name, lastname, email, phone, address, city, country, notes } = userData;
         const updateFields = [];
         const updatedValues = [];
         let paramCount = 1;
@@ -76,6 +76,26 @@ export default class UserModel {
         if (email !== undefined) {
             updateFields.push(`email = $${paramCount++}`);
             updatedValues.push(email);
+        }
+        if (phone !== undefined) {
+            updateFields.push(`phone = $${paramCount++}`);
+            updatedValues.push(phone);
+        }
+        if (address !== undefined) {
+            updateFields.push(`address = $${paramCount++}`);
+            updatedValues.push(address);
+        }
+        if (city !== undefined) {
+            updateFields.push(`city = $${paramCount++}`);
+            updatedValues.push(city);
+        }
+        if (country !== undefined) {
+            updateFields.push(`country = $${paramCount++}`);
+            updatedValues.push(country);
+        }
+        if (notes !== undefined) {
+            updateFields.push(`notes = $${paramCount++}`);
+            updatedValues.push(notes);
         }
         if (updateFields.length === 0) {
             throw new Error('No valid fields to update');
