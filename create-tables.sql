@@ -57,7 +57,12 @@ CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    notes TEXT
 );
 
 -- Tabla de reseñas
@@ -101,12 +106,16 @@ CREATE TABLE IF NOT EXISTS reservation_payments (
     FOREIGN KEY (reservation_id) REFERENCES reservations(id)
 );
 
--- Tabla de pagos de reservas
-CREATE TABLE IF NOT EXISTS reservation_payments (   
+-- Tabla de adminApartments
+CREATE TABLE IF NOT EXISTS admin_apartments (
     id SERIAL PRIMARY KEY,
-    reservation_id INTEGER NOT NULL,
-    amount NUMERIC(10, 2) NOT NULL,
-    payment_date DATE NOT NULL,
-    payment_method VARCHAR(50) NOT NULL,
-    FOREIGN KEY (reservation_id) REFERENCES reservations(id)
-);  
+    building_name VARCHAR(100) NOT NULL,
+    unit_number VARCHAR(100) NOT NULL,
+    distribution VARCHAR(100) NOT NULL,
+    description TEXT,
+    address VARCHAR(255) NOT NULL,
+    capacity INTEGER NOT NULL,
+    price_per_night DECIMAL(10,2) NOT NULL,
+    cleaning_fee DECIMAL(10,2) NOT NULL,
+    images JSONB[] DEFAULT '[]'
+);
