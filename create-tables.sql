@@ -65,4 +65,48 @@ CREATE TABLE IF NOT EXISTS reviews (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     comment TEXT NOT NULL
-); 
+);
+
+-- Tabla de reservas    
+CREATE TABLE IF NOT EXISTS reservations (
+    id SERIAL PRIMARY KEY,
+    apartment_id INTEGER REFERENCES admin_apartments(id),
+    client_id INTEGER REFERENCES clients(id),
+    client_name VARCHAR(100) NOT NULL,
+    client_email VARCHAR(100) NOT NULL,
+    client_phone VARCHAR(20) NOT NULL,
+    check_in_date DATE NOT NULL,
+    check_out_date DATE NOT NULL,
+    nights INTEGER NOT NULL,
+    price_per_night DECIMAL(10,2) NOT NULL,
+    cleaning_fee DECIMAL(10,2) NOT NULL,
+    other_expenses DECIMAL(10,2) DEFAULT 0,
+    taxes DECIMAL(10,2) DEFAULT 0,
+    total_amount DECIMAL(10,2) NOT NULL,
+    amount_paid DECIMAL(10,2) DEFAULT 0,
+    amount_due DECIMAL(10,2) NOT NULL,
+    parking_fee DECIMAL(10,2) DEFAULT 0,
+    status VARCHAR(20) CHECK (status IN ('pending', 'confirmed', 'checked_in', 'checked_out')) DEFAULT 'pending',
+    payment_status VARCHAR(20) CHECK (payment_status IN ('pending', 'partial', 'complete')) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de pagos de reservas
+CREATE TABLE IF NOT EXISTS reservation_payments (
+    id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    FOREIGN KEY (reservation_id) REFERENCES reservations(id)
+);
+
+-- Tabla de pagos de reservas
+CREATE TABLE IF NOT EXISTS reservation_payments (   
+    id SERIAL PRIMARY KEY,
+    reservation_id INTEGER NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    FOREIGN KEY (reservation_id) REFERENCES reservations(id)
+);  
