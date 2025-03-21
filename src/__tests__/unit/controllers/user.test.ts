@@ -49,8 +49,8 @@ describe('UserController', () => {
     describe('getAllUsers', () => {
         it('debería obtener todos los usuarios y devolver status 200', async () => {
             const mockUsers = [
-                { id: 1, name: 'John', lastname: 'Doe', email: 'john@example.com' },
-                { id: 2, name: 'Jane', lastname: 'Doe', email: 'jane@example.com' }
+                { id: 1, name: 'John', lastname: 'Doe', email: 'john@example.com', phone: '123456789', address: '123 Main St', city: 'Miami', country: 'USA', notes: 'Test notes' },
+                { id: 2, name: 'Jane', lastname: 'Doe', email: 'jane@example.com', phone: '987654321', address: '456 Oak St', city: 'New York', country: 'USA', notes: 'Test notes 2' }
             ];
             
             (UserModel.getAll as any).mockResolvedValueOnce(mockUsers);
@@ -83,7 +83,12 @@ describe('UserController', () => {
             const newUser = {
                 name: 'John',
                 lastname: 'Doe',
-                email: 'john@example.com'
+                email: 'john@example.com',
+                phone: '123456789',
+                address: '123 Main St',
+                city: 'Miami',
+                country: 'USA',
+                notes: 'Test notes'
             };
             
             const createdUser = {
@@ -138,7 +143,12 @@ describe('UserController', () => {
             const newUser = {
                 name: 'John',
                 lastname: 'Doe',
-                email: 'john@example.com'
+                email: 'john@example.com',
+                phone: '123456789',
+                address: '123 Main St',
+                city: 'Miami',
+                country: 'USA',
+                notes: 'Test notes'
             };
             
             mockRequest.body = newUser;

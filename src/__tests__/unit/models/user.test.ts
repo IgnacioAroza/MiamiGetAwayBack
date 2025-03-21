@@ -22,7 +22,12 @@ describe('UserModel', () => {
         id: 1,
         name: 'John',
         lastname: 'Doe',
-        email: 'john.doe@example.com'
+        email: 'john.doe@example.com',
+        phone: '123456789',
+        address: '123 Main St',
+        city: 'Miami',
+        country: 'USA',
+        notes: 'Test notes'
     };
 
     beforeEach(() => {
@@ -92,8 +97,8 @@ describe('UserModel', () => {
 
             expect(result).toEqual({ id: 1, ...newUser });
             expect(db.query).toHaveBeenCalledWith(
-                'INSERT INTO clients (name, lastname, email) VALUES ($1, $2, $3) RETURNING *;',
-                [newUser.name, newUser.lastname, newUser.email]
+                'INSERT INTO clients (name, lastname, email, phone, address, city, country, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+                [newUser.name, newUser.lastname, newUser.email, newUser.phone, newUser.address, newUser.city, newUser.country, newUser.notes]
             );
         });
 
