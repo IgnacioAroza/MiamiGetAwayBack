@@ -16,8 +16,8 @@ export interface Reservation {
     amountPaid: number;
     amountDue: number;
     parkingFee: number;
-    status: 'pendiente' | 'confirmada' | 'en contrato' | 'cerrada';
-    paymentStatus: 'pendiente' | 'parcial' | 'completo';
+    status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
+    paymentStatus: 'pending' | 'partial' | 'complete';
     createdAt: Date;
 }
 
@@ -38,8 +38,8 @@ export interface CreateReservationDTO {
     amountPaid: number;
     amountDue: number;
     parkingFee: number;
-    status: 'pendiente' | 'confirmada' | 'en contrato' | 'cerrada';
-    paymentStatus: 'pendiente' | 'parcial' | 'completo';
+    status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
+    paymentStatus: 'pending' | 'partial' | 'complete';
     createdAt: Date;
 }
 
@@ -60,8 +60,8 @@ export interface UpdateReservationDTO {
     amountPaid?: number;
     amountDue?: number;
     parkingFee?: number;
-    status?: 'pendiente' | 'confirmada' | 'en contrato' | 'cerrada';
-    paymentStatus?: 'pendiente' | 'parcial' | 'completo';
+    status?: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
+    paymentStatus?: 'pending' | 'partial' | 'complete';
 }
 
 

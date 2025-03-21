@@ -23,7 +23,7 @@ export default class ReservationPaymentsService {
         const amountPaid = reservation.amountPaid + data.amount;
         const amountDue = reservation.amountDue - data.amount;
         const isFullPayment = amountDue <= 0;
-        const paymentStatus = isFullPayment ? 'completo' : 'parcial';
+        const paymentStatus = isFullPayment ? 'complete' : 'partial';
 
         // 3. Actualizar la reserva
         const updatedReservation = await ReservationModel.updateReservation(data.reservationId, {

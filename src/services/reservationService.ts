@@ -1,7 +1,7 @@
 import { ReservationModel } from '../models/reservation.js';
 import EmailService from './emailService.js';
 import PdfService from './pdfService.js';
-import { Reservation, CreateReservationDTO, UpdateReservationDTO } from '../types/reservations.js';
+import { Reservation, CreateReservationDTO } from '../types/reservations.js';
 import ReservationPaymentsService from './reservationPaymentsService.js';
 
 export default class ReservationService {
@@ -19,7 +19,7 @@ export default class ReservationService {
             throw new Error('Reservation not found');
         }
         const previousStatus = currentReservation.status;
-        const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pendiente' | 'confirmada' | 'en contrato' | 'cerrada' });
+        const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' });
         if (!updatedReservation) {
             await EmailService.sendStatusChangeNotification(updatedReservation, previousStatus);
         }

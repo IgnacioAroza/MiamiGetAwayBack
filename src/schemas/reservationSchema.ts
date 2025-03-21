@@ -14,8 +14,8 @@ export const reservationSchema = z.object({
     amountPaid: z.number().positive("Amount paid must be a positive number"),
     amountDue: z.number().positive("Amount due must be a positive number"),
     parkingFee: z.number().positive("Parking fee must be a positive number"),
-    status: z.enum(["pendiente", "confirmada", "en contrato", "cerrada"]),
-    paymentStatus: z.enum(["pendiente", "parcial", "completo"]),
+    status: z.enum(["pending", "confirmed", "checked_in", "checked_out"]),
+    paymentStatus: z.enum(["pending", "partial", "complete"]),
 });
 
 export type Reservation = z.infer<typeof reservationSchema>;

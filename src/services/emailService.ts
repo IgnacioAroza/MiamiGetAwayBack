@@ -83,10 +83,10 @@ export default class EmailService {
     // Enviar correo con actualización de estado de reserva
     static async sendStatusChangeNotification(reservation: Reservation, previousStatus: string): Promise<void> {
         const statusMessages: {[key: string]: string} = {
-            'pendiente': 'Your reservation is pending confirmation',
-            'confirmada': 'Your reservation has been confirmed',
-            'en contrato': 'Check-in completed. Enjoy your stay!',
-            'cerrada': 'Check-out completed. Thank you for your visit!'
+            'pending': 'Your reservation is pending confirmation',
+            'confirmed': 'Your reservation has been confirmed',
+            'checked_in': 'Check-in completed. Enjoy your stay!',
+            'checked_out': 'Check-out completed. Thank you for your visit!'
         };
 
         await this.transporter.sendMail({
