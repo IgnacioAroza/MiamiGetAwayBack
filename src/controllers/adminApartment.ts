@@ -1,11 +1,23 @@
 import { Request, Response } from 'express';
 import { AdminApartmentModel } from '../models/adminApartment.js';
 import { validateApartment, validatePartialApartment } from '../schemas/adminApartmentSchema.js';
-import { AdminApartment, CreateAdminApartmentDTO, UpdateAdminApartmentDTO } from '../types/adminApartments.js';
+import { AdminApartment } from '../types/adminApartments.js';
 import cloudinary from '../utils/cloudinaryConfig.js';
 import path from 'path';
 
 class AdminApartmentController {
+    private static parseNumericFields(data: any): void {
+        if (data.capacity) {
+            data.capacity = Number(data.capacity);
+        }
+        if (data.pricePerNight) {
+            data.pricePerNight = Number(data.pricePerNight);
+        }
+        if (data.cleaningFee) {
+            data.cleaningFee = Number(data.cleaningFee);
+        }
+    }
+
     static async getAllApartments(req: Request, res: Response): Promise<void> {
         try {
             const apartments = await AdminApartmentModel.getAllApartments();
@@ -30,6 +42,9 @@ class AdminApartmentController {
     }
 
     static async createApartment(req: Request, res: Response): Promise<void> {
+        // Parsear campos numéricos antes de la validación
+        AdminApartmentController.parseNumericFields(req.body);
+        
         const { error } = validateApartment(req.body);  
         if (error) {
             res.status(400).json({ error: JSON.parse(error.message) });
@@ -66,6 +81,10 @@ class AdminApartmentController {
 
     static async updateApartment(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
+        
+        // Parsear campos numéricos antes de la validación
+        AdminApartmentController.parseNumericFields(req.body);
+        
         const { error } = validatePartialApartment(req.body);
         if (error) {
             res.status(400).json({ error: JSON.parse(error.message) });
