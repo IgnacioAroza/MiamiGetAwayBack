@@ -33,6 +33,7 @@ class ApartmentController {
         try {
             const apartmentData: CreateApartmentDTO = {
                 name: req.body.name,
+                unitNumber: req.body.unitNumber,
                 description: req.body.description,
                 address: req.body.address,
                 capacity: parseInt(req.body.capacity),
@@ -79,7 +80,7 @@ class ApartmentController {
             const { id } = req.params
             const apartmentData: UpdateApartmentDTO = {}
 
-            const updatableFields = ['name', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
+            const updatableFields = ['name', 'unitNumber', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
             
             // Validar campos numéricos primero, antes de procesar cualquier dato
             for (const field of updatableFields) {

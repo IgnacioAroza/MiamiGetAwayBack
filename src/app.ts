@@ -14,7 +14,6 @@ import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
 import reservationRoutes from './routes/reservation.js'
 import reservationPaymentsRoutes from './routes/reservationPayments.js'
-import adminApartmentRoutes from './routes/adminApartment.js'
 
 // Configuración de variables de entorno
 dotenv.config()
@@ -54,7 +53,6 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)
-app.use('/api/admin-apartments', adminApartmentRoutes)
 
 // Ruta de inicio
 app.get('/', (req, res) => {
@@ -69,8 +67,7 @@ app.get('/', (req, res) => {
             reviews: '/api/reviews',
             users: '/api/users',
             reservations: '/api/reservations',
-            reservationPayments: '/api/reservation-payments',
-            adminApartments: '/api/admin-apartments'
+            reservationPayments: '/api/reservation-payments'
         }
     })
 })

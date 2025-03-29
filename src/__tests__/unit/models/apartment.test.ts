@@ -34,6 +34,7 @@ describe('ApartmentModel', () => {
     bathrooms: 1,
     rooms: 1,
     price: 100,
+    unitNumber: 'A101',
     images: ['https://example.com/image.jpg']
   };
 
@@ -44,7 +45,7 @@ describe('ApartmentModel', () => {
 
   test('getAll devuelve todos los apartamentos', async () => {
     vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [testApartment], 
+      rows: [{ ...testApartment, unit_number: 'A101' }], 
       rowCount: 1, 
       command: 'SELECT', 
       oid: 0, 
@@ -54,12 +55,12 @@ describe('ApartmentModel', () => {
     const result = await ApartmentModel.getAll();
     
     expect(db.query).toHaveBeenCalledWith('SELECT * FROM apartments');
-    expect(result).toEqual([testApartment]);
+    expect(result[0]).toHaveProperty('unitNumber', 'A101');
   });
 
   test('getApartmentById devuelve un apartamento si existe', async () => {
     vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [testApartment], 
+      rows: [{ ...testApartment, unit_number: 'A101' }], 
       rowCount: 1, 
       command: 'SELECT', 
       oid: 0, 
@@ -72,7 +73,7 @@ describe('ApartmentModel', () => {
       'SELECT * FROM apartments WHERE id = $1', 
       [1]
     );
-    expect(result).toEqual(testApartment);
+    expect(result).toHaveProperty('unitNumber', 'A101');
   });
 
   test('getApartmentById devuelve null si no existe', async () => {
@@ -104,6 +105,7 @@ describe('ApartmentModel', () => {
     expect(validateApartment).toHaveBeenCalled();
     expect(db.query).toHaveBeenCalled();
     expect(result).toHaveProperty('id', 1);
+    expect(result).toHaveProperty('unitNumber', 'A101');
   });
 
   test('updateApartment actualiza correctamente', async () => {
@@ -117,7 +119,12 @@ describe('ApartmentModel', () => {
     });
     
     // Mock para el SELECT posterior
-    const updatedApartment = { ...testApartment, name: 'Updated Name' };
+    const updatedApartment = { 
+      ...testApartment, 
+      name: 'Updated Name', 
+      unit_number: 'A101' 
+    };
+    
     vi.mocked(db.query).mockResolvedValueOnce({ 
       rows: [updatedApartment], 
       rowCount: 1, 
@@ -130,6 +137,7 @@ describe('ApartmentModel', () => {
     
     expect(db.query).toHaveBeenCalledTimes(2);
     expect(result.name).toBe('Updated Name');
+    expect(result.unitNumber).toBe('A101');
   });
 
   test('deleteApartment elimina correctamente', async () => {

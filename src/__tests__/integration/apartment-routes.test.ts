@@ -84,8 +84,8 @@ describe('Rutas de Apartamentos', () => {
     it('debería devolver la lista de apartamentos', async () => {
       // Mock de datos
       const mockApartments = [
-        { id: 1, name: 'Apartment 1', address: 'Address 1', price: 100, capacity: 2, bathrooms: 1, rooms: 1, description: 'Description', images: [] },
-        { id: 2, name: 'Apartment 2', address: 'Address 2', price: 200, capacity: 4, bathrooms: 2, rooms: 2, description: 'Description', images: [] }
+        { id: 1, name: 'Apartment 1', address: 'Address 1', price: 100, capacity: 2, bathrooms: 1, rooms: 1, description: 'Description', images: [], unitNumber: '1A' },
+        { id: 2, name: 'Apartment 2', address: 'Address 2', price: 200, capacity: 4, bathrooms: 2, rooms: 2, description: 'Description', images: [], unitNumber: '2B' }
       ];
       vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce(mockApartments);
 
@@ -113,7 +113,8 @@ describe('Rutas de Apartamentos', () => {
         bathrooms: 1,
         rooms: 1,
         description: 'Description',
-        images: []
+        images: [],
+        unitNumber: '1A'
       };
       vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce(mockApartment);
 
@@ -172,7 +173,8 @@ describe('Rutas de Apartamentos', () => {
         bathrooms: 1,
         rooms: 2,
         description: 'Brand new apartment',
-        images: []
+        images: [],
+        unitNumber: '3C'
       };
       
       vi.mocked(ApartmentModel.createApartment).mockResolvedValueOnce(createdApartment);
@@ -238,7 +240,8 @@ describe('Rutas de Apartamentos', () => {
         bathrooms: 1,
         rooms: 1,
         description: 'Description',
-        images: []
+        images: [],
+        unitNumber: '1A'
       };
       
       vi.mocked(ApartmentModel.updateApartment).mockResolvedValueOnce(updatedApartment);
@@ -304,7 +307,8 @@ describe('Rutas de Apartamentos', () => {
         bathrooms: 1,
         rooms: 1,
         description: 'Description',
-        images: [] // Sin imágenes para simplificar
+        images: [],
+        unitNumber: '1A'
       };
       
       vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce(mockApartment);

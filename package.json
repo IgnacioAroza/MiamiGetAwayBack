@@ -11,7 +11,11 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "migrate": "node migrations/index.js",
+    "migrate:dev": "cross-env NODE_ENV=development node migrations/index.js",
+    "migrate:prod": "cross-env NODE_ENV=production node migrations/index.js",
+    "migrate:single": "node migrations/runSingle.js"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +25,7 @@
     "body-parser": "^1.20.3",
     "cloudinary": "^2.5.1",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "fs-extra": "^11.3.0",

@@ -20,6 +20,7 @@ export const apartmentSchema = z.object({
         (val) => (typeof val === 'string' ? parseFloat(val) : val),
         z.number().positive("Price must be a positive number")
     ),
+    unitNumber: z.string().min(1, "Unit number is mandatory"),
     images: z.array(z.string().url()).optional()
 });
 

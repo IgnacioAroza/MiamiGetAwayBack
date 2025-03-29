@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS apartments (
     bathrooms INTEGER NOT NULL,
     rooms INTEGER NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
-    images TEXT[] NOT NULL DEFAULT '{}'
+    images JSONB[] NOT NULL DEFAULT '{}'
 );
 
 -- Tabla de villas

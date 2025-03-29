@@ -8,6 +8,7 @@ export interface Apartment {
     bathrooms: number;
     rooms: number;
     price: number;
+    unitNumber: string;
     images: string[];    
 }
 
@@ -20,6 +21,7 @@ export interface CreateApartmentDTO {
     bathrooms: number;
     rooms: number;
     price: number;
+    unitNumber: string;
     images: string[];
 }
 
@@ -32,5 +34,6 @@ export interface UpdateApartmentDTO {
     bathrooms?: number;
     rooms?: number;
     price?: number;
+    unitNumber?: string;
     images?: string[];
 }

@@ -76,8 +76,8 @@ describe('ApartmentController', () => {
     it('debería devolver todos los apartamentos con status 200', async () => {
       // Configuración del mock
       const mockApartments = [
-        { id: 1, name: 'Apartment 1', address: '123 Main St', capacity: 4, bathrooms: 2, rooms: 2, price: 1000, description: 'Nice apartment', images: [] },
-        { id: 2, name: 'Apartment 2', address: '456 Second St', capacity: 2, bathrooms: 1, rooms: 1, price: 800, description: 'Cozy apartment', images: [] }
+        { id: 1, name: 'Apartment 1', address: '123 Main St', capacity: 4, bathrooms: 2, rooms: 2, price: 1000, description: 'Nice apartment', images: [], unitNumber: '1A' },
+        { id: 2, name: 'Apartment 2', address: '456 Second St', capacity: 2, bathrooms: 1, rooms: 1, price: 800, description: 'Cozy apartment', images: [], unitNumber: '2B' }
       ];
       vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce(mockApartments);
 
@@ -117,7 +117,8 @@ describe('ApartmentController', () => {
         rooms: 2,
         price: 1000,
         description: 'Nice apartment',
-        images: []
+        images: [],
+        unitNumber: '1A'
       };
       req.params = { id: '1' };
       vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce(mockApartment);
@@ -172,7 +173,8 @@ describe('ApartmentController', () => {
         rooms: 1,
         price: 900,
         description: 'Brand new apartment',
-        images: []
+        images: [],
+        unitNumber: '1A'
       };
       
       req.body = {
@@ -182,7 +184,8 @@ describe('ApartmentController', () => {
         bathrooms: '1',
         rooms: '1',
         price: '900',
-        description: 'Brand new apartment'
+        description: 'Brand new apartment',
+        unitNumber: '1A'
       };
       
       const createdApartment = { ...apartmentData, id: 3 };
@@ -288,7 +291,8 @@ describe('ApartmentController', () => {
         rooms: 2,
         price: 1200,
         description: 'Nice apartment',
-        images: []
+        images: [],
+        unitNumber: '1A'
       };
       
       vi.mocked(validatePartialApartment).mockReturnValueOnce({ success: true } as any);
@@ -352,7 +356,8 @@ describe('ApartmentController', () => {
         rooms: 1,
         price: 800,
         description: 'Apartment to be deleted',
-        images: [] // Eliminamos las imágenes para simplificar el test
+        images: [],
+        unitNumber: '1A' // Eliminamos las imágenes para simplificar el test
       };
       
       vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce(mockApartment);
@@ -396,7 +401,8 @@ describe('ApartmentController', () => {
         rooms: 1,
         price: 800,
         description: 'Apartment with images',
-        images: [] // Eliminamos las imágenes para simplificar el test
+        images: [],
+        unitNumber: '1A' // Eliminamos las imágenes para simplificar el test
       };
       
       vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce(mockApartment);

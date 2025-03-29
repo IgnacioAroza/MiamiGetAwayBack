@@ -7,7 +7,6 @@ export * from './yachts.js'
 export * from './admins.js'
 export * from './reviews.js'
 export * from './clients.js'
-export * from './adminApartments.js'
 export * from './reservations.js'
 export * from './reservationPayments.js'
 
