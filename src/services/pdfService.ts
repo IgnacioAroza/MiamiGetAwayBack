@@ -1,10 +1,10 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import { Reservation } from '../types/reservations.js';
+import { ReservationWithClient } from '../types/reservations.js';
 
 export default class PdfService {
-    static async generateInvoicePdf(reservation: Reservation): Promise<string> {
+    static async generateInvoicePdf(reservation: ReservationWithClient): Promise<string> {
         // Crear directorio temporal si no existe
         const tempDir = path.join(process.cwd(), 'temp');
         if (!fs.existsSync(tempDir)) {

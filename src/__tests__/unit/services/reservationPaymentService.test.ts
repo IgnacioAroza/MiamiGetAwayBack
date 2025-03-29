@@ -29,10 +29,10 @@ describe('ReservationPaymentsService', () => {
       
       const mockReservation: Partial<Reservation> = {
         id: 1,
+        clientId: 1,
         amountPaid: 200,
         amountDue: 800,
         totalAmount: 1000,
-        clientEmail: 'client@example.com',
         paymentStatus: 'partial' as const
       };
       

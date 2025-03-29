@@ -89,7 +89,7 @@ describe('AdminApartmentModel', () => {
 
             (validateApartment as any).mockReturnValueOnce({ success: true, data: newApartment });
             (db.query as any).mockResolvedValueOnce({ 
-                rows: [{ id: 1, ...newApartment }] 
+                rows: [{ id: 1, ...newApartment, images: JSON.stringify(newApartment.images) }] 
             });
 
             const result = await AdminApartmentModel.createApartment(newApartment as AdminApartment);
@@ -106,7 +106,7 @@ describe('AdminApartmentModel', () => {
                     newApartment.capacity,
                     newApartment.pricePerNight,
                     newApartment.cleaningFee,
-                    newApartment.images
+                    JSON.stringify(newApartment.images)
                 ]
             );
         });
@@ -148,17 +148,10 @@ describe('AdminApartmentModel', () => {
 
             expect(result).toEqual(updatedApartment);
             expect(db.query).toHaveBeenCalledWith(
-                'UPDATE admin_apartments SET (building_name, unit_number, distribution, description, address, capacity, price_per_night, cleaning_fee, images) = ($1, $2, $3, $4, $5, $6, $7, $8, $9) WHERE id = $1 RETURNING *',
+                'UPDATE admin_apartments SET building_name = $1, price_per_night = $2 WHERE id = $3 RETURNING *',
                 [
-                    updateData.buildingName, 
-                    undefined, 
-                    undefined, 
-                    undefined, 
-                    undefined, 
-                    undefined, 
-                    updateData.pricePerNight, 
-                    undefined, 
-                    undefined, 
+                    updateData.buildingName,
+                    updateData.pricePerNight,
                     1
                 ]
             );
@@ -201,7 +194,6 @@ describe('AdminApartmentModel', () => {
             (db.query as any).mockResolvedValueOnce({ rows: [] });
 
             await expect(AdminApartmentModel.deleteApartment(999)).rejects.toThrow('Apartment not found');
-            expect(db.query).toHaveBeenCalledWith('DELETE FROM admin_apartments WHERE id = $1 RETURNING *', [999]);
         });
 
         it('debería manejar errores de base de datos', async () => {

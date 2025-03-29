@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { Reservation } from '../types/reservations.js';
+import { Reservation, ReservationWithClient } from '../types/reservations.js';
 
 export default class EmailService {
     private static transporter = nodemailer.createTransport({
@@ -14,7 +14,7 @@ export default class EmailService {
     });
 
     // Enviar correo de confirmación de reserva
-    static async sendConfirmationEmail(to: string, reservation: Reservation): Promise<void> {
+    static async sendConfirmationEmail(to: string, reservation: ReservationWithClient): Promise<void> {
        await this.transporter.sendMail({
         from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,
         to: reservation.clientEmail,
@@ -36,7 +36,7 @@ export default class EmailService {
     }
 
     // Enviar correo con el comprobante de reserva
-    static async sendReservationPdf(reservation: Reservation, pdfPath: string): Promise<void> {
+    static async sendReservationPdf(reservation: ReservationWithClient, pdfPath: string): Promise<void> {
         await this.transporter.sendMail({
             from: `"Miami Getaway" <${process.env.EMAIL_USER}>`,
             to: reservation.clientEmail,
@@ -57,7 +57,7 @@ export default class EmailService {
     }
 
     // Enviar correo con información de pago
-    static async sendPaymentNotification(reservation: Reservation, amount: number, isFullPayment: boolean): Promise<void> {
+    static async sendPaymentNotification(reservation: ReservationWithClient, amount: number, isFullPayment: boolean): Promise<void> {
         await this.transporter.sendMail({
             from: `"Miami Getaway" <${process.env.EMAIL_USER}>`,
             to: reservation.clientEmail,
@@ -81,7 +81,7 @@ export default class EmailService {
     }
 
     // Enviar correo con actualización de estado de reserva
-    static async sendStatusChangeNotification(reservation: Reservation, previousStatus: string): Promise<void> {
+    static async sendStatusChangeNotification(reservation: ReservationWithClient, previousStatus: string): Promise<void> {
         const statusMessages: {[key: string]: string} = {
             'pending': 'Your reservation is pending confirmation',
             'confirmed': 'Your reservation has been confirmed',

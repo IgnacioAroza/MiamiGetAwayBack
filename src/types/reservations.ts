@@ -2,9 +2,6 @@ export interface Reservation {
     id: number;
     apartmentId: number;
     clientId: number;
-    clientName: string;
-    clientEmail: string;
-    clientPhone: string;
     checkInDate: Date;
     checkOutDate: Date;
     nights: number;
@@ -21,12 +18,19 @@ export interface Reservation {
     createdAt: Date;
 }
 
+export interface ReservationWithClient extends Reservation {
+    clientName?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+    clientAddress?: string;
+    clientCity?: string;
+    clientCountry?: string;
+    clientNotes?: string;
+}
+
 export interface CreateReservationDTO {
     apartmentId: number;
     clientId: number;
-    clientName: string;
-    clientEmail: string;
-    clientPhone: string;
     checkInDate: Date;
     checkOutDate: Date;
     nights: number;
@@ -46,9 +50,6 @@ export interface CreateReservationDTO {
 export interface UpdateReservationDTO {
     apartmentId?: number;
     clientId?: number;
-    clientName?: string;
-    clientEmail?: string;
-    clientPhone?: string;
     checkInDate?: Date;
     checkOutDate?: Date;
     nights?: number;

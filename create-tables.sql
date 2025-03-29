@@ -74,12 +74,9 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 -- Tabla de reservas    
 CREATE TABLE IF NOT EXISTS reservations (
-    id SERIAL PRIMARY KEY,
+   id SERIAL PRIMARY KEY,
     apartment_id INTEGER REFERENCES admin_apartments(id),
-    client_id INTEGER REFERENCES clients(id),
-    client_name VARCHAR(100) NOT NULL,
-    client_email VARCHAR(100) NOT NULL,
-    client_phone VARCHAR(20) NOT NULL,
+    client_id INTEGER NOT NULL REFERENCES clients(id),
     check_in_date DATE NOT NULL,
     check_out_date DATE NOT NULL,
     nights INTEGER NOT NULL,

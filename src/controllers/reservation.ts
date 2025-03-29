@@ -10,11 +10,27 @@ export class ReservationController {
             const filters: any = {};
             
             if (req.query.startDate) {
-                filters.startDate = new Date(req.query.startDate as string);
+                try {
+                    filters.startDate = new Date(req.query.startDate as string);
+                    if (isNaN(filters.startDate.getTime())) {
+                        throw new Error('Fecha de inicio inválida');
+                    }
+                } catch (error) {
+                    res.status(400).json({ error: 'La fecha de inicio debe estar en formato ISO' });
+                    return;
+                }
             }
             
             if (req.query.endDate) {
-                filters.endDate = new Date(req.query.endDate as string);
+                try {
+                    filters.endDate = new Date(req.query.endDate as string);
+                    if (isNaN(filters.endDate.getTime())) {
+                        throw new Error('Fecha de fin inválida');
+                    }
+                } catch (error) {
+                    res.status(400).json({ error: 'La fecha de fin debe estar en formato ISO' });
+                    return;
+                }
             }
             
             if (req.query.status) {
@@ -51,32 +67,45 @@ export class ReservationController {
     }
     
     static async createReservation(req: Request, res: Response): Promise<void> {
-        const { error } = validateReservation(req.body);
-        if (error) {
-            res.status(400).json({ error: JSON.parse(error.message) });
-            return;
-        }
-
         try {
-            const newReservation = await ReservationService.createReservation(req.body);
+            const validateResult = validateReservation(req.body);
+            if (!validateResult.success) {
+                res.status(400).json({ 
+                    error: 'Validación fallida', 
+                    details: validateResult.error.format() 
+                });
+                return;
+            }
+
+            const newReservation = await ReservationService.createReservation(validateResult.data);
             res.status(201).json(newReservation);
         } catch (error) {
+            console.error('Error al crear reserva:', error);
             res.status(500).json({ error: 'Error creating reservation' });
         }
     }
 
     static async updateReservation(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
-        const { error } = validatePartialReservation(req.body);
-        if (error) {
-            res.status(400).json({ error: JSON.parse(error.message) });
-            return;
-        }
-
         try {
-            const updatedReservation = await ReservationService.updateReservation(parseInt(id), req.body.status);
+            const validateResult = validatePartialReservation(req.body);
+            if (!validateResult.success) {
+                res.status(400).json({ 
+                    error: 'Validación fallida', 
+                    details: validateResult.error.format() 
+                });
+                return;
+            }
+
+            if (!validateResult.data.status) {
+                res.status(400).json({ error: 'Estado de reserva requerido' });
+                return;
+            }
+
+            const updatedReservation = await ReservationService.updateReservation(parseInt(id), validateResult.data.status);
             res.status(200).json(updatedReservation);
         } catch (error) {
+            console.error('Error al actualizar reserva:', error);
             res.status(500).json({ error: 'Error updating reservation' });
         }
     }

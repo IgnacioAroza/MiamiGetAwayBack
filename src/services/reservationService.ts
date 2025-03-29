@@ -1,34 +1,41 @@
 import { ReservationModel } from '../models/reservation.js';
 import EmailService from './emailService.js';
 import PdfService from './pdfService.js';
-import { Reservation, CreateReservationDTO } from '../types/reservations.js';
+import { Reservation, CreateReservationDTO, ReservationWithClient } from '../types/reservations.js';
 import ReservationPaymentsService from './reservationPaymentsService.js';
 
 export default class ReservationService {
     // Crear reserva con notificacion
     static async createReservation(data: CreateReservationDTO): Promise<Reservation> {
         const reservation = await ReservationModel.createReservation(data as any);
-        await EmailService.sendConfirmationEmail(reservation.clientEmail, reservation);
+        // Obtener los datos del cliente para el email
+        const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
+        if (reservationWithClient?.clientEmail) {
+            await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
+        }
         return reservation;
     }
 
     // Actualizar reserva con notificacion
     static async updateReservation(id: number, status: string): Promise<Reservation> {
-        const currentReservation = await ReservationModel.getReservationById(id);
+        const currentReservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!currentReservation) {
             throw new Error('Reservation not found');
         }
         const previousStatus = currentReservation.status;
         const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' });
-        if (!updatedReservation) {
-            await EmailService.sendStatusChangeNotification(updatedReservation, previousStatus);
+        if (updatedReservation) {
+            const updatedReservationWithClient = await ReservationModel.getReservationById(id) as ReservationWithClient;
+            if (updatedReservationWithClient?.clientEmail) {
+                await EmailService.sendStatusChangeNotification(updatedReservationWithClient, previousStatus);
+            }
         }
         return updatedReservation;
     }
 
     // Registrar pago con notificacion
     static async registerPayment(id: number, amount: number, paymentMethod: string, paymentReference?: string, notes?: string): Promise<Reservation> {
-        const currentReservation = await ReservationModel.getReservationById(id);
+        const currentReservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!currentReservation) {
             throw new Error('Reservation not found');
         }
@@ -43,7 +50,7 @@ export default class ReservationService {
         });
         
         // Obtener reserva actualizada
-        const updatedReservation = await ReservationModel.getReservationById(id);
+        const updatedReservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!updatedReservation) {
             throw new Error('Reservation not found');
         }
@@ -52,14 +59,16 @@ export default class ReservationService {
     
     // Generar y enviar PDF
     static async generateAndSendPDF(id: number): Promise<string> {
-        const reservation = await ReservationModel.getReservationById(id);
+        const reservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!reservation) {
             throw new Error('Reservation not found');
         }
         // Generar PDF
         const pdfPath = await PdfService.generateInvoicePdf(reservation);
         // Enviar PDF
-        await EmailService.sendReservationPdf(reservation, pdfPath);
+        if (reservation.clientEmail) {
+            await EmailService.sendReservationPdf(reservation, pdfPath);
+        }
 
         return pdfPath;
     }
@@ -81,5 +90,5 @@ export default class ReservationService {
     
     static async deleteReservation(id: number): Promise<{ message: string }> {
         return ReservationModel.deleteReservation(id);
-  }
+    }
 }
