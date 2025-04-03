@@ -9,9 +9,9 @@ const dateSchema = z.union([
 
 export const reservationPaymentSchema = z.object({
     reservationId: z.number().positive("Reservation ID must be a positive number"),
-    amount: z.number().positive("Amount must be a positive number"),
+    amount: z.number().min(0, "Amount must be a positive number"),
     paymentDate: dateSchema,
-    paymentMethod: z.enum(["efectivo", "transferencia", "tarjeta"]),
+    paymentMethod: z.enum(["card", "cash", "transfer", "bank_transfer", "paypal", "other"]),
     paymentReference: z.string().optional(),
     notes: z.string().optional(),
 });

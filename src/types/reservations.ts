@@ -20,6 +20,7 @@ export interface Reservation {
 
 export interface ReservationWithClient extends Reservation {
     clientName?: string;
+    clientLastname?: string;
     clientEmail?: string;
     clientPhone?: string;
     clientAddress?: string;
