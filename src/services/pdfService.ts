@@ -79,7 +79,7 @@ export default class PdfService {
     // Método para reutilizar la generación del contenido del PDF
     private static addPdfContent(doc: PDFKit.PDFDocument, reservation: ReservationWithClient): void {
         // Título
-        doc.fontSize(20).text('Comprobante de Reserva', { align: 'center' });
+        doc.fontSize(20).text('Reservation Invoice', { align: 'center' });
         doc.moveDown();
         
         // ID de reserva

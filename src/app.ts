@@ -14,6 +14,10 @@ import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
 import reservationRoutes from './routes/reservation.js'
 import reservationPaymentsRoutes from './routes/reservationPayments.js'
+import cronRoutes from './routes/cron.js'
+
+// Importar el servicio de cron
+import { CronService } from './services/cronService.js'
 
 // Configuración de variables de entorno
 dotenv.config()
@@ -53,11 +57,12 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)
+app.use('/api/cron', cronRoutes)
 
 // Ruta de inicio
 app.get('/', (req, res) => {
     res.json({ 
-        message: 'Bienvenido a la API de Miami Getaway',
+        message: 'Welcome to the Miami Getaway API',
         status: 'Online',
         endpoints: {
             apartments: '/api/apartments',
@@ -74,14 +79,14 @@ app.get('/', (req, res) => {
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Ruta no encontrada' })
+    res.status(404).json({ error: 'Route not found' })
 })
 
 // Manejo de errores global
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack)
     res.status(500).json({
-        error: 'Error interno del servidor',
+        error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
     })
 })
@@ -89,8 +94,13 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Iniciar el servidor solo si no estamos en modo de prueba
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {
-        console.log(`Servidor corriendo en http://localhost:${PORT}`)
+        console.log(`Server running on http://localhost:${PORT}`)
+        
+        // Iniciar el servicio de cron
+        const cronService = CronService.getInstance();
+        cronService.startAllJobs();
+        console.log('Cron service started');
     })
 }
 
-export default app
+export default app;
