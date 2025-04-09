@@ -5,13 +5,9 @@
 TRUNCATE TABLE reservation_payments CASCADE;
 TRUNCATE TABLE reservations CASCADE;
 
--- Eliminar datos de admin_apartments
-TRUNCATE TABLE admin_apartments CASCADE;
-
 -- Resetear las secuencias de ID a 1
 ALTER SEQUENCE reservations_id_seq RESTART WITH 1;
 ALTER SEQUENCE reservation_payments_id_seq RESTART WITH 1;
-ALTER SEQUENCE admin_apartments_id_seq RESTART WITH 1;
 
 -- Log completado
 SELECT 'Reset de tablas completado. Todos los datos han sido eliminados.' as message; 
