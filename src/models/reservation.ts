@@ -20,9 +20,11 @@ export class ReservationModel {
                     c.address as client_address,
                     c.city as client_city,
                     c.country as client_country,
-                    c.notes as client_notes
+                    c.notes as client_notes,
+                    a.name as apartment_name
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
+                LEFT JOIN apartments a ON r.apartment_id = a.id
             `;
             const queryParams: any[] = [];
             const conditions: string[] = [];
@@ -79,9 +81,11 @@ export class ReservationModel {
                     c.address as client_address,
                     c.city as client_city,
                     c.country as client_country,
-                    c.notes as client_notes
+                    c.notes as client_notes,
+                    a.name as apartment_name
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
+                LEFT JOIN apartments a ON r.apartment_id = a.id
                 WHERE r.id = $1
             `, [id]);
             
@@ -142,6 +146,7 @@ export class ReservationModel {
                 'client_notes': 'clientNotes',
                 'payment_status': 'paymentStatus',
                 'apartment_id': 'apartmentId',
+                'apartment_name': 'apartmentName',
                 'client_id': 'clientId',
                 'created_at': 'createdAt'
             };

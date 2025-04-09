@@ -3,6 +3,8 @@ import ReservationService from '../services/reservationService.js';
 import { validateReservation, validatePartialReservation } from '../schemas/reservationSchema.js';
 import ReservationPaymentsService from '../services/reservationPaymentsService.js';
 import { ReservationModel } from '../models/reservation.js';
+import EmailService from '../services/emailService.js';
+import db from '../utils/db_render.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -527,6 +529,78 @@ export class ReservationController {
         } catch (error: any) {
             console.error('Error updating payment status:', error);
             res.status(error.status || 500).json({ error: error.message || 'Error updating payment status' });
+        }
+    }
+
+    /**
+     * Envía una notificación por email al cliente de la reserva
+     */
+    static async sendNotification(req: Request, res: Response): Promise<void> {
+        const { id } = req.params;
+        const { type } = req.body; // Tipo de notificación: 'confirmation', 'status_update', etc.
+
+        try {
+            // Verificar la conexión de email primero
+            await EmailService.verifyConnection();
+
+            // Obtener la reserva con los datos del cliente usando una consulta JOIN
+            const result = await db.query(`
+                SELECT r.*, 
+                    c.name as client_name,
+                    c.lastname as client_lastname,
+                    c.email as client_email,
+                    c.phone as client_phone,
+                    c.address as client_address,
+                    c.city as client_city,
+                    c.country as client_country
+                FROM reservations r
+                LEFT JOIN clients c ON r.client_id = c.id
+                WHERE r.id = $1
+            `, [id]);
+
+            if (!result.rows[0]) {
+                res.status(404).json({ error: 'Reservation not found' });
+                return;
+            }
+
+            const reservationData = result.rows[0];
+
+            // Verificar que tengamos el email del cliente
+            if (!reservationData.client_email) {
+                res.status(400).json({ error: 'The reservation does not have a client email associated' });
+                return;
+            }
+
+            // Enviar el email según el tipo de notificación
+            switch (type) {
+                case 'confirmation':
+                    await EmailService.sendConfirmationEmail(reservationData.client_email, reservationData);
+                    break;
+                case 'status_update':
+                    await EmailService.sendStatusChangeNotification(reservationData, reservationData.status);
+                    break;
+                case 'payment':
+                    await EmailService.sendPaymentNotification(
+                        reservationData,
+                        reservationData.amount_paid,
+                        reservationData.amount_due === 0
+                    );
+                    break;
+                default:
+                    res.status(400).json({ error: 'Invalid notification type' });
+                    return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Notification sent successfully'
+            });
+        } catch (error: any) {
+            console.error('Error sending notification:', error);
+            res.status(500).json({
+                error: 'Error sending notification',
+                message: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
         }
     }
 }

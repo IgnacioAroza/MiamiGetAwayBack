@@ -6,12 +6,35 @@ export default class EmailService {
         // Configuración segun tu proveedor de email
         host: process.env.EMAIL_HOST,
         port: Number(process.env.EMAIL_PORT),
-        secure: Boolean(process.env.EMAIL_SECURE),
+        secure: false,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD,
         },
+        tls: {
+            minVersion: 'TLSv1.2',
+            rejectUnauthorized: true
+        }
     });
+
+    // Método para verificar la configuración
+    static async verifyConnection() {
+        console.log('Email Configuration:', {
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
+            user: process.env.EMAIL_USER,
+            // No logueamos la contraseña por seguridad
+        });
+        
+        try {
+            const verify = await this.transporter.verify();
+            console.log('Email connection verified:', verify);
+            return verify;
+        } catch (error) {
+            console.error('Email verification failed:', error);
+            throw error;
+        }
+    }
 
     // Enviar correo de confirmación de reserva
     static async sendConfirmationEmail(to: string, reservation: ReservationWithClient): Promise<void> {
@@ -24,8 +47,8 @@ export default class EmailService {
             <p>Dear ${reservation.clientName},</p>
             <p>Your reservation has been confirmed:</p>
             <ul>
-            <li>Check-in: ${reservation.checkInDate.toLocaleDateString()}</li>
-            <li>Check-out: ${reservation.checkOutDate.toLocaleDateString()}</li>
+            <li>Check-in: ${new Date(reservation.checkInDate).toLocaleDateString()}</li>
+            <li>Check-out: ${new Date(reservation.checkOutDate).toLocaleDateString()}</li>
             <li>Nights: ${reservation.nights}</li>
             <li>Total: $${reservation.totalAmount}</li>
             </ul>
@@ -70,8 +93,8 @@ export default class EmailService {
                 ${!isFullPayment ? `<p>Remaining balance: <strong>$${reservation.amountDue}</strong></p>` : ''}
                 <p>Reservation details:</p>
                 <ul>
-                    <li>Check-in: ${reservation.checkInDate.toLocaleDateString()}</li>
-                    <li>Check-out: ${reservation.checkOutDate.toLocaleDateString()}</li>
+                    <li>Check-in: ${new Date(reservation.checkInDate).toLocaleDateString()}</li>
+                    <li>Check-out: ${new Date(reservation.checkOutDate).toLocaleDateString()}</li>
                     <li>Total: $${reservation.totalAmount}</li>
                 </ul>
                 <p>Thank you for choosing Miami Get Away.</p>
@@ -100,8 +123,8 @@ export default class EmailService {
                 <p>${statusMessages[reservation.status]}</p>
                 <p>Reservation details:</p>
                 <ul>
-                    <li>Check-in: ${reservation.checkInDate.toLocaleDateString()}</li>
-                    <li>Check-out: ${reservation.checkOutDate.toLocaleDateString()}</li>
+                    <li>Check-in: ${new Date(reservation.checkInDate).toLocaleDateString()}</li>
+                    <li>Check-out: ${new Date(reservation.checkOutDate).toLocaleDateString()}</li>
                     <li>Total: $${reservation.totalAmount}</li>
                     <li>Paid: $${reservation.amountPaid}</li>
                     ${reservation.amountDue > 0 ? `<li>Balance due: $${reservation.amountDue}</li>` : ''}

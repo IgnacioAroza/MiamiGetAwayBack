@@ -20,4 +20,7 @@ router.get('/:id/payments', authMiddleware, ReservationController.getReservation
 // Ruta para actualizar el estado de pago de una reserva
 router.patch('/:id/payment-status', authMiddleware, ReservationController.updatePaymentStatus);
 
+// Ruta para enviar notificación por email al cliente
+router.post('/:id/send-notification', authMiddleware, ReservationController.sendNotification);
+
 export default router;

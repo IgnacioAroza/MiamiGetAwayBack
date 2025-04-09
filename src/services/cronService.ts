@@ -1,5 +1,8 @@
 import cron from 'node-cron';
+import { ReservationModel } from '../models/reservation.js';
 import db from '../utils/db_render.js';
+import { QueryResult } from 'pg';
+import EmailService from './emailService.js';
 
 /**
  * Servicio para manejar tareas programadas (cron jobs)
@@ -69,7 +72,7 @@ export class CronService {
       `);
 
       const reservations = result.rows;
-      console.log(`Encontradas ${reservations.length} reservas para posible actualización`);
+      console.log(`Found ${reservations.length} reservations for possible update`);
 
       let updatedCount = 0;
 
@@ -82,15 +85,19 @@ export class CronService {
 
         // Verificar si hoy es la fecha de check-in
         if (this.areDatesEqual(today, checkInDate) && reservation.status === 'confirmed') {
+          const previousStatus = reservation.status;
           await this.updateReservationStatus(reservation.id, 'checked_in');
-          console.log(`Reserva ${reservation.id} actualizada a CHECKED_IN`);
+          await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          console.log(`Reservation ${reservation.id} updated to CHECKED_IN`);
           updatedCount++;
         }
         
         // Verificar si hoy es la fecha de check-out
         else if (this.areDatesEqual(today, checkOutDate) && reservation.status === 'checked_in') {
+          const previousStatus = reservation.status;
           await this.updateReservationStatus(reservation.id, 'checked_out');
-          console.log(`Reserva ${reservation.id} actualizada a CHECKED_OUT`);
+          await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          console.log(`Reservation ${reservation.id} updated to CHECKED_OUT`);
           updatedCount++;
         }
       }
@@ -118,6 +125,27 @@ export class CronService {
     } catch (error) {
       console.error(`Error updating reservation status ${reservationId}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Envía una notificación por email cuando cambia el estado de una reserva
+   */
+  private async sendStatusChangeNotification(reservationId: number, previousStatus: string): Promise<void> {
+    try {
+      // Obtener los datos completos de la reserva con la información del cliente
+      const reservation = await ReservationModel.getReservationById(reservationId);
+      
+      if (reservation) {
+        // Enviar la notificación por email
+        await EmailService.sendStatusChangeNotification(reservation, previousStatus);
+        console.log(`Notificación enviada para la reserva ${reservationId}`);
+      } else {
+        console.error(`Could not find reservation ${reservationId} to send notification`);
+      }
+    } catch (error) {
+      console.error(`Error sending notification for reservation ${reservationId}:`, error);
+      // No lanzamos el error para evitar que interrumpa el proceso principal
     }
   }
 
