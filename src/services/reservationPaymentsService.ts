@@ -33,7 +33,7 @@ export default class ReservationPaymentsService {
         });
 
         // 4. Enviar correo de confirmación
-        await EmailService.sendPaymentNotification(updatedReservation, data.amount, isFullPayment);
+        // await EmailService.sendPaymentNotification(updatedReservation, data.amount, isFullPayment);
 
         return payment;
     }

@@ -33,7 +33,7 @@ export default class UserModel {
         }
 
         try {
-            if (!name || !lastname || !email || !phone || !address || !city || !country || !notes) {
+            if (!name || !lastname || !email) {
                 throw new Error('Missing required fields');
             }
 

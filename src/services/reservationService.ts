@@ -8,11 +8,11 @@ export default class ReservationService {
     // Crear reserva con notificacion
     static async createReservation(data: CreateReservationDTO): Promise<Reservation> {
         const reservation = await ReservationModel.createReservation(data as any);
-        // Obtener los datos del cliente para el email
-        const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
-        if (reservationWithClient?.clientEmail) {
-            await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
-        }
+        // // Obtener los datos del cliente para el email
+        // const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
+        // if (reservationWithClient?.clientEmail) {
+        //     await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
+        // }
         return reservation;
     }
 
