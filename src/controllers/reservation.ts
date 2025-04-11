@@ -83,7 +83,6 @@ export class ReservationController {
             const newReservation = await ReservationService.createReservation(validateResult.data);
             res.status(201).json(newReservation);
         } catch (error) {
-            console.error('Error al crear reserva:', error);
             res.status(500).json({ error: 'Error creating reservation' });
         }
     }
@@ -305,7 +304,6 @@ export class ReservationController {
             
             res.status(200).json(updatedReservation);
         } catch (error) {
-            console.error('Error al actualizar reserva:', error);
             res.status(500).json({ error: 'Error updating reservation' });
         }
     }
@@ -323,17 +321,8 @@ export class ReservationController {
             // Intentar eliminar la reserva
             await ReservationService.deleteReservation(parseInt(id));
             res.status(200).json({ message: 'Reservation deleted successfully' });
-        } catch (error: any) {
-            // Manejar específicamente el error de restricción de llave foránea
-            if (error.code === '23503') { // Código PostgreSQL para violación de restricción de llave foránea
-                res.status(400).json({ 
-                    error: 'No se puede eliminar la reserva porque tiene registros dependientes',
-                    detail: 'Esta reserva tiene pagos u otros registros asociados que deben eliminarse primero'
-                });
-            } else {
-                console.error('Error al eliminar reserva:', error);
-                res.status(500).json({ error: 'Error deleting reservation', detail: error.message });
-            }
+        } catch (error) {
+            res.status(500).json({ error: 'Error deleting reservation' });
         }
     }
     
@@ -527,7 +516,6 @@ export class ReservationController {
             );
             res.status(200).json(updatedReservation);
         } catch (error: any) {
-            console.error('Error updating payment status:', error);
             res.status(error.status || 500).json({ error: error.message || 'Error updating payment status' });
         }
     }
@@ -595,12 +583,8 @@ export class ReservationController {
                 success: true,
                 message: 'Notification sent successfully'
             });
-        } catch (error: any) {
-            console.error('Error sending notification:', error);
-            res.status(500).json({
-                error: 'Error sending notification',
-                message: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+        } catch (error) {
+            res.status(500).json({ error: 'Error sending notification' });
         }
     }
 }

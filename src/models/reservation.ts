@@ -73,16 +73,32 @@ export class ReservationModel {
     static async getReservationById(id: number): Promise<Reservation | null> {
         try {
             const { rows } = await db.query(`
-                SELECT r.*, 
-                    c.name as client_name,
-                    c.lastname as client_lastname,
-                    c.email as client_email,
-                    c.phone as client_phone,
-                    c.address as client_address,
-                    c.city as client_city,
-                    c.country as client_country,
-                    c.notes as client_notes,
-                    a.name as apartment_name
+                SELECT r.id,
+                    r.apartment_id as "apartmentId",
+                    r.client_id as "clientId",
+                    r.check_in_date as "checkInDate",
+                    r.check_out_date as "checkOutDate",
+                    r.nights,
+                    r.price_per_night as "pricePerNight",
+                    r.cleaning_fee as "cleaningFee",
+                    r.other_expenses as "otherExpenses",
+                    r.taxes,
+                    r.total_amount as "totalAmount",
+                    r.amount_paid as "amountPaid",
+                    r.amount_due as "amountDue",
+                    r.parking_fee as "parkingFee",
+                    r.status,
+                    r.payment_status as "paymentStatus",
+                    r.created_at as "createdAt",
+                    c.name as "clientName",
+                    c.lastname as "clientLastname",
+                    c.email as "clientEmail",
+                    c.phone as "clientPhone",
+                    c.address as "clientAddress",
+                    c.city as "clientCity",
+                    c.country as "clientCountry",
+                    c.notes as "clientNotes",
+                    a.name as "apartmentName"
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
@@ -92,71 +108,6 @@ export class ReservationModel {
             if (rows.length === 0) {
                 return null;
             }
-            
-            // Realizar transformaciones necesarias (por ejemplo, fechas)
-            
-            // Convertir fechas de string a objetos Date si es necesario
-            if (rows[0].check_in_date && typeof rows[0].check_in_date === 'string') {
-                rows[0].check_in_date = new Date(rows[0].check_in_date);
-            }
-            
-            if (rows[0].check_out_date && typeof rows[0].check_out_date === 'string') {
-                rows[0].check_out_date = new Date(rows[0].check_out_date);
-            }
-            
-            // Verificar que todos los campos numéricos son realmente números
-            ['nights', 'price_per_night', 'cleaning_fee', 'other_expenses', 'taxes', 
-             'total_amount', 'amount_paid', 'amount_due', 'parking_fee'].forEach(field => {
-                if (rows[0][field] !== undefined && rows[0][field] !== null) {
-                    const originalValue = rows[0][field];
-                    // Si no es un número, intentar convertirlo
-                    if (typeof originalValue !== 'number') {
-                        try {
-                            const numericValue = Number(originalValue);
-                            if (!isNaN(numericValue)) {
-                                rows[0][field] = numericValue;
-                            }
-                        } catch (error) {
-                            // Ignorar errores de conversión
-                        }
-                    }
-                }
-            });
-            
-            // Transformar snake_case a camelCase para compatibilidad
-            
-            // Mapa de transformación de propiedades
-            const transformMap = {
-                'check_in_date': 'checkInDate',
-                'check_out_date': 'checkOutDate',
-                'price_per_night': 'pricePerNight',
-                'cleaning_fee': 'cleaningFee',
-                'other_expenses': 'otherExpenses',
-                'total_amount': 'totalAmount',
-                'amount_paid': 'amountPaid',
-                'amount_due': 'amountDue',
-                'parking_fee': 'parkingFee',
-                'client_name': 'clientName',
-                'client_lastname': 'clientLastname',
-                'client_email': 'clientEmail',
-                'client_phone': 'clientPhone',
-                'client_address': 'clientAddress',
-                'client_city': 'clientCity',
-                'client_country': 'clientCountry',
-                'client_notes': 'clientNotes',
-                'payment_status': 'paymentStatus',
-                'apartment_id': 'apartmentId',
-                'apartment_name': 'apartmentName',
-                'client_id': 'clientId',
-                'created_at': 'createdAt'
-            };
-            
-            // Añadir propiedades en camelCase manteniendo las originales
-            Object.entries(transformMap).forEach(([snakeCase, camelCase]) => {
-                if (rows[0][snakeCase] !== undefined) {
-                    rows[0][camelCase] = rows[0][snakeCase];
-                }
-            });
             
             return rows[0];
         } catch (error) {
@@ -212,8 +163,12 @@ export class ReservationModel {
         }
 
         try {
+            // Convertir nombres de columnas de camelCase a snake_case
             const setClause = Object.keys(reservationData)
-                .map((key, index) => `${key} = $${index + 1}`)
+                .map((key, index) => {
+                    const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                    return `${snakeCaseKey} = $${index + 1}`;
+                })
                 .join(', ');
             
             const values = Object.values(reservationData);
@@ -223,7 +178,24 @@ export class ReservationModel {
                 `UPDATE reservations 
                 SET ${setClause} 
                 WHERE id = $${values.length} 
-                RETURNING *`,
+                RETURNING 
+                    id,
+                    apartment_id as "apartmentId",
+                    client_id as "clientId",
+                    check_in_date as "checkInDate",
+                    check_out_date as "checkOutDate",
+                    nights,
+                    price_per_night as "pricePerNight",
+                    cleaning_fee as "cleaningFee",
+                    other_expenses as "otherExpenses",
+                    taxes,
+                    total_amount as "totalAmount",
+                    amount_paid as "amountPaid",
+                    amount_due as "amountDue",
+                    parking_fee as "parkingFee",
+                    status,
+                    payment_status as "paymentStatus",
+                    created_at as "createdAt"`,
                 values
             );
             return rows[0];

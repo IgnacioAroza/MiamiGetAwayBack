@@ -6,7 +6,6 @@ import { ReservationPayment, CreateReservationPaymentDTO } from '../types/reserv
 
 export default class ReservationPaymentsService {
     static async createPayment(data: CreateReservationPaymentDTO): Promise<ReservationPayment> {
-        // 1. Crear el registro del pago
         const paymentData = {
             ...data,
             paymentDate: new Date(),
@@ -14,22 +13,15 @@ export default class ReservationPaymentsService {
 
         const payment = await ReservationPaymentModel.createReservationPayment(paymentData as any);
 
-        // 2. Actualizar montos y estado en la reserva
         const reservation = await ReservationModel.getReservationById(data.reservationId);
         if (!reservation) {
             throw new Error('Reservation not found');
         }
 
-        const amountPaid = reservation.amountPaid + data.amount;
-        const amountDue = reservation.amountDue - data.amount;
-        const isFullPayment = amountDue <= 0;
-        const paymentStatus = isFullPayment ? 'complete' : 'partial';
-
-        // 3. Actualizar la reserva
         const updatedReservation = await ReservationModel.updateReservation(data.reservationId, {
-            amountPaid,
-            amountDue,
-            paymentStatus,
+            amountPaid: data.amount,
+            amountDue: reservation.totalAmount - data.amount,
+            paymentStatus: 'partial',
         });
 
         // 4. Enviar correo de confirmación
