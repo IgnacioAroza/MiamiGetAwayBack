@@ -46,15 +46,25 @@ export class ReservationPaymentController {
 
     static async updateReservationPayment(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
-        const { error } = validatePartialReservationPayment(req.body);
+        
+        // Transformar datos de snake_case a camelCase
+        const transformedData = {
+            amount: req.body.amount,
+            paymentDate: req.body.payment_date,
+            paymentMethod: req.body.payment_method,
+            paymentReference: req.body.payment_reference,
+            notes: req.body.notes,
+            reservationId: req.body.reservation_id
+        };
+
+        const { error } = validatePartialReservationPayment(transformedData);
         if (error) {
+            console.log('Error de validación:', error);
             res.status(400).json({ error: JSON.parse(error.message) });
             return;
         }
-
-        const reservationPaymentData: Partial<ReservationPayment> = req.body;
         try {
-            const updatedReservationPayment = await ReservationPaymentModel.updateReservationPayment(parseInt(id), reservationPaymentData);
+            const updatedReservationPayment = await ReservationPaymentModel.updateReservationPayment(parseInt(id), transformedData);
             res.status(200).json(updatedReservationPayment);
         } catch (error) {
             res.status(500).json({ error: 'Error updating reservation payment' });

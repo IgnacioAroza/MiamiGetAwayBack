@@ -12,7 +12,7 @@ export const reservationPaymentSchema = z.object({
     amount: z.number().min(0, "Amount must be a positive number"),
     paymentDate: dateSchema,
     paymentMethod: z.enum(["card", "cash", "transfer", "bank_transfer", "paypal", "other"]),
-    paymentReference: z.string().optional(),
+    paymentReference: z.string().nullable().optional(),
     notes: z.string().optional(),
 });
 

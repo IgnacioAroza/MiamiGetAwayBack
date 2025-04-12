@@ -49,17 +49,35 @@ export class ReservationPaymentModel {
         }
         
         try {
-            const { rows } = await db.query('UPDATE reservation_payments SET (reservation_id, amount, payment_date, payment_method, payment_reference, notes) = ($1, $2, $3, $4, $5, $6) WHERE id = $7 RETURNING *', [
-                reservationPaymentData.reservationId,
-                reservationPaymentData.amount,
-                reservationPaymentData.paymentDate,
-                reservationPaymentData.paymentMethod,
-                reservationPaymentData.paymentReference,
-                reservationPaymentData.notes,
-                id
-            ]);
+            // Convertir nombres de columnas de camelCase a snake_case y preparar valores
+            const entries = Object.entries(reservationPaymentData);
+            const setClause = entries
+                .map(([key], index) => {
+                    const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                    return `${snakeCaseKey} = $${index + 1}`;
+                })
+                .join(', ');
+            
+            const values = entries.map(([_, value]) => value);
+            values.push(id);
+
+            const { rows } = await db.query(
+                `UPDATE reservation_payments 
+                SET ${setClause} 
+                WHERE id = $${values.length} 
+                RETURNING 
+                    id,
+                    reservation_id as "reservationId",
+                    amount,
+                    payment_date as "paymentDate",
+                    payment_method as "paymentMethod",
+                    payment_reference as "paymentReference",
+                    notes`,
+                values
+            );
             return rows[0];
         } catch (error) {
+            console.error('Error en updateReservationPayment:', error);
             throw error;
         }
     }
