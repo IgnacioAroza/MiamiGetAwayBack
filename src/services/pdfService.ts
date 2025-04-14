@@ -141,6 +141,7 @@ export default class PdfService {
         const nights = reservation.nights || 0;
         const pricePerNight = reservation.pricePerNight || 0;
         const cleaningFee = reservation.cleaningFee || 0;
+        const parkingFee = reservation.parkingFee || 0;
         const otherExpenses = reservation.otherExpenses || 0;
         const taxes = reservation.taxes || 0;
         const totalAmount = reservation.totalAmount || 0;
@@ -151,9 +152,17 @@ export default class PdfService {
            .text(`$${(pricePerNight * nights).toFixed(2)}`, 470, yPos, { align: 'right', width: 60 });
         yPos += 20;
 
-        doc.text('Cleaning fee', 40, yPos)
-           .text(`$${cleaningFee.toFixed(2)}`, 470, yPos, { align: 'right', width: 60 });
-        yPos += 20;
+        if (cleaningFee > 0) {
+            doc.text('Cleaning fee', 40, yPos)
+               .text(`$${cleaningFee.toFixed(2)}`, 470, yPos, { align: 'right', width: 60 });
+            yPos += 20;
+        }
+
+        if (parkingFee > 0) {
+            doc.text('Parking fee', 40, yPos)
+               .text(`$${parkingFee.toFixed(2)}`, 470, yPos, { align: 'right', width: 60 });
+            yPos += 20;
+        }
 
         if (otherExpenses > 0) {
             doc.text('Other expenses', 40, yPos)

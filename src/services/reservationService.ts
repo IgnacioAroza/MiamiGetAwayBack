@@ -109,6 +109,22 @@ export default class ReservationService {
                 reservation.pricePerNight = Number(reservation.pricePerNight);
             }
             
+            if (reservation.cleaningFee !== undefined && typeof reservation.cleaningFee !== 'number') {
+                reservation.cleaningFee = Number(reservation.cleaningFee);
+            }
+
+            if (reservation.parkingFee !== undefined && typeof reservation.parkingFee !== 'number') {
+                reservation.parkingFee = Number(reservation.parkingFee);
+            }
+
+            if (reservation.taxes !== undefined && typeof reservation.taxes !== 'number') {
+                reservation.taxes = Number(reservation.taxes);
+            }
+
+            if (reservation.otherExpenses !== undefined && typeof reservation.otherExpenses !== 'number') {
+                reservation.otherExpenses = Number(reservation.otherExpenses);
+            }
+            
             if (reservation.totalAmount !== undefined && typeof reservation.totalAmount !== 'number') {
                 reservation.totalAmount = Number(reservation.totalAmount);
             }

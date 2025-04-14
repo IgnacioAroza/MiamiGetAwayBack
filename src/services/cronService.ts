@@ -63,6 +63,8 @@ export class CronService {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Establecer a medianoche para comparación de fechas
+      
+      console.log('Ejecutando actualización de estados:', today.toISOString());
 
       // Buscar reservas que necesitan actualización de estado
       const result = await db.query(`
@@ -87,7 +89,8 @@ export class CronService {
         if (this.areDatesEqual(today, checkInDate) && reservation.status === 'confirmed') {
           const previousStatus = reservation.status;
           await this.updateReservationStatus(reservation.id, 'checked_in');
-          await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          // Comentado temporalmente el envío de emails
+          // await this.sendStatusChangeNotification(reservation.id, previousStatus);
           console.log(`Reservation ${reservation.id} updated to CHECKED_IN`);
           updatedCount++;
         }
@@ -96,7 +99,8 @@ export class CronService {
         else if (this.areDatesEqual(today, checkOutDate) && reservation.status === 'checked_in') {
           const previousStatus = reservation.status;
           await this.updateReservationStatus(reservation.id, 'checked_out');
-          await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          // Comentado temporalmente el envío de emails
+          // await this.sendStatusChangeNotification(reservation.id, previousStatus);
           console.log(`Reservation ${reservation.id} updated to CHECKED_OUT`);
           updatedCount++;
         }
