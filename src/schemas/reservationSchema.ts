@@ -23,6 +23,7 @@ export const reservationSchema = z.object({
     parkingFee: z.number().min(0, "Parking fee must be a non-negative number"),
     status: z.enum(["pending", "confirmed", "checked_in", "checked_out"]),
     paymentStatus: z.enum(["pending", "partial", "complete"]),
+    notes: z.string().optional(),
     createdAt: dateSchema.default(() => new Date())
 });
 

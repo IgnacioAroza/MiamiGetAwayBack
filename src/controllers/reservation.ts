@@ -16,10 +16,10 @@ export class ReservationController {
                 try {
                     filters.startDate = new Date(req.query.startDate as string);
                     if (isNaN(filters.startDate.getTime())) {
-                        throw new Error('Fecha de inicio inválida');
+                        throw new Error('Check in date is invalid');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'La fecha de inicio debe estar en formato ISO' });
+                    res.status(400).json({ error: 'Check in date is invalid' });
                     return;
                 }
             }
@@ -28,10 +28,10 @@ export class ReservationController {
                 try {
                     filters.endDate = new Date(req.query.endDate as string);
                     if (isNaN(filters.endDate.getTime())) {
-                        throw new Error('Fecha de fin inválida');
+                        throw new Error('Check out date is invalid');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'La fecha de fin debe estar en formato ISO' });
+                    res.status(400).json({ error: 'Check out date is invalid' });
                     return;
                 }
             }
@@ -74,7 +74,7 @@ export class ReservationController {
             const validateResult = validateReservation(req.body);
             if (!validateResult.success) {
                 res.status(400).json({ 
-                    error: 'Validación fallida', 
+                    error: 'Validation failed', 
                     details: validateResult.error.format() 
                 });
                 return;
@@ -93,7 +93,7 @@ export class ReservationController {
             const validateResult = validatePartialReservation(req.body);
             if (!validateResult.success) {
                 res.status(400).json({ 
-                    error: 'Validación fallida', 
+                    error: 'Validation failed', 
                     details: validateResult.error.format() 
                 });
                 return;
@@ -131,7 +131,7 @@ export class ReservationController {
             
             if (missingFields.length > 0) {
                 res.status(400).json({ 
-                    error: 'Faltan campos obligatorios para el cálculo', 
+                    error: 'Missing required fields for calculation', 
                     missingFields 
                 });
                 return;

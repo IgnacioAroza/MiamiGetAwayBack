@@ -15,6 +15,7 @@ export interface Reservation {
     parkingFee: number;
     status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
     paymentStatus: 'pending' | 'partial' | 'complete';
+    notes?: string;
     createdAt: Date;
 }
 
@@ -46,6 +47,7 @@ export interface CreateReservationDTO {
     parkingFee: number;
     status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
     paymentStatus: 'pending' | 'partial' | 'complete';
+    notes?: string;
     createdAt: Date;
 }
 
@@ -65,6 +67,7 @@ export interface UpdateReservationDTO {
     parkingFee?: number;
     status?: 'pending' | 'confirmed' | 'checked_in' | 'checked_out';
     paymentStatus?: 'pending' | 'partial' | 'complete';
+    notes?: string;
 }
 
 

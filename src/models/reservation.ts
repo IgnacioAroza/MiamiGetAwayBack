@@ -89,6 +89,7 @@ export class ReservationModel {
                     r.parking_fee as "parkingFee",
                     r.status,
                     r.payment_status as "paymentStatus",
+                    r.notes,
                     r.created_at as "createdAt",
                     c.name as "clientName",
                     c.lastname as "clientLastname",
@@ -128,8 +129,8 @@ export class ReservationModel {
                     check_in_date, check_out_date, nights, price_per_night, 
                     cleaning_fee, other_expenses, taxes, total_amount, 
                     amount_paid, amount_due, parking_fee, status, payment_status,
-                    created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
+                    notes, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
                 RETURNING *`, 
                 [
                     reservationData.apartmentId,
@@ -147,6 +148,7 @@ export class ReservationModel {
                     reservationData.parkingFee,
                     reservationData.status,
                     reservationData.paymentStatus,
+                    reservationData.notes,
                     reservationData.createdAt
                 ]
             );
@@ -195,6 +197,7 @@ export class ReservationModel {
                     parking_fee as "parkingFee",
                     status,
                     payment_status as "paymentStatus",
+                    notes,
                     created_at as "createdAt"`,
                 values
             );
