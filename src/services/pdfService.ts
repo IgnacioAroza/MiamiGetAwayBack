@@ -78,40 +78,52 @@ export default class PdfService {
     }
 
     private static addPdfContent(doc: PDFKit.PDFDocument, reservation: ReservationWithClient): void {
-        // Logo y encabezado
-        const logoPath = path.join(process.cwd(), 'src', 'assets', 'images', 'shadowLogo.jpg');
+        // Logo centrado
+        const logoPath = path.join(process.cwd(), 'src', 'assets', 'images', 'logo_texto_negro.png');
         if (fs.existsSync(logoPath)) {
-            doc.image(logoPath, 40, 30, {
-                fit: [150, 150]
+            doc.image(logoPath, 100, 30, {
+                fit: [400, 100],
+                align: 'center'
             });
         }
 
-        // Título centrado
-        doc.font('Helvetica')
-           .fontSize(20)
-           .text('Miami Get Away', 100, 50, {
+        // Dirección
+        doc.fontSize(12)
+           .text('1001 N Federal Hwy, Suite 252', 100, 120, {
+               align: 'center',
+               width: 400
+           })
+           .text('Hallandale Beach, FL  33009', {
+               align: 'center',
+               width: 400
+           })
+           .text('United States', {
                align: 'center',
                width: 400
            });
 
-        // Dirección
+        // Datos de contacto
         doc.fontSize(12)
-           .text('2127 Brickell Av 1204', 100, 80, {
+           .text('reservas@miami-getaway.com', 100, 170, {
                align: 'center',
                width: 400
            })
-           .text('Miami Florida 33129', {
+           .text('+1 (414) 339-3382', 100, 185, {
+               align: 'center',
+               width: 400
+           })
+           .text('+54 9 3564 503454', 100, 200, {
                align: 'center',
                width: 400
            });
 
         // Línea separadora superior
-        doc.moveTo(40, 160).lineTo(570, 160).stroke();
+        doc.moveTo(40, 230).lineTo(570, 230).stroke();
 
         // Información de facturación
         doc.fontSize(12)
-           .text('Bill To:', 40, 180)
-           .text(`Invoice #: ${reservation.id}`, 450, 180);
+           .text('Bill To:', 40, 245)
+           .text(`Invoice #: ${reservation.id}`, 450, 245);
 
         // Datos del cliente
         const clientName = reservation.clientName || 'No specified';
@@ -120,23 +132,23 @@ export default class PdfService {
         const clientPhone = reservation.clientPhone || 'No specified';
 
         doc.fontSize(12)
-           .text(`${clientName} ${clientLastname}`, 40, 195)
-           .text(`Email: ${clientEmail}`, 40, 210)
-           .text(`Phone: ${clientPhone}`, 40, 225);
+           .text(`${clientName} ${clientLastname}`, 40, 260)
+           .text(`Email: ${clientEmail}`, 40, 275)
+           .text(`Phone: ${clientPhone}`, 40, 290);
 
         // Línea separadora después de los datos del cliente
-        doc.moveTo(40, 245).lineTo(570, 245).stroke();
+        doc.moveTo(40, 310).lineTo(570, 310).stroke();
 
         // Encabezados de la tabla
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .text('DESCRIPTION', 40, 255)
-           .text('AMOUNT', 470, 255, { align: 'right', width: 60 });
+           .text('DESCRIPTION', 40, 325)
+           .text('AMOUNT', 470, 325, { align: 'right', width: 60 });
 
         // Contenido de la tabla
         doc.font('Helvetica')
            .fontSize(12);
-        let yPos = 270;
+        let yPos = 340;
 
         const nights = reservation.nights || 0;
         const pricePerNight = reservation.pricePerNight || 0;
@@ -199,13 +211,18 @@ export default class PdfService {
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .text('NOTA A TENER EN CUENTA:', 40, yPos);
+           .text('NOTE TO CONSIDER:', 40, yPos);
         yPos += 15;
 
-        doc.font('Helvetica')
-           .fontSize(12)
-           .text('Al ingresar les pedirán un depósito de seguridad', 40, yPos)
-           .text('de $150 con tarjeta reembolsable al final de la estadía.', 40, yPos + 15);
+        if (reservation.notes) {
+            doc.font('Helvetica')
+                .fontSize(12)
+                .text(reservation.notes, 40, yPos);
+        } else {
+            doc.font('Helvetica')
+                .fontSize(12)
+                .text('No notes provided', 40, yPos);
+        }
     }
 
     private static formatDate(date: any): string {
