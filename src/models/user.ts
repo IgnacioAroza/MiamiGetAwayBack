@@ -115,7 +115,6 @@ export default class UserModel {
                 throw new Error('User not found');
             }
         } catch (error) {
-            console.log('Error updating user:', error);
             throw error;
         }
     }
@@ -130,7 +129,6 @@ export default class UserModel {
                 throw new Error('User not found');
             }
         } catch (error) {
-            console.log('Error deleting user:', error);
             throw error;
         }
     }    

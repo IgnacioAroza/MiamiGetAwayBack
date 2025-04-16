@@ -42,7 +42,6 @@ export default class AdminModel {
             const { id, ...dataWithoutId } = adminData;
             return { id: rows[0].id, ...dataWithoutId };
         } catch (error) {
-            console.log('Error creating admin:', error);
             throw error;
         }
     }
@@ -83,7 +82,6 @@ export default class AdminModel {
                 throw new Error('Admin not found');
             }
         } catch (error) {
-            console.log('Error updating admin:', error);
             throw error;
         }
     }
@@ -98,7 +96,6 @@ export default class AdminModel {
                 throw new Error('Admin not found');
             }
         } catch (error) {
-            console.log('Error deleting admin:', error);
             throw error;
         }
     }

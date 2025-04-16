@@ -152,13 +152,13 @@ describe('ReservationService', () => {
 
       vi.mocked(ReservationModel.getReservationById).mockResolvedValueOnce(mockReservation);
       vi.mocked(PdfService.generateInvoicePdf).mockResolvedValueOnce(mockPdfPath);
-      vi.mocked(EmailService.sendReservationPdf).mockResolvedValueOnce();
+      vi.mocked(EmailService.sendConfirmationEmail).mockResolvedValueOnce();
 
       const result = await ReservationService.generateAndSendPDF(1);
 
       expect(ReservationModel.getReservationById).toHaveBeenCalledWith(1);
       expect(PdfService.generateInvoicePdf).toHaveBeenCalledWith(mockReservation);
-      expect(EmailService.sendReservationPdf).toHaveBeenCalledWith(mockReservation, mockPdfPath);
+      expect(EmailService.sendConfirmationEmail).toHaveBeenCalledWith(mockReservation, mockPdfPath);
       expect(result).toBe(mockPdfPath);
     });
   });

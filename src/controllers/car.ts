@@ -112,7 +112,6 @@ class CarController {
             const updatedCar = await CarModel.updateCar(Number(id), carData)
             res.status(200).json(updatedCar)
         } catch (error: any) {
-            console.log('Error in updateCar:', error)
             res.status(500).json({ error: error.message || 'An error ocurred while updating the car' })
         }
     }
@@ -165,7 +164,6 @@ class CarController {
             const filename = path.parse(filenameWithExtension).name
             return `cars/${filename}`
         } catch (error) {
-            console.log('Error parsing URL:', error)
             return null
         }
     }

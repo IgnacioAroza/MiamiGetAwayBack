@@ -59,7 +59,6 @@ export class ReservationPaymentController {
 
         const { error } = validatePartialReservationPayment(transformedData);
         if (error) {
-            console.log('Error de validación:', error);
             res.status(400).json({ error: JSON.parse(error.message) });
             return;
         }

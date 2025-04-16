@@ -220,7 +220,6 @@ class YachtController {
             const filename = path.parse(filenameWithExtension).name;
             return `yachts/${filename}`;
         } catch (error) {
-            console.log('Error parsing URL:', error);
             // Si algo falla, intentar extraer el nombre de archivo directamente
             try {
                 const filename = path.parse(url).name;

@@ -49,7 +49,6 @@ export class CronService {
   private startReservationStatusUpdateJob(): void {
     // Programar para ejecutar todos los días a medianoche
     this.reservationUpdateJob = cron.schedule('0 0 * * *', async () => {
-      console.log('Executing automatic status update...');
       await this.updateReservationStatuses();
     });
     console.log('Cron job of status update scheduled');
@@ -63,12 +62,10 @@ export class CronService {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Establecer a medianoche para comparación de fechas
-      
-      console.log('Ejecutando actualización de estados:', today.toISOString());
+    
 
       // Buscar reservas que necesitan actualización de estado
       const reservations = await ReservationModel.getReservationsForStatusUpdate();
-      console.log(`Found ${reservations.length} reservations for possible update`);
 
       let updatedCount = 0;
 
@@ -84,7 +81,6 @@ export class CronService {
           const previousStatus = reservation.status;
           await ReservationModel.updateReservationStatus(reservation.id, 'checked_in');
           await this.sendStatusChangeNotification(reservation.id, previousStatus);
-          console.log(`Reservation ${reservation.id} updated to CHECKED_IN`);
           updatedCount++;
         }
         
@@ -93,7 +89,6 @@ export class CronService {
           const previousStatus = reservation.status;
           await ReservationModel.updateReservationStatus(reservation.id, 'checked_out');
           await this.sendStatusChangeNotification(reservation.id, previousStatus);
-          console.log(`Reservation ${reservation.id} updated to CHECKED_OUT`);
           updatedCount++;
         }
       }
@@ -120,7 +115,6 @@ export class CronService {
       if (reservation) {
         // Enviar la notificación por email
         await EmailService.sendStatusChangeNotification(reservation, previousStatus);
-        console.log(`Notificación enviada para la reserva ${reservationId}`);
       } else {
         console.error(`Could not find reservation ${reservationId} to send notification`);
       }

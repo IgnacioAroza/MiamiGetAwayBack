@@ -21,16 +21,8 @@ export default class EmailService {
 
     // Método para verificar la configuración
     static async verifyConnection() {
-        console.log('Email Configuration:', {
-            host: process.env.EMAIL_HOST,
-            port: process.env.EMAIL_PORT,
-            user: process.env.EMAIL_USER,
-            // No logueamos la contraseña por seguridad
-        });
-        
         try {
             const verify = await this.transporter.verify();
-            console.log('Email connection verified:', verify);
             return verify;
         } catch (error) {
             console.error('Email verification failed:', error);
@@ -41,10 +33,8 @@ export default class EmailService {
     // Enviar correo de confirmación de reserva
     static async sendConfirmationEmail(to: string, reservation: ReservationWithClient): Promise<void> {
         try {
-            console.log('Generating PDF for reservation:', reservation.id);
             // Generar el PDF
             const pdfPath = await PdfService.generateInvoicePdf(reservation);
-            console.log('PDF generated at:', pdfPath);
             
             const mailOptions = {
                 from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,

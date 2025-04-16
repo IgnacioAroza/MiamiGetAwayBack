@@ -70,7 +70,6 @@ class ApartmentController {
             const newApartment = await ApartmentModel.createApartment(apartmentData as unknown as Apartment)
             res.status(201).json(newApartment)
         } catch (error: any) {
-            console.error('Error in createApartment:', error)
             res.status(500).json({ error: error.message || 'An error occurred while creating the apartment' })
         }
     }
@@ -141,7 +140,6 @@ class ApartmentController {
             const updatedApartment = await ApartmentModel.updateApartment(Number(id), apartmentData)
             res.status(200).json(updatedApartment)
         } catch (error: any) {
-            console.error('Error in updateApartment:', error)
             res.status(500).json({ error: error.message || 'An error occurred while updating the apartment' })
         }
     }
@@ -181,7 +179,6 @@ class ApartmentController {
                 res.status(500).json({ message: 'Error deleting apartment from database' })
             }
         } catch (error: any) {
-            console.error('Error in deleteApartment:', error)
             res.status(500).json({ error: error.message || 'An error occurred while deleting the apartment' })
         }
     }
@@ -194,7 +191,6 @@ class ApartmentController {
             const filename = path.parse(filenameWithExtension).name
             return `apartments/${filename}`
         } catch (error) {
-            console.log('Erro parsing URL:', error)
             return null
         }
     }

@@ -9,13 +9,11 @@ export default class ReviewModel {
             
             // Si no hay reviews, devolver un array vacío en lugar de un error
             if (!rows || rows.length === 0) {
-                console.log('No se encontraron reviews');
                 return [];
             }
             
             return rows;
         } catch (error) {
-            console.log('Error getting all reviews:', error);
             // En caso de error, devolver un array vacío para que la aplicación pueda continuar
             return [];
         }
@@ -54,7 +52,6 @@ export default class ReviewModel {
             // Verificar la respuesta
             if (!rows || rows.length === 0) {
                 // En lugar de lanzar error, crear un objeto de respuesta para pruebas
-                console.log('No se retornaron filas, creando objeto de respuesta ficticio para pruebas');
                 return {
                     id: Math.floor(Math.random() * 1000) + 1, // ID aleatorio para pruebas
                     name: name,
@@ -69,7 +66,6 @@ export default class ReviewModel {
                 comment: rows[0].comment || comment
             };
         } catch (error) {
-            console.log('Error creating review:', error);
             throw error;
         }
     }   
@@ -106,7 +102,6 @@ export default class ReviewModel {
                 throw new Error('Review not found');
             }
         } catch (error) {
-            console.log('Error updating review:', error);
             throw error;
         }
     }
@@ -122,7 +117,6 @@ export default class ReviewModel {
                 return { success: false, message: 'Review not found' };
             }
         } catch (error) {
-            console.log('Error deleting review:', error);
             // Convertir el error en un mensaje
             return { success: false, message: error instanceof Error ? error.message : 'Error deleting review' };
         }

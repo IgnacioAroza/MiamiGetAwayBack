@@ -15,7 +15,6 @@ export default class CarModel {
                 return car
             })
         } catch (error) {
-            console.log('Error in getAll:', error)
             throw error
         }
     }
@@ -33,7 +32,6 @@ export default class CarModel {
             }
             return null
         } catch (error) {
-            console.log('Error in getById:', error)
             throw error
         }
     }
@@ -56,7 +54,6 @@ export default class CarModel {
             const { id, ...dataWithoutId } = carData
             return { id: rows[0].id, ...dataWithoutId, images: images || [] }
         } catch (error) {
-            console.log('Error in createCar:', error)
             throw error
         }
     }
@@ -117,7 +114,6 @@ export default class CarModel {
                 throw new Error('Car not found')
             }
         } catch (error) {
-            console.log(error)
             throw new Error('Error updating car')
         }
     }
@@ -132,7 +128,6 @@ export default class CarModel {
                 throw new Error('Car not found')
             }
         } catch (error) {
-            console.log(error)
             throw new Error('Error deleting car')
         }
     }

@@ -46,7 +46,6 @@ export default class ApartmentModel {
             const { id, ...dataWithoutId } = apartmentData;
             return { id: rows[0].id, ...dataWithoutId, images: images || [] };
         } catch (error) {
-            console.log('Error creating apartment:', error);
             throw error;
         }
     }
@@ -123,7 +122,6 @@ export default class ApartmentModel {
                 throw new Error('Apartment not found')
             }
         } catch (error) {
-            console.log(error)
             throw new Error('Error updating apartment')
         }
     }
@@ -138,7 +136,6 @@ export default class ApartmentModel {
                 throw new Error('Apartment not found')
             }
         } catch (error) {
-            console.log(error)
             throw new Error('Error deleting apartment');
         }
     }

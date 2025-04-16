@@ -322,7 +322,6 @@ export class ReservationController {
             await ReservationService.deleteReservation(parseInt(id));
             res.status(200).json({ message: 'Reservation deleted successfully' });
         } catch (error) {
-            console.log(error);
             res.status(500).json({ error: 'Error deleting reservation' });
         }
     }
@@ -591,7 +590,6 @@ export class ReservationController {
                 message: 'Notification sent successfully'
             });
         } catch (error) {
-            console.log('Error sending notification:', error);
             res.status(500).json({ error: 'Error sending notification' });
         }
     }
