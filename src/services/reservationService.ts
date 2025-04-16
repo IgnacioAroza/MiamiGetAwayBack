@@ -3,16 +3,17 @@ import EmailService from './emailService.js';
 import PdfService from './pdfService.js';
 import { Reservation, CreateReservationDTO, ReservationWithClient } from '../types/reservations.js';
 import ReservationPaymentsService from './reservationPaymentsService.js';
+import db from '../utils/db_render.js';
 
 export default class ReservationService {
     // Crear reserva con notificacion
     static async createReservation(data: CreateReservationDTO): Promise<Reservation> {
         const reservation = await ReservationModel.createReservation(data as any);
-        // // Obtener los datos del cliente para el email
-        // const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
-        // if (reservationWithClient?.clientEmail) {
-        //     await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
-        // }
+        // Obtener los datos del cliente para el email
+        const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
+        if (reservationWithClient?.clientEmail) {
+            await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
+        }
         return reservation;
     }
 
@@ -150,14 +151,11 @@ export default class ReservationService {
         if (!reservation) {
             throw new Error('Reservation not found');
         }
-        // Generar PDF
-        const pdfPath = await PdfService.generateInvoicePdf(reservation);
-        // Enviar PDF
+        // Generar PDF y enviar correo
         if (reservation.clientEmail) {
-            await EmailService.sendReservationPdf(reservation, pdfPath);
+            await EmailService.sendConfirmationEmail(reservation.clientEmail, reservation);
         }
-
-        return pdfPath;
+        return `reservation-${reservation.id}-${reservation.clientName}-${reservation.clientLastname}.pdf`;
     }
 
     // Otros métodos CRUD simplificados (sin lógica de email)
@@ -177,5 +175,9 @@ export default class ReservationService {
     
     static async deleteReservation(id: number): Promise<{ message: string }> {
         return ReservationModel.deleteReservation(id);
+    }
+
+    static async getReservationWithClientDetails(reservationId: number): Promise<any> {
+        return await ReservationModel.getReservationWithClientDetails(reservationId);
     }
 }

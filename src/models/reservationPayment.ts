@@ -93,4 +93,12 @@ export class ReservationPaymentModel {
             throw error;
         }
     }
+
+    static async getPaymentsByReservation(reservationId: number): Promise<ReservationPayment[]> {
+        const { rows } = await db.query(
+            'SELECT * FROM reservation_payments WHERE reservation_id = $1 ORDER BY payment_date DESC',
+            [reservationId]
+        );
+        return rows;
+    }
 }

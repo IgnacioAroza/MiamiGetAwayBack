@@ -6,6 +6,10 @@ import { ReservationPayment, CreateReservationPaymentDTO } from '../types/reserv
 
 export default class ReservationPaymentsService {
     static async createPayment(data: CreateReservationPaymentDTO): Promise<ReservationPayment> {
+        if (!data.amount || isNaN(data.amount)) {
+            throw new Error('Invalid payment amount');
+        }
+
         const paymentData = {
             ...data,
             paymentDate: new Date(),
@@ -18,29 +22,31 @@ export default class ReservationPaymentsService {
             throw new Error('Reservation not found');
         }
 
+        const newAmountPaid = (reservation.amountPaid || 0) + data.amount;
+        const newAmountDue = reservation.totalAmount - newAmountPaid;
+        
+        const paymentStatus = newAmountDue <= 0 ? 'complete' : 'partial';
+
         const updatedReservation = await ReservationModel.updateReservation(data.reservationId, {
-            amountPaid: data.amount,
-            amountDue: reservation.totalAmount - data.amount,
-            paymentStatus: 'partial',
+            amountPaid: newAmountPaid,
+            amountDue: newAmountDue,
+            paymentStatus: paymentStatus,
         });
 
-        // 4. Enviar correo de confirmación
-        // await EmailService.sendPaymentNotification(updatedReservation, data.amount, isFullPayment);
+        const paymentAmount = Number(data.amount);
+        if (isNaN(paymentAmount)) {
+            throw new Error('Invalid payment amount');
+        }
+
+        const isPaymentComplete = newAmountDue <= 0;
+
+        await EmailService.sendPaymentNotification(updatedReservation, paymentAmount, isPaymentComplete);
 
         return payment;
     }
 
     static async getPaymentsByReservation(reservationId: number): Promise<ReservationPayment[]> {
-        try {
-            const { rows } = await db.query(
-                'SELECT * FROM reservation_payments WHERE reservation_id = $1 ORDER BY payment_date DESC',
-                [reservationId]
-            );
-
-            return rows;
-        } catch (error) {
-            throw error;
-        }
+        return await ReservationPaymentModel.getPaymentsByReservation(reservationId);
     }
 
     static async getAllPayments(): Promise<ReservationPayment[]> {

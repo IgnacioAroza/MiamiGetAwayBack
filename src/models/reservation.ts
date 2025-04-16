@@ -21,7 +21,8 @@ export class ReservationModel {
                     c.city as client_city,
                     c.country as client_country,
                     c.notes as client_notes,
-                    a.name as apartment_name
+                    a.name as apartment_name,
+                    a.address as apartment_address
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
@@ -99,7 +100,8 @@ export class ReservationModel {
                     c.city as "clientCity",
                     c.country as "clientCountry",
                     c.notes as "clientNotes",
-                    a.name as "apartmentName"
+                    a.name as "apartmentName",
+                    a.address as "apartmentAddress"
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
@@ -180,25 +182,7 @@ export class ReservationModel {
                 `UPDATE reservations 
                 SET ${setClause} 
                 WHERE id = $${values.length} 
-                RETURNING 
-                    id,
-                    apartment_id as "apartmentId",
-                    client_id as "clientId",
-                    check_in_date as "checkInDate",
-                    check_out_date as "checkOutDate",
-                    nights,
-                    price_per_night as "pricePerNight",
-                    cleaning_fee as "cleaningFee",
-                    other_expenses as "otherExpenses",
-                    taxes,
-                    total_amount as "totalAmount",
-                    amount_paid as "amountPaid",
-                    amount_due as "amountDue",
-                    parking_fee as "parkingFee",
-                    status,
-                    payment_status as "paymentStatus",
-                    notes,
-                    created_at as "createdAt"`,
+                RETURNING *`,
                 values
             );
             return rows[0];
@@ -217,5 +201,57 @@ export class ReservationModel {
         } catch (error) {
             throw error;
         }
+    }
+
+    static async getReservationWithClientDetails(reservationId: number): Promise<any> {
+        const result = await db.query(`
+            SELECT 
+                r.id,
+                r.apartment_id as "apartmentId",
+                r.client_id as "clientId",
+                r.check_in_date as "checkInDate",
+                r.check_out_date as "checkOutDate",
+                r.nights,
+                r.price_per_night as "pricePerNight",
+                r.cleaning_fee as "cleaningFee",
+                r.other_expenses as "otherExpenses",
+                r.taxes,
+                r.total_amount as "totalAmount",
+                r.amount_paid as "amountPaid",
+                r.amount_due as "amountDue",
+                r.parking_fee as "parkingFee",
+                r.status,
+                r.payment_status as "paymentStatus",
+                r.notes,
+                r.created_at as "createdAt",
+                c.name as "clientName",
+                c.lastname as "clientLastname",
+                c.email as "clientEmail",
+                c.phone as "clientPhone",
+                c.address as "clientAddress",
+                c.city as "clientCity",
+                c.country as "clientCountry"
+            FROM reservations r
+            LEFT JOIN clients c ON r.client_id = c.id
+            WHERE r.id = $1
+        `, [reservationId]);
+
+        return result.rows[0] || null;
+    }
+
+    static async getReservationsForStatusUpdate(): Promise<any[]> {
+        const result = await db.query(`
+            SELECT id, check_in_date, check_out_date, status
+            FROM reservations
+            WHERE status IN ('confirmed', 'checked_in')
+        `);
+        return result.rows;
+    }
+
+    static async updateReservationStatus(reservationId: number, newStatus: string): Promise<void> {
+        await db.query(
+            'UPDATE reservations SET status = $1 WHERE id = $2',
+            [newStatus, reservationId]
+        );
     }
 }

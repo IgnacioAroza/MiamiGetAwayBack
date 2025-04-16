@@ -67,13 +67,7 @@ export class CronService {
       console.log('Ejecutando actualización de estados:', today.toISOString());
 
       // Buscar reservas que necesitan actualización de estado
-      const result = await db.query(`
-        SELECT id, check_in_date, check_out_date, status
-        FROM reservations
-        WHERE status IN ('confirmed', 'checked_in')
-      `);
-
-      const reservations = result.rows;
+      const reservations = await ReservationModel.getReservationsForStatusUpdate();
       console.log(`Found ${reservations.length} reservations for possible update`);
 
       let updatedCount = 0;
@@ -88,9 +82,8 @@ export class CronService {
         // Verificar si hoy es la fecha de check-in
         if (this.areDatesEqual(today, checkInDate) && reservation.status === 'confirmed') {
           const previousStatus = reservation.status;
-          await this.updateReservationStatus(reservation.id, 'checked_in');
-          // Comentado temporalmente el envío de emails
-          // await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          await ReservationModel.updateReservationStatus(reservation.id, 'checked_in');
+          await this.sendStatusChangeNotification(reservation.id, previousStatus);
           console.log(`Reservation ${reservation.id} updated to CHECKED_IN`);
           updatedCount++;
         }
@@ -98,9 +91,8 @@ export class CronService {
         // Verificar si hoy es la fecha de check-out
         else if (this.areDatesEqual(today, checkOutDate) && reservation.status === 'checked_in') {
           const previousStatus = reservation.status;
-          await this.updateReservationStatus(reservation.id, 'checked_out');
-          // Comentado temporalmente el envío de emails
-          // await this.sendStatusChangeNotification(reservation.id, previousStatus);
+          await ReservationModel.updateReservationStatus(reservation.id, 'checked_out');
+          await this.sendStatusChangeNotification(reservation.id, previousStatus);
           console.log(`Reservation ${reservation.id} updated to CHECKED_OUT`);
           updatedCount++;
         }
@@ -113,21 +105,6 @@ export class CronService {
       };
     } catch (error) {
       console.error('Error updating reservation statuses:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualiza el estado de una reserva
-   */
-  private async updateReservationStatus(reservationId: number, newStatus: string): Promise<void> {
-    try {
-      await db.query(
-        'UPDATE reservations SET status = $1 WHERE id = $2',
-        [newStatus, reservationId]
-      );
-    } catch (error) {
-      console.error(`Error updating reservation status ${reservationId}:`, error);
       throw error;
     }
   }

@@ -29,6 +29,7 @@ export interface ReservationWithClient extends Reservation {
     clientCountry?: string;
     clientNotes?: string;
     apartmentName?: string;
+    apartmentAddress?: string;
 }
 
 export interface CreateReservationDTO {

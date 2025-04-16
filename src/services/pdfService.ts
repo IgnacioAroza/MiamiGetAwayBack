@@ -150,13 +150,13 @@ export default class PdfService {
            .fontSize(12);
         let yPos = 340;
 
-        const nights = reservation.nights || 0;
-        const pricePerNight = reservation.pricePerNight || 0;
-        const cleaningFee = reservation.cleaningFee || 0;
-        const parkingFee = reservation.parkingFee || 0;
-        const otherExpenses = reservation.otherExpenses || 0;
-        const taxes = reservation.taxes || 0;
-        const totalAmount = reservation.totalAmount || 0;
+        const nights = Number(reservation.nights) || 0;
+        const pricePerNight = Number(reservation.pricePerNight) || 0;
+        const cleaningFee = Number(reservation.cleaningFee) || 0;
+        const parkingFee = Number(reservation.parkingFee) || 0;
+        const otherExpenses = Number(reservation.otherExpenses) || 0;
+        const taxes = Number(reservation.taxes) || 0;
+        const totalAmount = Number(reservation.totalAmount) || 0;
 
         // Usar el nombre del apartamento si está disponible
         const apartmentName = reservation.apartmentName || 'Apartment';
@@ -205,7 +205,10 @@ export default class PdfService {
 
         doc.font('Helvetica')
            .fontSize(12)
-           .text(`Check in: ${this.formatDate(reservation.checkInDate)} at 4:00 pm`, 40, yPos)
+           .text(`Apartment Address: ${reservation.apartmentAddress || 'No specified'}`, 40, yPos);
+        yPos += 15;
+
+        doc.text(`Check in: ${this.formatDate(reservation.checkInDate)} at 4:00 pm`, 40, yPos)
            .text(`Check Out: ${this.formatDate(reservation.checkOutDate)} at 11:00 am`, 40, yPos + 15);
         yPos += 45;
 

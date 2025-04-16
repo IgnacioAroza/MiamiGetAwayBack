@@ -322,6 +322,7 @@ export class ReservationController {
             await ReservationService.deleteReservation(parseInt(id));
             res.status(200).json({ message: 'Reservation deleted successfully' });
         } catch (error) {
+            console.log(error);
             res.status(500).json({ error: 'Error deleting reservation' });
         }
     }
@@ -525,53 +526,59 @@ export class ReservationController {
      */
     static async sendNotification(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
-        const { type } = req.body; // Tipo de notificación: 'confirmation', 'status_update', etc.
+        const { type } = req.body;
 
         try {
             // Verificar la conexión de email primero
             await EmailService.verifyConnection();
 
-            // Obtener la reserva con los datos del cliente usando una consulta JOIN
-            const result = await db.query(`
-                SELECT r.*, 
-                    c.name as client_name,
-                    c.lastname as client_lastname,
-                    c.email as client_email,
-                    c.phone as client_phone,
-                    c.address as client_address,
-                    c.city as client_city,
-                    c.country as client_country
-                FROM reservations r
-                LEFT JOIN clients c ON r.client_id = c.id
-                WHERE r.id = $1
-            `, [id]);
+            // Obtener la reserva con los datos del cliente usando el servicio
+            const reservationData = await ReservationService.getReservationWithClientDetails(parseInt(id));
 
-            if (!result.rows[0]) {
+            if (!reservationData) {
                 res.status(404).json({ error: 'Reservation not found' });
                 return;
             }
 
-            const reservationData = result.rows[0];
-
             // Verificar que tengamos el email del cliente
-            if (!reservationData.client_email) {
+            if (!reservationData.clientEmail) {
+                console.error('No email found for reservation:', id);
                 res.status(400).json({ error: 'The reservation does not have a client email associated' });
+                return;
+            }
+
+            // Validar formato del email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(reservationData.clientEmail)) {
+                console.error('Invalid email format:', reservationData.clientEmail);
+                res.status(400).json({ error: 'Invalid email format' });
                 return;
             }
 
             // Enviar el email según el tipo de notificación
             switch (type) {
                 case 'confirmation':
-                    await EmailService.sendConfirmationEmail(reservationData.client_email, reservationData);
+                    await EmailService.sendConfirmationEmail(reservationData.clientEmail, reservationData);
                     break;
                 case 'status_update':
                     await EmailService.sendStatusChangeNotification(reservationData, reservationData.status);
                     break;
                 case 'payment':
+                    // Obtener el último pago para esta reserva
+                    const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
+                    const lastPayment = payments[0];
+                    
+                    if (!lastPayment) {
+                        throw new Error('No payment found for this reservation');
+                    }
+
+                    // Determinar si es un pago completo basado en el monto pendiente
+                    const isPaymentComplete = Number(reservationData.amountDue) <= 0;
+
                     await EmailService.sendPaymentNotification(
                         reservationData,
-                        reservationData.amount_paid,
-                        reservationData.amount_due === 0
+                        lastPayment.amount,
+                        isPaymentComplete
                     );
                     break;
                 default:
@@ -584,6 +591,7 @@ export class ReservationController {
                 message: 'Notification sent successfully'
             });
         } catch (error) {
+            console.log('Error sending notification:', error);
             res.status(500).json({ error: 'Error sending notification' });
         }
     }
