@@ -61,14 +61,11 @@ export default class EmailService {
                 }]
             };
 
-            console.log('Sending email with PDF attachment...');
             const info = await this.transporter.sendMail(mailOptions);
-            console.log('Email sent successfully:', info.messageId);
 
             // Eliminar el archivo PDF después de enviar el correo
             try {
                 fs.unlinkSync(pdfPath);
-                console.log('Temporary PDF file deleted:', pdfPath);
             } catch (error) {
                 console.error('Error deleting temporary PDF file:', error);
                 // No lanzamos el error para no interrumpir el flujo principal
