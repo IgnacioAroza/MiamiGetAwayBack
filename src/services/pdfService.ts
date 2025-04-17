@@ -2,7 +2,7 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 import { ReservationWithClient } from '../types/reservations.js';
-
+import { MonthlySummary } from '../types/monthlySummary.js';
 export default class PdfService {
     static async generateInvoicePdf(reservation: ReservationWithClient): Promise<string> {
         const tempDir = path.join(process.cwd(), 'temp');
@@ -228,12 +228,143 @@ export default class PdfService {
         }
     }
 
-    private static formatDate(date: any): string {
-        if (!date) return 'No specified';
+    static async generateMonthlySummaryPdf(
+        summary: MonthlySummary,
+        reservations: any[],
+        payments: any[]
+    ): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            try {
+                const doc = new PDFDocument();
+                const buffers: Buffer[] = [];
+                
+                doc.on('data', (chunk) => buffers.push(Buffer.from(chunk)));
+                doc.on('error', (error) => {
+                    console.error('Error generating the PDF:', error);
+                    reject(error);
+                });
+                
+                doc.on('end', () => {
+                    try {
+                        const pdfBuffer = Buffer.concat(buffers);
+                        resolve(pdfBuffer);
+                    } catch (error) {
+                        console.error('Error concatenating buffers:', error);
+                        reject(error);
+                    }
+                });
+                
+                this.addMonthlySummaryContent(doc, summary, reservations, payments);
+                doc.end();
+            } catch (error) {
+                console.error('General error in generateMonthlySummaryPdf:', error);
+                reject(error);
+            }
+        });
+    }
+
+    private static addMonthlySummaryContent(
+        doc: PDFKit.PDFDocument,
+        summary: MonthlySummary,
+        reservations: any[],
+        payments: any[]
+    ): void {
         try {
+            // Logo y encabezado
+            const logoPath = path.join(process.cwd(), 'src', 'assets', 'images', 'logo_texto_negro.png');
+            if (fs.existsSync(logoPath)) {
+                doc.image(logoPath, 100, 30, {
+                    fit: [400, 100],
+                    align: 'center'
+                });
+            }
+
+            // Título
+            doc.moveDown(4);
+            doc.y = 150;
+            doc.fontSize(20)
+               .text(`Monthly Summary - ${summary.month}/${summary.year}`, {
+                   align: 'center'
+               })
+               .moveDown();
+
+            // Resumen general
+            doc.fontSize(12)
+               .text('General Summary', { underline: true })
+               .moveDown()
+               .text(`Total Reservations: ${summary.totalReservations || 0}`)
+               .text(`Total Payments: ${summary.totalPayments || 0}`)
+               .text(`Total Revenue: $${(Number(summary.totalRevenue) || 0).toFixed(2)}`)
+               .moveDown();
+
+            // Lista de Reservas
+            if (reservations && reservations.length > 0) {
+                doc.text('Reservations for this month', { underline: true })
+                   .moveDown();
+                
+                reservations.forEach(reservation => {
+                    const clientName = reservation.clientName || 'No specified';
+                    const clientLastName = reservation.clientLastName || '';
+                    const checkIn = this.formatDate(reservation.checkInDate);
+                    const checkOut = this.formatDate(reservation.checkOutDate);
+                    const totalAmount = Number(reservation.totalAmount) || 0;
+                    
+                    doc.text(`Reservation #${reservation.id || 'N/A'}`)
+                       .text(`Client: ${clientName} ${clientLastName}`)
+                       .text(`Check-in: ${checkIn}`)
+                       .text(`Check-out: ${checkOut}`)
+                       .text(`Total: $${totalAmount.toFixed(2)}`)
+                       .moveDown();
+                });
+            } else {
+                doc.text('No reservations for this month')
+                   .moveDown();
+            }
+
+            // Lista de Pagos
+            if (payments && payments.length > 0) {
+                doc.text('Payments for this month', { underline: true })
+                   .moveDown();
+                
+                payments.forEach(payment => {
+                    const amount = Number(payment.amount) || 0;
+                    const paymentDate = this.formatDate(payment.paymentDate);
+                    
+                    doc.text(`Payment #${payment.id || 'N/A'}`)
+                       .text(`Reservation: #${payment.reservationId || 'N/A'}`)
+                       .text(`Client: ${payment.clientName || 'N/A'} ${payment.clientLastName || ''}`)
+                       .text(`Amount: $${amount.toFixed(2)}`)
+                       .text(`Date: ${paymentDate}`)
+                       .moveDown();
+                });
+            } else {
+                doc.text('No payments for this month')
+                   .moveDown();
+            }
+
+            // Pie de página
+            doc.fontSize(10)
+               .text('Generated on: ' + new Date().toLocaleDateString(), {
+                   align: 'center'
+               });
+        } catch (error) {
+            console.error('Error generating the PDF content:', error);
+            doc.text('Error generating the PDF content')
+               .moveDown()
+               .text('Please try again later');
+        }
+    }
+
+    private static formatDate(date: any): string {
+        try {
+            if (!date) return 'Not specified';
             const dateObj = new Date(date);
             if (isNaN(dateObj.getTime())) return 'Invalid date';
-            return dateObj.toLocaleDateString();
+            return dateObj.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
         } catch (error) {
             return 'Invalid date';
         }

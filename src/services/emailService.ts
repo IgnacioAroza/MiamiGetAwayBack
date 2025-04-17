@@ -140,4 +140,43 @@ export default class EmailService {
             `
         });
     }
+
+    static async sendMonthlySummaryEmail(
+        to: string,
+        pdfBuffer: Buffer,
+        month: number,
+        year: number
+    ): Promise<void> {
+        try {
+            const mailOptions = {
+                from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,
+                to: to,
+                subject: `Monthly Summary - ${month}/${year}`,
+                html: `
+                    <h1 style="font-size: 24px;">Monthly Summary</h1>
+                    <p style="font-size: 16px;">Attached you will find the monthly summary of reservations and payments for ${month}/${year}.</p>
+                    <p style="font-size: 16px;">This summary includes:</p>
+                    <ul style="font-size: 16px;">
+                        <li>Total reservations for the month</li>
+                        <li>Total payments received</li>
+                        <li>Total revenue</li>
+                        <li>Detailed list of reservations</li>
+                        <li>Detailed list of payments</li>
+                    </ul>
+                    <p style="font-size: 16px;">If you have any questions, please do not hesitate to contact us.</p>
+                    <p style="font-size: 16px;">Best regards,<br>Miami Get Away Team</p>
+                `,
+                attachments: [{
+                    filename: `monthly-summary-${year}-${month}.pdf`,
+                    content: pdfBuffer,
+                    contentType: 'application/pdf'
+                }]
+            };
+
+            await this.transporter.sendMail(mailOptions);
+        } catch (error) {
+            console.error('Error sending monthly summary email:', error);
+            throw error;
+        }
+    }
 }

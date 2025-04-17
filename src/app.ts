@@ -15,6 +15,7 @@ import userRoutes from './routes/user.js'
 import reservationRoutes from './routes/reservation.js'
 import reservationPaymentsRoutes from './routes/reservationPayments.js'
 import cronRoutes from './routes/cron.js'
+import monthlySummaryRoutes from './routes/monthlySummary.js'
 
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
@@ -58,6 +59,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)
 app.use('/api/cron', cronRoutes)
+app.use('/api/summaries', monthlySummaryRoutes)
 
 // Ruta de inicio
 app.get('/', (req, res) => {
