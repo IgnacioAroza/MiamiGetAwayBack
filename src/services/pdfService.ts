@@ -198,6 +198,11 @@ export default class PdfService {
         yPos += 30;
 
         // Terms & Conditions
+
+        const apartmentAddress = reservation.apartmentAddress || 'No specified';
+        console.log(apartmentAddress)
+
+
         doc.font('Helvetica-Bold')
            .fontSize(12)
            .text('Terms & Conditions', 40, yPos);
@@ -205,7 +210,7 @@ export default class PdfService {
 
         doc.font('Helvetica')
            .fontSize(12)
-           .text(`Apartment Address: ${reservation.apartmentAddress || 'No specified'}`, 40, yPos);
+           .text(`Apartment Address: ${apartmentAddress}`, 40, yPos);
         yPos += 15;
 
         doc.text(`Check in: ${this.formatDate(reservation.checkInDate)} at 4:00 pm`, 40, yPos)
