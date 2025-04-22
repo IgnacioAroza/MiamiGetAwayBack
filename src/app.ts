@@ -72,13 +72,11 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     })
 })
 
-// Iniciar el servidor solo si no estamos en modo de prueba
-if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
-        // Iniciar el servicio de cron
-        const cronService = CronService.getInstance();
-        cronService.startAllJobs();
-    })
-}
+// Iniciar el servidor
+app.listen(PORT, () => {
+    // Iniciar el servicio de cron
+    const cronService = CronService.getInstance();
+    cronService.startAllJobs();
+})
 
 export default app;
