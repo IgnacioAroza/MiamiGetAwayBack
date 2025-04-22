@@ -198,10 +198,7 @@ export default class PdfService {
         yPos += 30;
 
         // Terms & Conditions
-
         const apartmentAddress = reservation.apartmentAddress || 'No specified';
-        console.log(apartmentAddress)
-
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
