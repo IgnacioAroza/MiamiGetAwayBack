@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import morgan from 'morgan'
 
 // Importar rutas
 import apartmentRoutes from './routes/apartment.js'
@@ -45,7 +44,6 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(morgan('dev')) // Logging
 
 // Configuración de rutas
 app.use('/api/apartments', apartmentRoutes)
@@ -61,24 +59,6 @@ app.use('/api/reservation-payments', reservationPaymentsRoutes)
 app.use('/api/cron', cronRoutes)
 app.use('/api/summaries', monthlySummaryRoutes)
 
-// Ruta de inicio
-app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Welcome to the Miami Getaway API',
-        status: 'Online',
-        endpoints: {
-            apartments: '/api/apartments',
-            cars: '/api/cars',
-            villas: '/api/villas',
-            yachts: '/api/yachts',
-            reviews: '/api/reviews',
-            users: '/api/users',
-            reservations: '/api/reservations',
-            reservationPayments: '/api/reservation-payments'
-        }
-    })
-})
-
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Route not found' })
@@ -86,7 +66,6 @@ app.use('*', (req, res) => {
 
 // Manejo de errores global
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error(err.stack)
     res.status(500).json({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -96,12 +75,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Iniciar el servidor solo si no estamos en modo de prueba
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`)
-        
         // Iniciar el servicio de cron
         const cronService = CronService.getInstance();
         cronService.startAllJobs();
-        console.log('Cron service started');
     })
 }
 
