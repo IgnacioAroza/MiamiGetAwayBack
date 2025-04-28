@@ -40,7 +40,8 @@ export default class ReservationPaymentsService {
 
         const isPaymentComplete = newAmountDue <= 0;
 
-        await EmailService.sendPaymentNotification(updatedReservation, paymentAmount, isPaymentComplete);
+        // Comentamos el envío automático de email de pago
+        /*await EmailService.sendPaymentNotification(updatedReservation, paymentAmount, isPaymentComplete);*/
 
         return payment;
     }

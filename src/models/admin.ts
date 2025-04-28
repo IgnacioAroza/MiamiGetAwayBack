@@ -1,6 +1,7 @@
 import db from '../utils/db_render.js';
 import { Admin } from '../types/index.js';
 import { validateAdmin } from '../schemas/adminSchema.js';
+import bcrypt from 'bcrypt';
 
 export default class AdminModel {
     static async getAll(): Promise<Admin[]> {
@@ -34,9 +35,13 @@ export default class AdminModel {
                 throw new Error('Missing required fields');
             }
 
+            // Encriptar la contraseña
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+
             const { rows } = await db.query(
                 'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING *;',
-                [username, email, password]
+                [username, email, hashedPassword]
             );
 
             const { id, ...dataWithoutId } = adminData;
@@ -61,8 +66,11 @@ export default class AdminModel {
             updatedValues.push(email);
         }
         if (password !== undefined) {
+            // Encriptar la nueva contraseña
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
             updateFields.push(`password = $${paramCount++}`);
-            updatedValues.push(password);
+            updatedValues.push(hashedPassword);
         }
         if (updateFields.length === 0) {
             throw new Error('No valid fields to update');

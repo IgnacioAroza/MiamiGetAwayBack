@@ -101,7 +101,8 @@ export class ReservationModel {
                     c.country as "clientCountry",
                     c.notes as "clientNotes",
                     a.name as "apartmentName",
-                    a.address as "apartmentAddress"
+                    a.address as "apartmentAddress",
+                    a.description as "apartmentDescription"
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id

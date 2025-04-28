@@ -10,10 +10,11 @@ export default class ReservationService {
     static async createReservation(data: CreateReservationDTO): Promise<Reservation> {
         const reservation = await ReservationModel.createReservation(data as any);
         // Obtener los datos del cliente para el email
-        const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
-        if (reservationWithClient?.clientEmail) {
+        // const reservationWithClient = await ReservationModel.getReservationById(reservation.id) as ReservationWithClient;
+        // Comentamos el envío automático de email
+        /*if (reservationWithClient?.clientEmail) {
             await EmailService.sendConfirmationEmail(reservationWithClient.clientEmail, reservationWithClient);
-        }
+        }*/
         return reservation;
     }
 
@@ -25,12 +26,13 @@ export default class ReservationService {
         }
         const previousStatus = currentReservation.status;
         const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' });
-        if (updatedReservation) {
+        // Comentamos el envío automático de email de actualización
+        /*if (updatedReservation) {
             const updatedReservationWithClient = await ReservationModel.getReservationById(id) as ReservationWithClient;
             if (updatedReservationWithClient?.clientEmail) {
                 await EmailService.sendStatusChangeNotification(updatedReservationWithClient, previousStatus);
             }
-        }
+        }*/
         return updatedReservation;
     }
 
