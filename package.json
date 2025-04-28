@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec tsx src/app.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs');fs.cpSync('src/assets','dist/assets',{recursive:true,force:true});\"",
     "lint": "eslint . --ext .ts",
     "test": "vitest run",
     "test:watch": "vitest watch",

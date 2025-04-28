@@ -576,23 +576,43 @@ export default class PdfService {
     }
 
     private static addBackgroundImage(doc: PDFKit.PDFDocument): void {
-        const backgroundImagePath = path.join(__dirname, '..', 'assets', 'images', 'background.png');
-        if (fs.existsSync(backgroundImagePath)) {
-            try {
-                const imageBuffer = fs.readFileSync(backgroundImagePath);
-                const pageWidth = doc.page.width;
-                const pageHeight = doc.page.height;
-                doc.save();
-                doc.fillOpacity(1);
-                doc.image(imageBuffer, 0, 0, {
-                    width: pageWidth,
-                    height: pageHeight
-                });
-                doc.fillOpacity(1);
-                doc.restore();
-            } catch (imgError) {
-                // Silenciar el error de la imagen
+        try {
+            // Intentar diferentes rutas para la imagen de fondo
+            const possiblePaths = [
+                path.join(__dirname, '..', 'assets', 'images', 'background.png'),
+                path.join(process.cwd(), 'src', 'assets', 'images', 'background.png'),
+                path.join(process.cwd(), 'assets', 'images', 'background.png'),
+                path.join(process.cwd(), 'dist', 'assets', 'images', 'background.png')
+            ];
+
+            let backgroundImagePath = '';
+            for (const possiblePath of possiblePaths) {
+                if (fs.existsSync(possiblePath)) {
+                    backgroundImagePath = possiblePath;
+                    break;
+                }
             }
+
+            if (!backgroundImagePath) {
+                console.error('Background image not found');
+                return;
+            }
+
+            const imageBuffer = fs.readFileSync(backgroundImagePath);
+            const pageWidth = doc.page.width;
+            const pageHeight = doc.page.height;
+            
+            doc.save();
+            doc.fillOpacity(1);
+            doc.image(imageBuffer, 0, 0, {
+                width: pageWidth,
+                height: pageHeight
+            });
+            doc.fillOpacity(1);
+            doc.restore();
+        } catch (error) {
+            console.error('Error adding background image');
+            // No lanzamos el error para no interrumpir la generación del PDF
         }
     }
 }
