@@ -308,30 +308,33 @@ export default class PdfService {
 
         // Cleaning fee
         if (reservation.cleaningFee > 0) {
+            const cleaningFee = Number(reservation.cleaningFee) || 0;
             doc.text('Cleaning fee', colX.description + 5, currentY + 5)
                .text('1.00', colX.quantity + 5, currentY + 5)
-               .text(`$${reservation.cleaningFee.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
-               .text(`$${reservation.cleaningFee.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
+               .text(`$${cleaningFee.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
+               .text(`$${cleaningFee.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
             drawHorizontalLine(currentY);
         }
 
         // Parking fee
         if (reservation.parkingFee > 0) {
+            const parkingFee = Number(reservation.parkingFee) || 0;
             doc.text('Parking fee', colX.description + 5, currentY + 5)
                .text('1.00', colX.quantity + 5, currentY + 5)
-               .text(`$${reservation.parkingFee.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
-               .text(`$${reservation.parkingFee.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
+               .text(`$${parkingFee.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
+               .text(`$${parkingFee.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
             drawHorizontalLine(currentY);
         }
 
         // Other expenses
         if (reservation.otherExpenses > 0) {
+            const otherExpenses = Number(reservation.otherExpenses) || 0;
             doc.text('Other expenses', colX.description + 5, currentY + 5)
                .text('1.00', colX.quantity + 5, currentY + 5)
-               .text(`$${reservation.otherExpenses.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
-               .text(`$${reservation.otherExpenses.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
+               .text(`$${otherExpenses.toFixed(2)}`, colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
+               .text(`$${otherExpenses.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
             drawHorizontalLine(currentY);
         }
