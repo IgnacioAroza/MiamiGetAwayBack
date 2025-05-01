@@ -173,9 +173,11 @@ export class ReservationModel {
             throw new Error(JSON.stringify(validateResult.error));
         }
 
+        let setClause = '';
+        let values: any[] = []; // Declare values outside the try block
         try {
             // Convertir nombres de columnas de camelCase a snake_case
-            const setClause = Object.keys(reservationData)
+            setClause = Object.keys(reservationData)
                 .map((key, index) => {
                     const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
                     if (snakeCaseKey === 'check_in_date' || snakeCaseKey === 'check_out_date') {
@@ -184,8 +186,10 @@ export class ReservationModel {
                     return `${snakeCaseKey} = $${index + 1}`;
                 })
                 .join(', ');
-            
-            const values = Object.values(reservationData);
+
+            values = Object.values(reservationData);
+
+            // Asegurarse de que los índices de los parámetros sean correctos
             values.push(id);
 
             const { rows } = await db.query(
@@ -197,6 +201,7 @@ export class ReservationModel {
             );
             return rows[0];
         } catch (error) {
+            console.error('Error in updateReservation SQL:', (error as Error).message, 'Query:', setClause, 'Values:', values);
             throw error;
         }
     }
