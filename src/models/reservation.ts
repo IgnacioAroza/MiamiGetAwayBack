@@ -173,21 +173,24 @@ export class ReservationModel {
             throw new Error(JSON.stringify(validateResult.error));
         }
 
-        let setClause = '';
+        let setClause = ''; // Declare setClause outside the try block
         let values: any[] = []; // Declare values outside the try block
         try {
             // Convertir nombres de columnas de camelCase a snake_case
             setClause = Object.keys(reservationData)
                 .map((key, index) => {
                     const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-                    if (snakeCaseKey === 'check_in_date' || snakeCaseKey === 'check_out_date') {
-                        return `${snakeCaseKey} = (TIMESTAMP WITH TIME ZONE $${index + 1} AT TIME ZONE 'America/New_York')`;
-                    }
                     return `${snakeCaseKey} = $${index + 1}`;
                 })
                 .join(', ');
 
-            values = Object.values(reservationData);
+            // Convertir fechas a cadenas ISO si están presentes
+            values = Object.values(reservationData).map(value => {
+                if (value instanceof Date) {
+                    return value.toISOString();
+                }
+                return value;
+            });
 
             // Asegurarse de que los índices de los parámetros sean correctos
             values.push(id);
@@ -201,7 +204,11 @@ export class ReservationModel {
             );
             return rows[0];
         } catch (error) {
-            console.error('Error in updateReservation SQL:', (error as Error).message, 'Query:', setClause, 'Values:', values);
+            if (error instanceof Error) {
+                console.error('Error in updateReservation SQL:', error.message, 'Query:', setClause, 'Values:', values);
+            } else {
+                console.error('Error in updateReservation SQL:', error, 'Query:', setClause, 'Values:', values);
+            }
             throw error;
         }
     }
