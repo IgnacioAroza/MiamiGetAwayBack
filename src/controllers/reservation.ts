@@ -306,6 +306,7 @@ export class ReservationController {
             
             res.status(200).json(updatedReservation);
         } catch (error) {
+            console.error('Error in updateReservation:', error); // Log detallado del error
             res.status(500).json({ error: 'Error updating reservation' });
         }
     }
