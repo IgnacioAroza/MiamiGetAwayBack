@@ -133,7 +133,12 @@ export class ReservationModel {
                     cleaning_fee, other_expenses, taxes, total_amount, 
                     amount_paid, amount_due, parking_fee, status, payment_status,
                     notes, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
+                ) VALUES (
+                    $1, $2, 
+                    (TIMESTAMP WITH TIME ZONE $3 AT TIME ZONE 'America/New_York'), 
+                    (TIMESTAMP WITH TIME ZONE $4 AT TIME ZONE 'America/New_York'), 
+                    $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+                ) 
                 RETURNING *`, 
                 [
                     reservationData.apartmentId,
@@ -162,6 +167,7 @@ export class ReservationModel {
     }
 
     static async updateReservation(id: number, reservationData: Partial<Reservation>): Promise<Reservation> {
+        console.log('Reservation data to update:', reservationData); // Log de los datos que se van a actualizar
         const validateResult = validatePartialReservation(reservationData);
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error));
@@ -172,6 +178,9 @@ export class ReservationModel {
             const setClause = Object.keys(reservationData)
                 .map((key, index) => {
                     const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                    if (snakeCaseKey === 'check_in_date' || snakeCaseKey === 'check_out_date') {
+                        return `${snakeCaseKey} = (TIMESTAMP WITH TIME ZONE $${index + 1} AT TIME ZONE 'America/New_York')`;
+                    }
                     return `${snakeCaseKey} = $${index + 1}`;
                 })
                 .join(', ');

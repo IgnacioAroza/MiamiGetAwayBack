@@ -20,6 +20,7 @@ export default class ReservationService {
 
     // Actualizar reserva con notificacion
     static async updateReservation(id: number, status: string): Promise<Reservation> {
+        console.log('Updating reservation with ID:', id, 'and status:', status); // Log antes de actualizar
         const currentReservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!currentReservation) {
             throw new Error('Reservation not found');
