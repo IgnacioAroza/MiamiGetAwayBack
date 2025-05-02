@@ -135,16 +135,15 @@ export class ReservationModel {
                     notes, created_at
                 ) VALUES (
                     $1, $2, 
-                    (TIMESTAMP WITH TIME ZONE $3 AT TIME ZONE 'America/New_York'), 
-                    (TIMESTAMP WITH TIME ZONE $4 AT TIME ZONE 'America/New_York'), 
-                    $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+                    $3, $4, $5, $6, $7, $8, $9, $10, 
+                    $11, $12, $13, $14, $15, $16, $17
                 ) 
                 RETURNING *`, 
                 [
                     reservationData.apartmentId,
                     reservationData.clientId,
-                    reservationData.checkInDate,
-                    reservationData.checkOutDate,
+                    reservationData.checkInDate instanceof Date ? reservationData.checkInDate.toISOString() : reservationData.checkInDate,
+                    reservationData.checkOutDate instanceof Date ? reservationData.checkOutDate.toISOString() : reservationData.checkOutDate,
                     reservationData.nights,
                     reservationData.pricePerNight,
                     reservationData.cleaningFee,
@@ -157,7 +156,7 @@ export class ReservationModel {
                     reservationData.status,
                     reservationData.paymentStatus,
                     reservationData.notes,
-                    reservationData.createdAt
+                    new Date().toISOString() // created_at
                 ]
             );
             return rows[0];
@@ -167,7 +166,6 @@ export class ReservationModel {
     }
 
     static async updateReservation(id: number, reservationData: Partial<Reservation>): Promise<Reservation> {
-        console.log('Reservation data to update:', reservationData); // Log de los datos que se van a actualizar
         const validateResult = validatePartialReservation(reservationData);
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error));
