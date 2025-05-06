@@ -551,13 +551,26 @@ export default class PdfService {
     private static formatDate(date: any): string {
         try {
             if (!date) return 'Not specified';
+    
+            // Si la fecha ya es una cadena en formato ISO, procesarla
+            if (typeof date === 'string' && date.includes('T')) {
+                const [fullDate, fullTime] = date.split('T');
+                const time = fullTime.split(':').slice(0, 2).join(':'); // Extraer HH:mm
+                return `${fullDate} ${time}`; // Combinar fecha y hora
+            }
+    
+            // Si es un objeto Date, formatear manualmente (aunque no debería ser necesario)
             const dateObj = new Date(date);
-            if (isNaN(dateObj.getTime())) return 'Invalid date';
-            return dateObj.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
+            if (!isNaN(dateObj.getTime())) {
+                const year = dateObj.getUTCFullYear();
+                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+                const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            }
+    
+            return 'Invalid date';
         } catch (error) {
             return 'Invalid date';
         }

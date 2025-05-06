@@ -88,8 +88,6 @@ export class ReservationController {
     }
 
     static async updateReservation(req: Request, res: Response): Promise<void> {
-        console.log('Request body:', req.body); // Log del cuerpo de la solicitud
-        console.log('Request params:', req.params); // Log de los parámetros de la solicitud
         const { id } = req.params;
         try {
             const validateResult = validatePartialReservation(req.body);
