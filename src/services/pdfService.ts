@@ -397,9 +397,6 @@ export default class PdfService {
         doc.font('Helvetica')
            .fillColor('white')
            .text(`Apartment Description: ${apartmentDescription}`, 40, yPos);
-        yPos += 15;
-
-        doc.text('Check-in from 1 PM, check-out until 11 AM', 40, yPos)
         yPos += 45;
 
         doc.font('Helvetica-Bold')
@@ -551,23 +548,32 @@ export default class PdfService {
     private static formatDate(date: any): string {
         try {
             if (!date) return 'Not specified';
-    
-            // Si la fecha ya es una cadena en formato ISO, procesarla
-            if (typeof date === 'string' && date.includes('T')) {
-                const [fullDate, fullTime] = date.split('T');
-                const time = fullTime.split(':').slice(0, 2).join(':'); // Extraer HH:mm
-                return `${fullDate} ${time}`; // Combinar fecha y hora
+            
+            // Si es un string y tiene el formato MM-DD-YYYY HH:mm
+            if (typeof date === 'string') {
+                // Verificar si es el nuevo formato MM-DD-YYYY HH:mm
+                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
+                if (dateTimeRegex.test(date)) {
+                    return date; // Ya está en el formato deseado, lo devolvemos tal cual
+                }
+                
+                // Si no es el nuevo formato pero es un string con 'T' (formato ISO)
+                if (date.includes('T')) {
+                    const [fullDate, fullTime] = date.split('T');
+                    const time = fullTime.split(':').slice(0, 2).join(':'); // Extraer HH:mm
+                    return `${fullDate} ${time}`; // Combinar fecha y hora
+                }
             }
     
-            // Si es un objeto Date, formatear manualmente (aunque no debería ser necesario)
+            // Si es un objeto Date, formatear manualmente al nuevo formato
             const dateObj = new Date(date);
             if (!isNaN(dateObj.getTime())) {
-                const year = dateObj.getUTCFullYear();
-                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getUTCDate()).padStart(2, '0');
-                const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-                const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}`;
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                return `${month}-${day}-${year} ${hours}:${minutes}`;
             }
     
             return 'Invalid date';

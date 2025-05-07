@@ -14,24 +14,32 @@ export class ReservationController {
             
             if (req.query.startDate) {
                 try {
-                    filters.startDate = new Date(req.query.startDate as string);
-                    if (isNaN(filters.startDate.getTime())) {
-                        throw new Error('Check in date is invalid');
+                    // Ya no convertimos a Date, pasamos directamente el string
+                    filters.startDate = req.query.startDate as string;
+                    
+                    // Validar el formato de fecha MM-DD-YYYY HH:mm
+                    const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
+                    if (!dateTimeRegex.test(filters.startDate)) {
+                        throw new Error('Check in date format is invalid. Use MM-DD-YYYY HH:mm');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'Check in date is invalid' });
+                    res.status(400).json({ error: 'Check in date is invalid. Format must be MM-DD-YYYY HH:mm' });
                     return;
                 }
             }
             
             if (req.query.endDate) {
                 try {
-                    filters.endDate = new Date(req.query.endDate as string);
-                    if (isNaN(filters.endDate.getTime())) {
-                        throw new Error('Check out date is invalid');
+                    // Ya no convertimos a Date, pasamos directamente el string
+                    filters.endDate = req.query.endDate as string;
+                    
+                    // Validar el formato de fecha MM-DD-YYYY HH:mm
+                    const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
+                    if (!dateTimeRegex.test(filters.endDate)) {
+                        throw new Error('Check out date format is invalid. Use MM-DD-YYYY HH:mm');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'Check out date is invalid' });
+                    res.status(400).json({ error: 'Check out date is invalid. Format must be MM-DD-YYYY HH:mm' });
                     return;
                 }
             }
@@ -158,8 +166,13 @@ export class ReservationController {
                 const parkingFeeNum = Number(parkingFee);
                 const taxesNum = Number(taxes);
                 
-                // Calcular el nuevo precio total asegurando que todos son números
-                totalAmount = (nightsNum * pricePerNightNum) + cleaningFeeNum + otherExpensesNum + parkingFeeNum + taxesNum;
+                // Calcular el subtotal (sin impuestos) primero
+                const subtotal = (nightsNum * pricePerNightNum) + cleaningFeeNum + otherExpensesNum + parkingFeeNum;
+                
+                // Los impuestos ya NO se calculan, se usan directamente como los proporciona el usuario
+                
+                // Calcular el total incluyendo los impuestos proporcionados por el usuario
+                totalAmount = subtotal + taxesNum;
                 
                 // Verificar si el cálculo resultó en NaN
                 if (isNaN(totalAmount)) {

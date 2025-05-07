@@ -3,6 +3,7 @@ import { ReservationModel } from '../models/reservation.js';
 import db from '../utils/db_render.js';
 import { QueryResult } from 'pg';
 import EmailService from './emailService.js';
+import { parseReservationDate } from '../schemas/reservationSchema.js';
 
 /**
  * Servicio para manejar tareas programadas (cron jobs)
@@ -60,9 +61,9 @@ export class CronService {
    */
   public async updateReservationStatuses(): Promise<{ updated: number, message: string }> {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Establecer a medianoche para comparación de fechas
-    
+      // Obtener fecha actual en formato MM-DD-YYYY
+      const now = new Date();
+      const todayFormatted = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${now.getFullYear()} 00:00`;
 
       // Buscar reservas que necesitan actualización de estado
       const reservations = await ReservationModel.getReservationsForStatusUpdate();
@@ -70,14 +71,15 @@ export class CronService {
       let updatedCount = 0;
 
       for (const reservation of reservations) {
-        const checkInDate = new Date(reservation.check_in_date);
-        checkInDate.setHours(0, 0, 0, 0);
+        // Extraer solo la parte de la fecha (sin hora) para comparar
+        const checkInDateParts = reservation.check_in_date.split(' ')[0]; // MM-DD-YYYY
+        const checkOutDateParts = reservation.check_out_date.split(' ')[0]; // MM-DD-YYYY
         
-        const checkOutDate = new Date(reservation.check_out_date);
-        checkOutDate.setHours(0, 0, 0, 0);
+        // Normalizar la fecha actual para comparar solo MM-DD-YYYY
+        const todayParts = todayFormatted.split(' ')[0]; // MM-DD-YYYY
 
         // Verificar si hoy es la fecha de check-in
-        if (this.areDatesEqual(today, checkInDate) && reservation.status === 'confirmed') {
+        if (todayParts === checkInDateParts && reservation.status === 'confirmed') {
           const previousStatus = reservation.status;
           await ReservationModel.updateReservationStatus(reservation.id, 'checked_in');
           await this.sendStatusChangeNotification(reservation.id, previousStatus);
@@ -85,7 +87,7 @@ export class CronService {
         }
         
         // Verificar si hoy es la fecha de check-out
-        else if (this.areDatesEqual(today, checkOutDate) && reservation.status === 'checked_in') {
+        else if (todayParts === checkOutDateParts && reservation.status === 'checked_in') {
           const previousStatus = reservation.status;
           await ReservationModel.updateReservationStatus(reservation.id, 'checked_out');
           await this.sendStatusChangeNotification(reservation.id, previousStatus);
@@ -123,13 +125,4 @@ export class CronService {
       // No lanzamos el error para evitar que interrumpa el proceso principal
     }
   }
-
-  /**
-   * Compara si dos fechas son iguales (ignorando la hora)
-   */
-  private areDatesEqual(date1: Date, date2: Date): boolean {
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
-  }
-} 
+}

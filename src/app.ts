@@ -69,8 +69,8 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Iniciar el servidor
 app.listen(PORT, () => {
     // Iniciar el servicio de cron
-    const cronService = CronService.getInstance();
-    cronService.startAllJobs();
+    // const cronService = CronService.getInstance();
+    // cronService.startAllJobs();
 })
 
 export default app;

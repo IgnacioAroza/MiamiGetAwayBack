@@ -1,11 +1,11 @@
 import db from '../utils/db_render.js';
 import { Reservation } from '../types/reservations.js';
-import { validateReservation, validatePartialReservation } from '../schemas/reservationSchema.js';
+import { validateReservation, validatePartialReservation, parseReservationDate } from '../schemas/reservationSchema.js';
 
 export class ReservationModel {
     static async getAllReservations(filters: {
-        startDate?: Date,
-        endDate?: Date,
+        startDate?: string, // Cambiado de Date a string
+        endDate?: string,   // Cambiado de Date a string
         status?: string,
         clientName?: string,
         clientEmail?: string
@@ -142,8 +142,8 @@ export class ReservationModel {
                 [
                     reservationData.apartmentId,
                     reservationData.clientId,
-                    reservationData.checkInDate instanceof Date ? reservationData.checkInDate.toISOString() : reservationData.checkInDate,
-                    reservationData.checkOutDate instanceof Date ? reservationData.checkOutDate.toISOString() : reservationData.checkOutDate,
+                    reservationData.checkInDate, // Ya es un string, no necesita conversión
+                    reservationData.checkOutDate, // Ya es un string, no necesita conversión
                     reservationData.nights,
                     reservationData.pricePerNight,
                     reservationData.cleaningFee,
@@ -156,7 +156,14 @@ export class ReservationModel {
                     reservationData.status,
                     reservationData.paymentStatus,
                     reservationData.notes,
-                    new Date().toISOString() // created_at
+                    reservationData.createdAt || new Date().toLocaleDateString('en-US', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).replace(',', '').replace(/(\d+)\/(\d+)\/(\d+) (\d+):(\d+)/, '$1-$2-$3 $4:$5')
                 ]
             );
             return rows[0];
@@ -182,13 +189,8 @@ export class ReservationModel {
                 })
                 .join(', ');
 
-            // Convertir fechas a cadenas ISO si están presentes
-            values = Object.values(reservationData).map(value => {
-                if (value instanceof Date) {
-                    return value.toISOString();
-                }
-                return value;
-            });
+            // Ya no necesitamos convertir fechas a cadenas ISO
+            values = Object.values(reservationData);
 
             // Asegurarse de que los índices de los parámetros sean correctos
             values.push(id);

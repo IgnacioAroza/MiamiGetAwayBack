@@ -4,6 +4,7 @@ import PdfService from './pdfService.js';
 import { Reservation, CreateReservationDTO, ReservationWithClient } from '../types/reservations.js';
 import ReservationPaymentsService from './reservationPaymentsService.js';
 import db from '../utils/db_render.js';
+import { parseReservationDate } from '../schemas/reservationSchema.js';
 
 export default class ReservationService {
     // Crear reserva con notificacion
@@ -95,14 +96,9 @@ export default class ReservationService {
                 throw new Error('Reservation not found');
             }
             
-            // Asegurarnos de que las fechas sean objetos Date válidos
-            if (reservation.checkInDate && !(reservation.checkInDate instanceof Date)) {
-                reservation.checkInDate = new Date(reservation.checkInDate);
-            }
-            
-            if (reservation.checkOutDate && !(reservation.checkOutDate instanceof Date)) {
-                reservation.checkOutDate = new Date(reservation.checkOutDate);
-            }
+            // Ya no es necesario convertir las fechas a objeto Date,
+            // pero podríamos necesitar proporcionar una función helper para el PDF
+            // en caso de que el servicio de PDF espere objetos Date
             
             // Asegurar que los campos numéricos sean números
             if (reservation.nights !== undefined && typeof reservation.nights !== 'number') {
@@ -163,8 +159,8 @@ export default class ReservationService {
 
     // Otros métodos CRUD simplificados (sin lógica de email)
     static async getAllReservations(filters: {
-        startDate?: Date,
-        endDate?: Date,
+        startDate?: string, // Cambiado de Date a string
+        endDate?: string,   // Cambiado de Date a string
         status?: string,
         clientName?: string,
         clientEmail?: string
