@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: miami_getaway_demo_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: miami_getaway_demo
+    ports:
+      - "5433:5432"  # Usar puerto diferente para evitar conflictos
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/scripts:/docker-entrypoint-initdb.d  # Tus scripts se ejecutarán automáticamente
+
+volumes:
+  postgres_data:

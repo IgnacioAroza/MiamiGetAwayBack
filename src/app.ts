@@ -1,6 +1,10 @@
+import dotenv from 'dotenv';
+// RESTO DE IMPORTACIONES DESPUÉS de cargar las variables de entorno
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
+import morgan from 'morgan'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 // Importar rutas
 import apartmentRoutes from './routes/apartment.js'
@@ -19,12 +23,8 @@ import monthlySummaryRoutes from './routes/monthlySummary.js'
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
 
-// Configuración de variables de entorno
-dotenv.config()
-
 // Crear la aplicación Express
 const app = express()
-const PORT = process.env.PORT || 3000
 
 // Configuración de middlewares
 const corsOptions = {
@@ -38,6 +38,7 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(morgan('dev'))
 
 // Configuración de rutas
 app.use('/api/apartments', apartmentRoutes)
@@ -67,7 +68,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 })
 
 // Iniciar el servidor
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
     // Iniciar el servicio de cron
     // const cronService = CronService.getInstance();
     // cronService.startAllJobs();

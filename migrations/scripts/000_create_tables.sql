@@ -1,3 +1,52 @@
+-- Tabla Admins
+CREATE TABLE IF NOT EXISTS admins (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla Cars
+CREATE TABLE IF NOT EXISTS cars (
+    id SERIAL PRIMARY KEY,
+    brand VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    images JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla Villas
+CREATE TABLE IF NOT EXISTS villas (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    capacity INTEGER,
+    rooms INTEGER,
+    bathrooms INTEGER,
+    price DECIMAL(10,2) NOT NULL,
+    images JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla Yatchs
+CREATE TABLE IF NOT EXISTS yatchs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    capacity INTEGER,
+    price DECIMAL(10,2) NOT NULL,
+    images JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Crear tabla de clientes
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
@@ -5,19 +54,33 @@ CREATE TABLE IF NOT EXISTS clients (
     lastname VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
+    address TEXT,
+    city VARCHAR(100),
+    country VARCHAR(100),
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla Reviews
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    NAME VARCHAR(100),
+    comment TEXT
 );
 
 -- Crear tabla de apartamentos
 CREATE TABLE IF NOT EXISTS apartments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    address TEXT NOT NULL,
-    description TEXT,
-    price_per_night DECIMAL(10,2) NOT NULL,
-    cleaning_fee DECIMAL(10,2) DEFAULT 0,
-    parking_fee DECIMAL(10,2) DEFAULT 0,
+    description TEXT NOT NULL,
+    unit_number VARCHAR(20),
+    address VARCHAR(255) NOT NULL,
+    capacity INTEGER,
+    rooms INTEGER,
+    bathrooms INTEGER,
+    price DECIMAL(10,2) NOT NULL,
+    images JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -27,8 +90,8 @@ CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY,
     client_id INTEGER REFERENCES clients(id),
     apartment_id INTEGER REFERENCES apartments(id),
-    check_in_date DATE NOT NULL,
-    check_out_date DATE NOT NULL,
+    check_in_date VARCHAR(20) NOT NULL,
+    check_out_date VARCHAR(20) NOT NULL,
     nights INTEGER NOT NULL,
     price_per_night DECIMAL(10,2) NOT NULL,
     cleaning_fee DECIMAL(10,2) DEFAULT 0,
@@ -36,9 +99,12 @@ CREATE TABLE IF NOT EXISTS reservations (
     other_expenses DECIMAL(10,2) DEFAULT 0,
     taxes DECIMAL(10,2) DEFAULT 0,
     total_amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
+    amount_paid DECIMAL(10,2) DEFAULT 0.00,
+    amount_due DECIMAL(10,2) DEFAULT 0.00,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'check-in', 'check-out')),
+    payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'partial', 'complete')),
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at VARCHAR(20) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

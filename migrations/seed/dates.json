@@ -1,0 +1,329 @@
+{
+  "cars": [
+    {
+      "brand": "BMW",
+      "model": "X5",
+      "description": "SUV de lujo con todas las comodidades para explorar Miami",
+      "price": 120.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501234/miami_getaway/cars/bmw_x5_1.jpg",
+          "alt": "BMW X5 frontal"
+        }
+      ]
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class Convertible",
+      "description": "Convertible elegante ideal para recorrer Ocean Drive",
+      "price": 150.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501235/miami_getaway/cars/mercedes_c_1.jpg",
+          "alt": "Mercedes-Benz C-Class"
+        }
+      ]
+    },
+    {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "description": "Vehículo robusto perfecto para aventuras en los Everglades",
+      "price": 95.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501236/miami_getaway/cars/jeep_wrangler_1.jpg",
+          "alt": "Jeep Wrangler"
+        }
+      ]
+    }
+  ],
+  "villas": [
+    {
+      "name": "Villa Bahía",
+      "description": "Espectacular villa con vista al mar y acceso directo a la playa",
+      "address": "123 Palm Island Dr, Miami Beach, FL 33139",
+      "capacity": 8,
+      "rooms": 4,
+      "bathrooms": 3,
+      "price": 750.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501237/miami_getaway/villas/villa_bahia_1.jpg",
+          "alt": "Villa Bahía frente al mar"
+        }
+      ]
+    },
+    {
+      "name": "Villa Palmera",
+      "description": "Hermosa villa con piscina privada y jardín tropical",
+      "address": "456 Coconut Grove Ave, Miami, FL 33133",
+      "capacity": 6,
+      "rooms": 3,
+      "bathrooms": 2,
+      "price": 550.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501238/miami_getaway/villas/villa_palmera_1.jpg",
+          "alt": "Villa Palmera con piscina"
+        }
+      ]
+    },
+    {
+      "name": "Villa Oasis",
+      "description": "Lujosa villa con spa, sauna y sala de cine",
+      "address": "789 Coral Way, Coral Gables, FL 33134",
+      "capacity": 10,
+      "rooms": 5,
+      "bathrooms": 4,
+      "price": 950.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501239/miami_getaway/villas/villa_oasis_1.jpg",
+          "alt": "Villa Oasis con jardín"
+        }
+      ]
+    }
+  ],
+  "yatchs": [
+    {
+      "name": "Serenity",
+      "description": "Yate de lujo de 75 pies con 3 camarotes y terraza panorámica",
+      "capacity": 12,
+      "price": 1200.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501240/miami_getaway/yachts/serenity_1.jpg",
+          "alt": "Yate Serenity"
+        }
+      ]
+    },
+    {
+      "name": "Ocean Breeze",
+      "description": "Yate deportivo de 60 pies ideal para navegar por Biscayne Bay",
+      "capacity": 8,
+      "price": 950.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501241/miami_getaway/yachts/ocean_breeze_1.jpg",
+          "alt": "Yate Ocean Breeze"
+        }
+      ]
+    },
+    {
+      "name": "Royal Blue",
+      "description": "Catamaran de 55 pies perfecto para fiestas y eventos especiales",
+      "capacity": 20,
+      "price": 1500.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501242/miami_getaway/yachts/royal_blue_1.jpg",
+          "alt": "Catamaran Royal Blue"
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "name": "John",
+      "lastname": "Smith",
+      "email": "john.smith@example.com",
+      "phone": "+1 (305) 555-1234",
+      "address": "123 Ocean Drive",
+      "city": "New York",
+      "country": "USA",
+      "notes": "Cliente frecuente, prefiere apartamentos cerca de South Beach"
+    },
+    {
+      "name": "Maria",
+      "lastname": "González",
+      "email": "maria.gonzalez@example.com",
+      "phone": "+34 912 345 678",
+      "address": "Calle Mayor 12",
+      "city": "Madrid",
+      "country": "España",
+      "notes": "Ha reservado varias veces villas para vacaciones familiares"
+    },
+    {
+      "name": "Thomas",
+      "lastname": "Müller",
+      "email": "thomas.muller@example.com",
+      "phone": "+49 30 12345678",
+      "address": "Berlinerstr. 42",
+      "city": "Berlín",
+      "country": "Alemania",
+      "notes": "Le interesan tours en yate y excursiones de pesca"
+    }
+  ],
+  "reviews": [
+    {
+      "name": "Sarah J.",
+      "comment": "Nuestra estancia en el apartamento Ocean View fue increíble. Vistas espectaculares y excelente ubicación. ¡Volveremos seguro!"
+    },
+    {
+      "name": "Michael R.",
+      "comment": "El BMW X5 que alquilamos estaba impecable y fue perfecto para nuestro viaje familiar por Florida. El servicio fue excelente."
+    },
+    {
+      "name": "Laura T.",
+      "comment": "La experiencia en el yate Royal Blue superó todas nuestras expectativas. La tripulación fue muy profesional y atenta."
+    }
+  ],
+  "apartments": [
+    {
+      "name": "Ocean View Studio",
+      "description": "Estudio moderno con impresionantes vistas al mar",
+      "unit_number": "1001",
+      "address": "123 Collins Ave, Miami Beach, FL 33139",
+      "capacity": 2,
+      "rooms": 0,
+      "bathrooms": 1,
+      "price": 120.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501243/miami_getaway/apartments/ocean_view_1.jpg",
+          "alt": "Vista desde Ocean View Studio"
+        }
+      ]
+    },
+    {
+      "name": "Downtown Loft",
+      "description": "Espacioso loft en el corazón de Brickell",
+      "unit_number": "501",
+      "address": "789 Brickell Ave, Miami, FL 33131",
+      "capacity": 4,
+      "rooms": 1,
+      "bathrooms": 1,
+      "price": 180.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501244/miami_getaway/apartments/downtown_loft_1.jpg",
+          "alt": "Interior del Downtown Loft"
+        }
+      ]
+    },
+    {
+      "name": "Beachfront Condo",
+      "description": "Condominio de lujo con acceso directo a la playa",
+      "unit_number": "2203",
+      "address": "456 Ocean Dr, Miami Beach, FL 33139",
+      "capacity": 6,
+      "rooms": 2,
+      "bathrooms": 2,
+      "price": 250.00,
+      "images": [
+        {
+          "url": "https://res.cloudinary.com/dcxa0ozit/image/upload/v1714501245/miami_getaway/apartments/beachfront_condo_1.jpg",
+          "alt": "Terraza del Beachfront Condo"
+        }
+      ]
+    }
+  ],
+  "reservations": [
+    {
+      "client_id": 1,
+      "apartment_id": 1,
+      "check_in_date": "2025-06-15",
+      "check_out_date": "2025-06-20",
+      "nights": 5,
+      "price_per_night": 120.00,
+      "cleaning_fee": 50.00,
+      "parking_fee": 25.00,
+      "other_expenses": 0.00,
+      "taxes": 39.00,
+      "total_amount": 714.00,
+      "amount_paid": 714.00,
+      "amount_due": 0.00,
+      "status": "confirmed",
+      "payment_status": "complete",
+      "notes": "El cliente solicitó check-in temprano",
+      "created_at": "2025-05-01 10:00:00"
+    },
+    {
+      "client_id": 2,
+      "apartment_id": 2,
+      "check_in_date": "2025-07-10",
+      "check_out_date": "2025-07-17",
+      "nights": 7,
+      "price_per_night": 180.00,
+      "cleaning_fee": 80.00,
+      "parking_fee": 30.00,
+      "other_expenses": 100.00,
+      "taxes": 77.00,
+      "total_amount": 1547.00,
+      "amount_paid": 0.00,
+      "amount_due": 1547.00,
+      "status": "pending",
+      "payment_status": "pending",
+      "notes": "Solicitó información sobre alquiler de coche",
+      "created_at": "2025-05-05 14:30:00"
+    },
+    {
+      "client_id": 3,
+      "apartment_id": 3,
+      "check_in_date": "2025-08-05",
+      "check_out_date": "2025-08-12",
+      "nights": 7,
+      "price_per_night": 250.00,
+      "cleaning_fee": 100.00,
+      "parking_fee": 40.00,
+      "other_expenses": 0.00,
+      "taxes": 108.50,
+      "total_amount": 1998.50,
+      "amount_paid": 999.25,
+      "amount_due": 999.25,
+      "status": "confirmed",
+      "payment_status": "partial",
+      "notes": "Familia con 2 niños, necesita cuna",
+      "created_at": "2025-05-10 09:15:00"
+    }
+  ],
+  "reservation_payments": [
+    {
+      "reservation_id": 1,
+      "amount": 714.00,
+      "payment_date": "2025-05-01 11:30:00",
+      "payment_method": "credit_card",
+      "status": "completed",
+      "notes": "Pago completo realizado al confirmar la reserva"
+    },
+    {
+      "reservation_id": 3,
+      "amount": 999.25,
+      "payment_date": "2025-05-10 10:00:00",
+      "payment_method": "bank_transfer",
+      "status": "completed",
+      "notes": "Pago del 50% como depósito inicial"
+    },
+    {
+      "reservation_id": 3,
+      "amount": 999.25,
+      "payment_date": "2025-05-15 16:45:00",
+      "payment_method": "paypal",
+      "status": "completed",
+      "notes": "Pago del saldo restante"
+    }
+  ],
+  "monthly_summaries": [
+    {
+      "month": 5,
+      "year": 2025,
+      "total_reservations": 3,
+      "total_payments": 3,
+      "total_revenue": 2712.50
+    },
+    {
+      "month": 6,
+      "year": 2025,
+      "total_reservations": 1,
+      "total_payments": 1,
+      "total_revenue": 714.00
+    },
+    {
+      "month": 7,
+      "year": 2025,
+      "total_reservations": 1,
+      "total_payments": 0,
+      "total_revenue": 0.00
+    }
+  ]
+}
