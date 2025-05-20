@@ -13,14 +13,12 @@ export class ReservationPaymentModel {
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    status,
-                    notes,
-                    created_at as "createdAt",
-                    updated_at as "updatedAt"
+                    notes
                 FROM reservation_payments
             `);
             return rows;
         } catch (error) {
+            console.log(error);
             throw error;
         }
     }
@@ -35,10 +33,7 @@ export class ReservationPaymentModel {
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    status,
-                    notes,
-                    created_at as "createdAt",
-                    updated_at as "updatedAt"
+                    notes
                 FROM reservation_payments
                 WHERE id = $1
             `, [id]);
@@ -65,10 +60,7 @@ export class ReservationPaymentModel {
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    status,
-                    notes,
-                    created_at as "createdAt",
-                    updated_at as "updatedAt"
+                    notes
             `, [
                 reservationPaymentData.reservationId,
                 reservationPaymentData.amount,
@@ -111,10 +103,7 @@ export class ReservationPaymentModel {
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    status,
-                    notes,
-                    created_at as "createdAt",
-                    updated_at as "updatedAt"
+                    notes
                 `,
                 values
             );
@@ -145,10 +134,7 @@ export class ReservationPaymentModel {
                 payment_date as "paymentDate",
                 payment_method as "paymentMethod",
                 payment_reference as "paymentReference",
-                status,
-                notes,
-                created_at as "createdAt",
-                updated_at as "updatedAt"
+                notes
             FROM reservation_payments
             WHERE reservation_id = $1
             ORDER BY payment_date DESC
