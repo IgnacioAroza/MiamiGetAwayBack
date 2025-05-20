@@ -5,7 +5,20 @@ import { validateReservationPayment, validatePartialReservationPayment } from '.
 export class ReservationPaymentModel {
     static async getAllReservationPayments(): Promise<ReservationPayment[]> {
         try {
-            const { rows } = await db.query('SELECT * FROM reservation_payments');
+            const { rows } = await db.query(`
+                SELECT 
+                    id,
+                    reservation_id as "reservationId",
+                    amount,
+                    payment_date as "paymentDate",
+                    payment_method as "paymentMethod",
+                    payment_reference as "paymentReference",
+                    status,
+                    notes,
+                    created_at as "createdAt",
+                    updated_at as "updatedAt"
+                FROM reservation_payments
+            `);
             return rows;
         } catch (error) {
             throw error;
@@ -14,21 +27,49 @@ export class ReservationPaymentModel {
 
     static async getReservationPaymentById(id: number): Promise<ReservationPayment | null> {
         try {
-            const { rows } = await db.query('SELECT * FROM reservation_payments WHERE id = $1', [id]);
+            const { rows } = await db.query(`
+                SELECT 
+                    id,
+                    reservation_id as "reservationId",
+                    amount,
+                    payment_date as "paymentDate",
+                    payment_method as "paymentMethod",
+                    payment_reference as "paymentReference",
+                    status,
+                    notes,
+                    created_at as "createdAt",
+                    updated_at as "updatedAt"
+                FROM reservation_payments
+                WHERE id = $1
+            `, [id]);
             return rows[0] || null;
         } catch (error) {
             throw error;
         }
     }
-    
+
     static async createReservationPayment(reservationPaymentData: ReservationPayment): Promise<ReservationPayment> {
         const validateResult = validateReservationPayment(reservationPaymentData);
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error));
         }
-        
         try {
-            const { rows } = await db.query('INSERT INTO reservation_payments (reservation_id, amount, payment_date, payment_method, payment_reference, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [
+            const { rows } = await db.query(`
+                INSERT INTO reservation_payments 
+                    (reservation_id, amount, payment_date, payment_method, payment_reference, notes) 
+                VALUES ($1, $2, $3, $4, $5, $6) 
+                RETURNING 
+                    id,
+                    reservation_id as "reservationId",
+                    amount,
+                    payment_date as "paymentDate",
+                    payment_method as "paymentMethod",
+                    payment_reference as "paymentReference",
+                    status,
+                    notes,
+                    created_at as "createdAt",
+                    updated_at as "updatedAt"
+            `, [
                 reservationPaymentData.reservationId,
                 reservationPaymentData.amount,
                 reservationPaymentData.paymentDate,
@@ -47,7 +88,6 @@ export class ReservationPaymentModel {
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error));
         }
-        
         try {
             // Convertir nombres de columnas de camelCase a snake_case y preparar valores
             const entries = Object.entries(reservationPaymentData);
@@ -57,7 +97,6 @@ export class ReservationPaymentModel {
                     return `${snakeCaseKey} = $${index + 1}`;
                 })
                 .join(', ');
-            
             const values = entries.map(([_, value]) => value);
             values.push(id);
 
@@ -72,12 +111,15 @@ export class ReservationPaymentModel {
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    notes`,
+                    status,
+                    notes,
+                    created_at as "createdAt",
+                    updated_at as "updatedAt"
+                `,
                 values
             );
             return rows[0];
         } catch (error) {
-            console.error('Error en updateReservationPayment:', error);
             throw error;
         }
     }
@@ -95,10 +137,22 @@ export class ReservationPaymentModel {
     }
 
     static async getPaymentsByReservation(reservationId: number): Promise<ReservationPayment[]> {
-        const { rows } = await db.query(
-            'SELECT * FROM reservation_payments WHERE reservation_id = $1 ORDER BY payment_date DESC',
-            [reservationId]
-        );
+        const { rows } = await db.query(`
+            SELECT 
+                id,
+                reservation_id as "reservationId",
+                amount,
+                payment_date as "paymentDate",
+                payment_method as "paymentMethod",
+                payment_reference as "paymentReference",
+                status,
+                notes,
+                created_at as "createdAt",
+                updated_at as "updatedAt"
+            FROM reservation_payments
+            WHERE reservation_id = $1
+            ORDER BY payment_date DESC
+        `, [reservationId]);
         return rows;
     }
 }
