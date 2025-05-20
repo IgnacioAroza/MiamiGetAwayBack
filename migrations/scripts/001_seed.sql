@@ -43,10 +43,10 @@ INSERT INTO reservations (client_id, apartment_id, check_in_date, check_out_date
 (3, 3, '2025-08-05', '2025-08-12', 7, 250.00, 100.00, 40.00, 0.00, 108.50, 1998.50, 999.25, 999.25, 'confirmed', 'partial', 'Familia con 2 niños, necesita cuna', '2025-05-10 09:15:00');
 
 -- Datos para la tabla reservation_payments
-INSERT INTO reservation_payments (reservation_id, amount, payment_date, payment_method, status, notes) VALUES
-(1, 714.00, '2025-05-01 11:30:00', 'credit_card', 'completed', 'Pago completo realizado al confirmar la reserva'),
-(3, 999.25, '2025-05-10 10:00:00', 'bank_transfer', 'completed', 'Pago del 50% como depósito inicial'),
-(3, 999.25, '2025-05-15 16:45:00', 'paypal', 'completed', 'Pago del saldo restante');
+INSERT INTO reservation_payments (reservation_id, amount, payment_date, payment_method, payment_reference, status, notes) VALUES
+(1, 714.00, '2025-05-01 11:30:00', 'credit_card', 'Tarjeta', 'completed', 'Pago completo realizado al confirmar la reserva'),
+(3, 999.25, '2025-05-10 10:00:00', 'bank_transfer', 'Tarjeta', 'completed', 'Pago del 50% como depósito inicial'),
+(3, 999.25, '2025-05-15 16:45:00', 'paypal', 'Tarjeta', 'completed', 'Pago del saldo restante');
 
 -- Datos para la tabla monthly_summaries
 -- INSERT INTO monthly_summaries (month, year, total_reservations, total_payments, total_revenue) VALUES

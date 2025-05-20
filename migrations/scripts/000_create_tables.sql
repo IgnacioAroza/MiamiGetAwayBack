@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS reservation_payments (
     amount DECIMAL(10,2) NOT NULL,
     payment_date TIMESTAMP NOT NULL,
     payment_method VARCHAR(50),
+    payment_reference VARCHAR(100),
     status VARCHAR(20) DEFAULT 'completed',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
