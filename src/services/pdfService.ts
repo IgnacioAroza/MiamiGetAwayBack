@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { ReservationWithClient } from '../types/reservations.js';
 import { MonthlySummary } from '../types/monthlySummary.js';
+import { ReservationPayment } from '../types/reservationPayments.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -11,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default class PdfService {
-    static async generateInvoicePdf(reservation: ReservationWithClient): Promise<string> {
+    static async generateInvoicePdf(reservation: ReservationWithClient, payments: ReservationPayment[] = []): Promise<string> {
         // Comentamos la parte de logs
         /*const logFile = path.join(process.cwd(), 'pdf-debug.log');
         const writeLog = (message: string) => {
@@ -57,7 +58,7 @@ export default class PdfService {
                 this.addBackgroundImage(doc);
                 
                 // Agregar contenido al PDF
-                this.addPdfContent(doc, reservation);
+                this.addPdfContent(doc, reservation, payments);
                 
                 doc.end();
                 //writeLog('Document ended successfully');
@@ -71,7 +72,7 @@ export default class PdfService {
     }
 
     // Nuevo método para generar PDF y retornar como buffer para descarga directa
-    static async generatePdfForDownload(reservation: ReservationWithClient): Promise<Buffer> {
+    static async generatePdfForDownload(reservation: ReservationWithClient, payments: ReservationPayment[] = []): Promise<Buffer> {
         return new Promise((resolve, reject) => {
             try {
                 // Verificar campos críticos
@@ -107,7 +108,7 @@ export default class PdfService {
                 this.addBackgroundImage(doc);
                 
                 // Agregar contenido al PDF
-                this.addPdfContent(doc, reservation);
+                this.addPdfContent(doc, reservation, payments);
                 
                 // Finalizar el PDF
                 doc.end();
@@ -117,7 +118,13 @@ export default class PdfService {
         });
     }
 
-    private static addPdfContent(doc: PDFKit.PDFDocument, reservation: ReservationWithClient): void {
+    private static addPdfContent(doc: PDFKit.PDFDocument, reservation: ReservationWithClient, payments: ReservationPayment[] = []): void {
+        // --- Imagen de fondo en todas las páginas, incluso en saltos automáticos ---
+        doc.on('pageAdded', () => {
+            PdfService.addBackgroundImage(doc);
+        });
+        PdfService.addBackgroundImage(doc); // Para la primera página
+
         // Logo centrado
         const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo_sin_fondo.png');
         if (fs.existsSync(logoPath)) {
@@ -376,9 +383,59 @@ export default class PdfService {
            .text('TOTAL', colX.unitPrice, currentY + 5);
         doc.fillColor('white')
            .text(`$${totalAmount.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
-        
-        // Actualizar la posición Y para el siguiente contenido
-        yPos = currentY + 30;
+        currentY += 30;
+        // Pagos como filas adicionales en la misma tabla de ítems, con salto de página y encabezado si es necesario
+        const pageHeight = doc.page.height;
+        const bottomMargin = 30;
+        const rowHeight = 20;
+        const drawTableHeader = (y: number) => {
+            // Fondo azul para encabezado
+            doc.rect(colX.description, y, colX.endX - colX.description, headerHeight).fill('#1B4B82');
+            doc.fillColor('white')
+                .font('Helvetica-Bold').fontSize(12)
+                .text('Items', colX.description + 5, y + 5)
+                .text('Quantity', colX.quantity + 5, y + 5)
+                .text('Unit Price', colX.unitPrice, y + 5, { align: 'right', width: 100 })
+                .text('Amount', colX.amount, y + 5, { align: 'right', width: 60 });
+        };
+        if (payments && payments.length > 0) {
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('white');
+            payments.forEach(payment => {
+                // Si la siguiente fila se pasa de página, agregar página y encabezado
+                if (currentY + rowHeight + bottomMargin > pageHeight) {
+                    doc.addPage();
+                    currentY = 40; // margen superior
+                    drawTableHeader(currentY);
+                    currentY += headerHeight;
+                }
+                const formattedDate = this.formatDate(payment.paymentDate).split(' ')[0];
+                doc.text('Payment', colX.description + 5, currentY + 5)
+                   .text(formattedDate, colX.quantity + 5, currentY + 5)
+                   .text(payment.paymentMethod || '-', colX.unitPrice, currentY + 5, { align: 'right', width: 100 })
+                   .text(`$${Number(payment.amount).toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
+                currentY += rowHeight;
+                drawHorizontalLine(currentY);
+            });
+        }
+        // Monto adeudado como fila final, también con salto de página si es necesario
+        if (currentY + rowHeight + bottomMargin > pageHeight) {
+            doc.addPage();
+            currentY = 40;
+            drawTableHeader(currentY);
+            currentY += headerHeight;
+        }
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('white')
+            .text('Amount Due', colX.unitPrice, currentY + 5)
+            .text(`$${Number(reservation.amountDue || 0).toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
+        currentY += 25;
+        yPos = currentY;
+
+        // --- Salto de página para la sección inferior si no hay suficiente espacio ---
+        const minSpaceForBottom = 120; // espacio mínimo para Terms, Address, Notes, etc.
+        if (yPos + minSpaceForBottom > doc.page.height - bottomMargin) {
+            doc.addPage();
+            yPos = 40;
+        }
 
         // Terms & Conditions
         const apartmentAddress = reservation.apartmentAddress || 'Not specified';
@@ -399,23 +456,30 @@ export default class PdfService {
            .text(`Apartment Description: ${apartmentDescription}`, 40, yPos);
         yPos += 45;
 
+        // --- Cálculo de altura de las notas y salto de página si es necesario ---
+        doc.font('Helvetica-Bold').fontSize(12);
+        const notesTitle = 'NOTES TO CONSIDER:';
+        const notesContent = reservation.notes ? reservation.notes : 'No notes provided';
+        const notesFontSize = 12;
+        const notesFont = 'Helvetica';
+        // Calcular altura del título y del contenido
+        const notesTitleHeight = doc.heightOfString(notesTitle, { width: 500, align: 'left' });
+        doc.font(notesFont).fontSize(notesFontSize);
+        const notesContentHeight = doc.heightOfString(notesContent, { width: 500, align: 'left' });
+        const totalNotesHeight = notesTitleHeight + 5 + notesContentHeight + 10;
+        if (yPos + totalNotesHeight > doc.page.height - bottomMargin) {
+            doc.addPage();
+            yPos = 40;
+        }
         doc.font('Helvetica-Bold')
            .fontSize(12)
            .fillColor('white')
-           .text('NOTES TO CONSIDER:', 40, yPos);
-        yPos += 15;
-
-        if (reservation.notes) {
-            doc.font('Helvetica')
-                .fillColor('white')
-                .fontSize(12)
-                .text(reservation.notes, 40, yPos);
-        } else {
-            doc.font('Helvetica')
-                .fillColor('white')
-                .fontSize(12)
-                .text('No notes provided', 40, yPos);
-        }
+           .text(notesTitle, 40, yPos);
+        yPos += notesTitleHeight + 5;
+        doc.font(notesFont)
+           .fillColor('white')
+           .fontSize(notesFontSize)
+           .text(notesContent, 40, yPos, { width: 500, align: 'left' });
     }
 
     static async generateMonthlySummaryPdf(
@@ -552,7 +616,7 @@ export default class PdfService {
             // Si es un string y tiene el formato MM-DD-YYYY HH:mm
             if (typeof date === 'string') {
                 // Verificar si es el nuevo formato MM-DD-YYYY HH:mm
-                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
+                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[3]):([0-5][0-9])$/;
                 if (dateTimeRegex.test(date)) {
                     return date; // Ya está en el formato deseado, lo devolvemos tal cual
                 }
@@ -597,7 +661,7 @@ export default class PdfService {
         }
     }
 
-    private static addBackgroundImage(doc: PDFKit.PDFDocument): void {
+    public static addBackgroundImage(doc: PDFKit.PDFDocument): void {
         try {
             // Intentar diferentes rutas para la imagen de fondo
             const possiblePaths = [
@@ -614,7 +678,7 @@ export default class PdfService {
                     break;
                 }
             }
-
+            console.log(backgroundImagePath);
             if (!backgroundImagePath) {
                 console.error('Background image not found');
                 return;

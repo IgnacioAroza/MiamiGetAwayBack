@@ -5,6 +5,7 @@ import ReservationPaymentsService from '../services/reservationPaymentsService.j
 import { ReservationModel } from '../models/reservation.js';
 import EmailService from '../services/emailService.js';
 import db from '../utils/db_render.js';
+import PdfService from '../services/pdfService.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -389,41 +390,39 @@ export class ReservationController {
     // Método para generar y descargar PDF directamente
     static async downloadPdf(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
-        
+
         if (!id || isNaN(parseInt(id))) {
             res.status(400).json({ error: 'ID de reserva inválido' });
             return;
         }
 
         try {
-            // Verificar que la reserva existe antes de generar el PDF
-            const reservationExists = await ReservationService.getReservationById(parseInt(id));
-            
-            if (!reservationExists) {
+            // Obtener la reserva
+            const reservation = await ReservationService.getReservationById(parseInt(id));
+            if (!reservation) {
                 res.status(404).json({ error: 'Reservation not found' });
                 return;
             }
-            
-            // Generar el PDF
-            const pdfBuffer = await ReservationService.generatePdfForDownload(parseInt(id));
-            
+
+            // Obtener los pagos de la reserva
+            const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
+
+            // Generar el PDF pasando los pagos
+            const pdfBuffer = await PdfService.generatePdfForDownload(reservation, payments);
+
             if (!pdfBuffer || pdfBuffer.length === 0) {
                 res.status(500).json({ error: 'Error generating PDF: Empty buffer' });
                 return;
             }
-            
-            // Configurar encabezados para la descarga
+
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=reservation-${id}.pdf`);
             res.setHeader('Content-Length', pdfBuffer.length);
-            
-            // Enviar el PDF como respuesta para la descarga
             res.status(200).send(pdfBuffer);
         } catch (error: any) {
-            // Proporcionar un mensaje de error más descriptivo basado en el tipo de error
             const errorMessage = error.message || 'Error desconocido al generar el PDF';
-            res.status(500).json({ 
-                error: 'Error generating PDF for download', 
+            res.status(500).json({
+                error: 'Error generating PDF for download',
                 details: errorMessage,
                 stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             });
