@@ -30,14 +30,25 @@ export class ReservationModel {
             const queryParams: any[] = [];
             const conditions: string[] = [];
             
+            // Convierte 'MM-DD-YYYY HH:mm' o 'MM-DD-YYYY' a 'MM-DD-YYYY HH:mm'
+            function toDBDateFormat(dateStr: string): string {
+                // Si ya tiene hora, lo dejamos igual
+                if (/\d{2}-\d{2}-\d{4} \d{2}:\d{2}/.test(dateStr)) return dateStr;
+                // Si solo tiene fecha, agregamos 00:00
+                if (/\d{2}-\d{2}-\d{4}/.test(dateStr)) return dateStr + ' 00:00';
+                return dateStr;
+            }
             // Añadir filtros si existen
             if (filters.startDate) {
-                queryParams.push(filters.startDate);
+                queryParams.push(toDBDateFormat(filters.startDate));
                 conditions.push(`r.check_in_date >= $${queryParams.length}`);
             }
             
             if (filters.endDate) {
-                queryParams.push(filters.endDate);
+                // Para incluir todo el día, si no tiene hora, agregamos 23:59
+                let endDate = toDBDateFormat(filters.endDate);
+                if (endDate.endsWith('00:00')) endDate = endDate.replace('00:00', '23:59');
+                queryParams.push(endDate);
                 conditions.push(`r.check_out_date <= $${queryParams.length}`);
             }
             
