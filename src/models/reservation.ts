@@ -263,9 +263,13 @@ export class ReservationModel {
                 c.phone as "clientPhone",
                 c.address as "clientAddress",
                 c.city as "clientCity",
-                c.country as "clientCountry"
+                c.country as "clientCountry",
+                a.name as "apartmentName",
+                a.address as "apartmentAddress",
+                a.description as "apartmentDescription"
             FROM reservations r
             LEFT JOIN clients c ON r.client_id = c.id
+            LEFT JOIN apartments a ON r.apartment_id = a.id
             WHERE r.id = $1
         `, [reservationId]);
 

@@ -678,7 +678,6 @@ export default class PdfService {
                     break;
                 }
             }
-            console.log(backgroundImagePath);
             if (!backgroundImagePath) {
                 console.error('Background image not found');
                 return;
