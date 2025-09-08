@@ -8,19 +8,47 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configurar dotenv
-dotenv.config();
+// Permite seleccionar archivo de entorno según NODE_ENV o variables ENV_FILE/DOTENV_CONFIG_PATH
+(() => {
+    const cwd = process.cwd();
+    const explicitEnvFile = process.env.ENV_FILE || process.env.DOTENV_CONFIG_PATH;
+    let envPath;
+
+    if (explicitEnvFile) {
+        envPath = path.isAbsolute(explicitEnvFile)
+            ? explicitEnvFile
+            : path.resolve(cwd, explicitEnvFile);
+    } else if (process.env.NODE_ENV === 'development') {
+        const devEnv = path.resolve(cwd, '.env.demo');
+        if (fs.existsSync(devEnv)) envPath = devEnv;
+    }
+
+    if (envPath && fs.existsSync(envPath)) {
+        dotenv.config({ path: envPath, override: true });
+    } else {
+        dotenv.config();
+    }
+})();
 
 // Configurar la conexión a la base de datos
 const { Pool } = pg;
+
+// Resolver variables de conexión con prioridad DB_* y fallback a las antiguas
+const dbUser = process.env.DB_USER || process.env.USER;
+const dbHost = process.env.DB_HOST || process.env.HOST;
+const dbName = process.env.DB_NAME || process.env.DATABASE;
+const dbPassword = process.env.DB_PASSWORD || process.env.PASSWORD;
+const dbPort = process.env.DB_PORT || process.env.PORT_DB;
+
+const useSsl = (process.env.DB_SSL === 'true') || (process.env.NODE_ENV === 'production');
+
 const pool = new Pool({
-    user: process.env.USER,
-    host: process.env.HOST,
-    database: process.env.DATABASE,
-    password: process.env.PASSWORD,
-    port: process.env.PORT_DB ? parseInt(process.env.PORT_DB) : undefined,
-    ssl: {
-        rejectUnauthorized: false
-    },
+    user: dbUser,
+    host: dbHost,
+    database: dbName,
+    password: dbPassword,
+    port: dbPort ? parseInt(dbPort) : undefined,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
 });
 
 // Cliente de base de datos para usar en migraciones
