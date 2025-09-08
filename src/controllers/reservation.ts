@@ -87,9 +87,9 @@ export class ReservationController {
                 }
                 
                 const fromDate = req.query.fromDate as string;
-                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
-                if (!dateTimeRegex.test(fromDate)) {
-                    res.status(400).json({ error: 'fromDate format is invalid. Use MM-DD-YYYY HH:mm' });
+                const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+                if (!dateRegex.test(fromDate)) {
+                    res.status(400).json({ error: 'fromDate format is invalid. Use MM-DD-YYYY' });
                     return;
                 }
                 filters.fromDate = fromDate;

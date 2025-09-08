@@ -125,7 +125,7 @@ npm run test:coverage
 - `q`: Búsqueda general por nombre o apellido del cliente (coincidencia parcial)
 - `clientLastname`: Buscar por apellido del cliente (coincidencia parcial)
 - `upcoming`: Filtrar reservaciones futuras (`true`, `false`, `1`, `0`)
-- `fromDate`: Fecha base para el filtro `upcoming` en formato `MM-DD-YYYY HH:mm` (solo con `upcoming=true`)
+- `fromDate`: Fecha base para el filtro `upcoming` en formato `MM-DD-YYYY` (solo con `upcoming=true`)
 - `withinDays`: Limitar reservaciones futuras a N días desde la fecha base (solo con `upcoming=true`)
 
 #### Ejemplos de uso:
@@ -141,10 +141,13 @@ GET /api/reservations?q=john
 GET /api/reservations?upcoming=true
 
 # Reservaciones futuras desde una fecha específica
-GET /api/reservations?upcoming=true&fromDate=01-15-2025%2010:00
+GET /api/reservations?upcoming=true&fromDate=01-15-2025
 
 # Reservaciones futuras en los próximos 30 días
 GET /api/reservations?upcoming=true&withinDays=30
+
+# Reservaciones futuras en los próximos 7 días desde una fecha específica
+GET /api/reservations?upcoming=true&fromDate=01-15-2025&withinDays=7
 
 # Combinar filtros: reservaciones confirmadas futuras de un cliente
 GET /api/reservations?status=confirmed&upcoming=true&clientLastname=smith
