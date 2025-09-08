@@ -8,7 +8,12 @@ export class ReservationModel {
         endDate?: string,   // Cambiado de Date a string
         status?: string,
         clientName?: string,
-        clientEmail?: string
+        clientEmail?: string,
+        q?: string,
+        clientLastname?: string,
+        upcoming?: boolean,
+        fromDate?: string,
+        withinDays?: number
     } = {}): Promise<Reservation[]> {
         try {
             let query = `
@@ -65,6 +70,45 @@ export class ReservationModel {
             if (filters.clientEmail) {
                 queryParams.push(filters.clientEmail);
                 conditions.push(`c.email = $${queryParams.length}`);
+            }
+
+            // Nuevo filtro: búsqueda general por nombre o apellido
+            if (filters.q) {
+                queryParams.push(`%${filters.q}%`);
+                const paramIndex1 = queryParams.length;
+                queryParams.push(`%${filters.q}%`);
+                const paramIndex2 = queryParams.length;
+                conditions.push(`(c.name ILIKE $${paramIndex1} OR c.lastname ILIKE $${paramIndex2})`);
+            }
+
+            // Nuevo filtro: búsqueda por apellido específico
+            if (filters.clientLastname) {
+                queryParams.push(`%${filters.clientLastname}%`);
+                conditions.push(`c.lastname ILIKE $${queryParams.length}`);
+            }
+
+            // Nuevo filtro: próximas reservas
+            if (filters.upcoming) {
+                // Excluir reservas con check_in_date null cuando upcoming=true
+                conditions.push(`r.check_in_date IS NOT NULL`);
+                
+                // Determinar la fecha base para comparación
+                let baseFromExpression;
+                if (filters.fromDate) {
+                    queryParams.push(filters.fromDate);
+                    baseFromExpression = `to_timestamp($${queryParams.length}, 'MM-DD-YYYY HH24:MI')`;
+                } else {
+                    baseFromExpression = 'NOW()';
+                }
+                
+                // Filtro de fechas futuras
+                conditions.push(`to_timestamp(r.check_in_date, 'MM-DD-YYYY HH24:MI') >= ${baseFromExpression}`);
+                
+                // Si se especifica withinDays, agregar límite superior
+                if (filters.withinDays !== undefined) {
+                    queryParams.push(filters.withinDays);
+                    conditions.push(`to_timestamp(r.check_in_date, 'MM-DD-YYYY HH24:MI') < ${baseFromExpression} + ($${queryParams.length} || ' days')::interval`);
+                }
             }
             
             // Añadir condiciones a la consulta
