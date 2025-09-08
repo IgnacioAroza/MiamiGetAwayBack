@@ -88,10 +88,10 @@ export class ReservationModel {
                 if (filters.fromDate) {
                     // Convertir fromDate de MM-DD-YYYY a YYYY-MM-DD para comparar
                     queryParams.push(filters.fromDate);
-                    conditions.push(`r.check_in_date >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')`);
+                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')`);
                 } else {
                     // Usar fecha actual en formato YYYY-MM-DD
-                    conditions.push(`r.check_in_date >= to_char(CURRENT_DATE, 'YYYY-MM-DD')`);
+                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(CURRENT_DATE, 'YYYY-MM-DD')`);
                 }
                 
                 // Si se especifica withinDays, agregar límite superior
@@ -99,9 +99,9 @@ export class ReservationModel {
                     queryParams.push(filters.withinDays);
                     if (filters.fromDate) {
                         const fromDateParam = queryParams.findIndex(p => p === filters.fromDate) + 1;
-                        conditions.push(`r.check_in_date < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
                     } else {
-                        conditions.push(`r.check_in_date < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
                     }
                 }
             }
@@ -118,8 +118,6 @@ export class ReservationModel {
             return rows;
         } catch (error) {
             console.error('Error in getAllReservations:', error);
-            console.error('Query:', query);
-            console.error('Params:', queryParams);
             throw error;
         }
     }
