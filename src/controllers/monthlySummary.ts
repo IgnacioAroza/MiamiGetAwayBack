@@ -2,6 +2,37 @@ import { Request, Response } from 'express';
 import MonthlySummaryService from '../services/monthlySummaryService.js';
 
 export class MonthlySummaryController {
+    static async getSalesVolume(req: Request, res: Response): Promise<void> {
+        try {
+            const { from, to, groupBy } = req.query as {
+                from?: string; to?: string; groupBy?: string
+            };
+
+            if (!from || !to) {
+                res.status(400).json({ error: 'from and to are required (YYYY-MM-DD)' });
+                return;
+            }
+
+            // Validar formato básico de fecha
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+            if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+                res.status(400).json({ error: 'Invalid from or to date' });
+                return;
+            }
+
+            const validGroups = ['day', 'month', 'year'] as const;
+            const gb = (groupBy || 'month').toLowerCase();
+            const useGroupBy = (validGroups as readonly string[]).includes(gb) ? gb as 'day'|'month'|'year' : 'month';
+
+            const result = await MonthlySummaryService.getSalesVolume({ from, to, groupBy: useGroupBy });
+            res.status(200).json(result);
+        } catch (error) {
+            console.error('Error getting sales volume:', error);
+            res.status(500).json({ error: 'Error getting sales volume' });
+        }
+    }
+    
     static async generateSummary(req: Request, res: Response): Promise<void> {
         try {
             const { month, year } = req.body;
