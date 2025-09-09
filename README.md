@@ -153,6 +153,49 @@ GET /api/reservations?upcoming=true&fromDate=01-15-2025&withinDays=7
 GET /api/reservations?status=confirmed&upcoming=true&clientLastname=smith
 ```
 
+### Pagos de Reservaciones
+
+- `GET /api/reservationPayments`: Obtener todos los pagos de reservaciones
+
+#### Query Parameters disponibles para filtrar pagos:
+
+**Filtros por fechas:**
+- `startDate`: Fecha de inicio de pagos en formato `MM-DD-YYYY`
+- `endDate`: Fecha de fin de pagos en formato `MM-DD-YYYY`
+
+**Filtros por pago:**
+- `paymentMethod`: Método de pago (ej: cash, card, transfer)
+- `status`: Estado del pago
+- `reservationId`: ID específico de reservación
+
+**Filtros por cliente:**
+- `clientName`: Buscar por nombre del cliente (coincidencia parcial)
+- `clientEmail`: Buscar por email exacto del cliente
+- `clientLastname`: Buscar por apellido del cliente (coincidencia parcial)
+- `q`: Búsqueda general por nombre o apellido del cliente (coincidencia parcial)
+
+#### Ejemplos de uso:
+
+```bash
+# Obtener todos los pagos
+GET /api/reservation-payments
+
+# Pagos por método
+GET /api/reservation-payments?paymentMethod=card
+
+# Pagos de un cliente específico
+GET /api/reservation-payments?q=john
+
+# Pagos en un rango de fechas
+GET /api/reservation-payments?startDate=01-01-2025&endDate=12-31-2025
+
+# Pagos de una reservación específica
+GET /api/reservation-payments?reservationId=123
+
+# Combinar filtros: pagos con tarjeta de un cliente en enero
+GET /api/reservation-payments?paymentMethod=card&clientLastname=smith&startDate=01-01-2025&endDate=01-31-2025
+```
+
 ## Ejemplo de uso de la API
 
 **Registrar usuario:**

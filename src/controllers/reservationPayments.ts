@@ -5,7 +5,68 @@ import ReservationPaymentsService from '../services/reservationPaymentsService.j
 export class ReservationPaymentController {
     static async getAllReservationPayments(req: Request, res: Response): Promise<void> {
         try {
-            const reservationPayments = await ReservationPaymentsService.getAllPayments();
+            // Obtener filtros desde query params
+            const filters: any = {};
+            
+            // Filtros por fechas de pago
+            if (req.query.startDate) {
+                const startDate = req.query.startDate as string;
+                const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+                if (!dateRegex.test(startDate)) {
+                    res.status(400).json({ error: 'startDate format is invalid. Use MM-DD-YYYY' });
+                    return;
+                }
+                filters.startDate = startDate;
+            }
+            
+            if (req.query.endDate) {
+                const endDate = req.query.endDate as string;
+                const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+                if (!dateRegex.test(endDate)) {
+                    res.status(400).json({ error: 'endDate format is invalid. Use MM-DD-YYYY' });
+                    return;
+                }
+                filters.endDate = endDate;
+            }
+
+            // Filtros por método de pago
+            if (req.query.paymentMethod) {
+                filters.paymentMethod = req.query.paymentMethod as string;
+            }
+
+            // Filtros por cliente
+            if (req.query.clientName) {
+                filters.clientName = req.query.clientName as string;
+            }
+
+            if (req.query.clientEmail) {
+                filters.clientEmail = req.query.clientEmail as string;
+            }
+
+            if (req.query.q) {
+                filters.q = req.query.q as string;
+            }
+
+            if (req.query.clientLastname) {
+                filters.clientLastname = req.query.clientLastname as string;
+            }
+
+            // Filtro por ID de reservación
+            if (req.query.reservationId) {
+                const reservationId = parseInt(req.query.reservationId as string);
+                if (isNaN(reservationId)) {
+                    res.status(400).json({ error: 'reservationId must be a valid number' });
+                    return;
+                }
+                filters.reservationId = reservationId;
+            }
+
+            // Filtro por estado del pago - comentado temporalmente
+            // if (req.query.status) {
+            //     filters.status = req.query.status as string;
+            // }
+            
+            const reservationPayments = await ReservationPaymentsService.getAllPayments(filters);
             res.status(200).json(reservationPayments);
         } catch (error) {
             res.status(500).json({ error: 'Error fetching reservation payments' });
