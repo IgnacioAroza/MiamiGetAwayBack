@@ -8,6 +8,14 @@ const dateSchema = z.string().refine(val => dateTimeRegex.test(val), {
     message: "Must be a valid date in format MM-DD-YYYY HH:mm"
 });
 
+// Esquema para el pago inicial opcional
+const initialPaymentSchema = z.object({
+    amount: z.number().positive("Amount must be a positive number"),
+    paymentMethod: z.string().min(1, "Payment method is required"),
+    paymentReference: z.string().optional(),
+    notes: z.string().optional()
+}).optional();
+
 export const reservationSchema = z.object({
     apartmentId: z.number().positive("Apartment ID must be a positive number"),
     clientId: z.number().positive("Client ID must be a positive number"),
@@ -26,6 +34,7 @@ export const reservationSchema = z.object({
     status: z.enum(["pending", "confirmed", "checked_in", "checked_out", "cancelled"]),
     paymentStatus: z.enum(["pending", "partial", "complete"]),
     notes: z.string().optional(),
+    initialPayment: initialPaymentSchema,
     createdAt: dateSchema.optional().default(() => {
         // Formatear la fecha actual en formato MM-DD-YYYY HH:mm
         const now = new Date();
