@@ -142,7 +142,64 @@ export class ReservationController {
                 return;
             }
 
-            const newReservation = await ReservationService.createReservation(validateResult.data);
+            // Extraer initialPayment y separar los datos de la reserva
+            const { initialPayment, ...reservationData } = validateResult.data;
+
+            // Crear la reserva primero
+            const newReservation = await ReservationService.createReservation(reservationData as any);
+
+            // Si viene un pago inicial en los datos validados, registrarlo y devolver la reserva actualizada
+            if (initialPayment) {
+                const { amount, paymentMethod, paymentReference, notes } = initialPayment;
+
+                // Validaciones mínimas (coherentes con registerPayment)
+                if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+                    res.status(400).json({ 
+                        error: 'payment_error',
+                        message: 'Error al registrar el pago',
+                        details: 'Valid initial payment amount is required',
+                        reservationId: newReservation?.id
+                    });
+                    return;
+                }
+
+                if (!paymentMethod) {
+                    res.status(400).json({ 
+                        error: 'payment_error',
+                        message: 'Error al registrar el pago',
+                        details: 'Initial payment method is required',
+                        reservationId: newReservation?.id
+                    });
+                    return;
+                }
+
+                try {
+                    // Registrar el pago en la tabla reservation_payments
+                    const createdPayment = await ReservationPaymentsService.createPayment({
+                        reservationId: Number(newReservation.id),
+                        amount: Number(amount),
+                        paymentMethod,
+                        paymentReference,
+                        notes,
+                        paymentDate: new Date()
+                    });
+
+                    // Obtener la reserva ya recalculada
+                    const updatedReservation = await ReservationService.getReservationById(Number(newReservation.id));
+                    res.status(201).json(updatedReservation);
+                    return;
+                } catch (err: any) {
+                    res.status(400).json({
+                        error: 'payment_error',
+                        message: 'Error al registrar el pago',
+                        details: err?.message || 'Unknown payment error',
+                        reservationId: newReservation?.id
+                    });
+                    return;
+                }
+            }
+
+            // Si no hay pago inicial, devolver la reserva creada
             res.status(201).json(newReservation);
         } catch (error) {
             res.status(500).json({ error: 'Error creating reservation' });

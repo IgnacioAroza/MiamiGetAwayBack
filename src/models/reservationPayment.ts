@@ -133,6 +133,7 @@ export class ReservationPaymentModel {
         if (!validateResult.success) {
             throw new Error(JSON.stringify(validateResult.error));
         }
+        
         try {
             const { rows } = await db.query(`
                 INSERT INTO reservation_payments 
@@ -154,6 +155,7 @@ export class ReservationPaymentModel {
                 reservationPaymentData.paymentReference,
                 reservationPaymentData.notes
             ]);
+            
             return rows[0];
         } catch (error) {
             throw error;

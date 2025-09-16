@@ -30,19 +30,35 @@ export default class ReservationPaymentsService {
         }
     }
 
-    static async createPayment(data: CreateReservationPaymentDTO): Promise<ReservationPayment> {
-        if (!data.amount || isNaN(Number(data.amount))) {
-            throw new Error('Amount is required and must be a number');
+    static async createPayment(paymentData: CreateReservationPaymentDTO): Promise<ReservationPayment> {
+        // Validar los datos de entrada
+        if (!paymentData.reservationId || paymentData.reservationId <= 0) {
+            throw new Error('Valid reservation ID is required');
+        }
+        
+        if (!paymentData.amount || paymentData.amount <= 0) {
+            throw new Error('Valid payment amount is required');
+        }
+        
+        if (!paymentData.paymentMethod || paymentData.paymentMethod.trim() === '') {
+            throw new Error('Payment method is required');
         }
 
-        const paymentData = {
-            ...data,
-            paymentDate: new Date(),
+        // Preparar los datos para el modelo
+        const paymentForModel: Omit<ReservationPayment, 'id'> = {
+            reservationId: paymentData.reservationId,
+            amount: paymentData.amount,
+            paymentDate: paymentData.paymentDate || new Date(),
+            paymentMethod: paymentData.paymentMethod,
+            paymentReference: paymentData.paymentReference || undefined,
+            notes: paymentData.notes || undefined
         };
 
-        const payment = await ReservationPaymentModel.createReservationPayment(paymentData as any);
-        await this.recalculateReservationPayments(data.reservationId);
-        return payment;
+        try {
+            return await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+        } catch (error) {
+            throw new Error(`Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
 
     static async getPaymentsByReservation(reservationId: number): Promise<ReservationPayment[]> {

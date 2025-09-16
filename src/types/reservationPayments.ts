@@ -14,6 +14,7 @@ export interface CreateReservationPaymentDTO {
     paymentMethod: string;
     paymentReference?: string;
     notes?: string;
+    paymentDate?: Date;
 }
 
 export interface UpdateReservationPaymentDTO {
