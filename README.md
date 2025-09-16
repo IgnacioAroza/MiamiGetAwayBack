@@ -94,6 +94,30 @@ npm run test:coverage
 
 ## API Endpoints
 
+### Summaries / Reportes
+
+- `GET /api/summaries/sales-volume` (auth requerido): Reporte de volumen de ventas basado en pagos.
+  - Query params:
+    - `from` (YYYY-MM-DD) requerido
+    - `to` (YYYY-MM-DD) requerido
+    - `groupBy` opcional: `day | month | year` (por defecto `month`)
+  - Respuesta:
+    - `{ from, to, groupBy, series: [{ period, totalRevenue, totalPayments }], totals: { totalRevenue, totalPayments } }`
+  - Ejemplos:
+    ```bash
+    # Ventas por mes en Q1 2025
+    GET /api/summaries/sales-volume?from=2025-01-01&to=2025-03-31&groupBy=month
+
+    # Ventas diarias en enero 2025
+    GET /api/summaries/sales-volume?from=2025-01-01&to=2025-01-31&groupBy=day
+    ```
+
+- Endpoints existentes de resúmenes mensuales (auth requerido):
+  - `POST /api/summaries/generate` — genera/actualiza el resumen del mes. Body: `{ month, year }`.
+  - `GET /api/summaries/:year/:month` — obtiene detalles del resumen (reservas y pagos del mes).
+  - `GET /api/summaries/:year/:month/pdf` — descarga PDF del resumen mensual.
+  - `POST /api/summaries/:year/:month/send` — envía el resumen mensual por email.
+
 ### Apartamentos
 
 - `GET /api/apartments`: Obtener todos los apartamentos
@@ -237,3 +261,8 @@ Este proyecto está licenciado bajo la Licencia MIT.
 - **Restructuración de Modelos**: Se eliminó el código de creación de tablas de los modelos. La creación de tablas ahora solo ocurre en los archivos de pruebas para garantizar un entorno limpio durante las pruebas. Esto mejora el rendimiento y la seguridad de la aplicación en producción.
 
 - **Mejora en el Manejo de Errores**: Los modelos ahora gestionan mejor los casos donde pueden devolverse resultados nulos, proporcionando respuestas más consistentes y fáciles de manejar por los controladores.
+
+## Contacto
+
+¿Dudas o sugerencias?  
+Puedes abrir un issue o escribir a [ignacioaroza.ia@gmail.com](mailto:ignacioaroza.ia@gmail.com).

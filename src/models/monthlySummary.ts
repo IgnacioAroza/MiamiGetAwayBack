@@ -17,6 +17,30 @@ export class MonthlySummaryModel {
         }
     }
 
+    static async getSalesVolume(params: { from: string; to: string; groupBy: 'day'|'month'|'year' }): Promise<any[]> {
+        try {
+            const { from, to, groupBy } = params;
+            const granularity = groupBy === 'day' || groupBy === 'year' ? groupBy : 'month';
+
+            const query = `
+                SELECT 
+                    date_trunc('${granularity}', payment_date) AS period,
+                    SUM(amount)::numeric(12,2) AS "totalRevenue",
+                    COUNT(*)::int AS "totalPayments"
+                FROM reservation_payments
+                WHERE payment_date >= $1::timestamp
+                  AND payment_date <= $2::timestamp + INTERVAL '23 hours 59 minutes 59 seconds'
+                GROUP BY 1
+                ORDER BY 1;
+            `;
+            const values = [from, to];
+            const result = await db.query(query, values);
+            return result.rows;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static async getSummaryById(id: number): Promise<MonthlySummary | null> {
         try {
             const query = `

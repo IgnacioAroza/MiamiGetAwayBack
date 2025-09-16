@@ -55,6 +55,30 @@ export default class MonthlySummaryService {
         }
     }
 
+    static async getSalesVolume(params: { from: string; to: string; groupBy: 'day'|'month'|'year' }) {
+        try {
+            const { from, to, groupBy } = params;
+            const rows = await MonthlySummaryModel.getSalesVolume({ from, to, groupBy });
+
+            // Normalizar period a ISO string
+            const series = rows.map((r: any) => ({
+                period: typeof r.period === 'string' ? r.period : new Date(r.period).toISOString(),
+                totalRevenue: Number(r.totalRevenue) || 0,
+                totalPayments: Number(r.totalPayments) || 0,
+            }));
+
+            const totals = series.reduce((acc, cur) => {
+                acc.totalRevenue += cur.totalRevenue;
+                acc.totalPayments += cur.totalPayments;
+                return acc;
+            }, { totalRevenue: 0, totalPayments: 0 });
+
+            return { from, to, groupBy, series, totals };
+        } catch (error) {
+            throw error;
+        }
+    }
+    
     static async generateSummaryPdf(month: number, year: number): Promise<Buffer> {
         try {
             // Obtener datos detallados

@@ -5,6 +5,9 @@ import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Reporte: Volumen de ventas
+router.get('/sales-volume', authMiddleware, MonthlySummaryController.getSalesVolume);
+
 // Generar un nuevo resumen mensual
 router.post('/generate', authMiddleware, MonthlySummaryController.generateSummary);
 
