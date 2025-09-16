@@ -27,7 +27,7 @@ export default class ReservationService {
             throw new Error('Reservation not found');
         }
         const previousStatus = currentReservation.status;
-        const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' });
+        const updatedReservation = await ReservationModel.updateReservation(id, { status: status as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled' });
         // Comentamos el envío automático de email de actualización
         /*if (updatedReservation) {
             const updatedReservationWithClient = await ReservationModel.getReservationById(id) as ReservationWithClient;
@@ -115,6 +115,9 @@ export default class ReservationService {
 
             if (reservation.parkingFee !== undefined && typeof reservation.parkingFee !== 'number') {
                 reservation.parkingFee = Number(reservation.parkingFee);
+            }
+            if ((reservation as any).cancellationFee !== undefined && typeof (reservation as any).cancellationFee !== 'number') {
+                (reservation as any).cancellationFee = Number((reservation as any).cancellationFee);
             }
 
             if (reservation.taxes !== undefined && typeof reservation.taxes !== 'number') {

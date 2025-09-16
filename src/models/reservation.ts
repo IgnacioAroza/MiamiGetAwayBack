@@ -93,6 +93,7 @@ export class ReservationModel {
                     r.nights,
                     r.price_per_night as "pricePerNight",
                     r.cleaning_fee as "cleaningFee",
+                    r.cancellation_fee as "cancellationFee",
                     r.other_expenses as "otherExpenses",
                     r.taxes,
                     r.total_amount as "totalAmount",
@@ -141,13 +142,13 @@ export class ReservationModel {
                 `INSERT INTO reservations (
                     apartment_id, client_id, 
                     check_in_date, check_out_date, nights, price_per_night, 
-                    cleaning_fee, other_expenses, taxes, total_amount, 
+                    cleaning_fee, cancellation_fee, other_expenses, taxes, total_amount, 
                     amount_paid, amount_due, parking_fee, status, payment_status,
                     notes, created_at
                 ) VALUES (
                     $1, $2, 
-                    $3, $4, $5, $6, $7, $8, $9, $10, 
-                    $11, $12, $13, $14, $15, $16, $17
+                    $3, $4, $5, $6, $7, $8, $9, $10, $11, 
+                    $12, $13, $14, $15, $16, $17, $18
                 ) 
                 RETURNING *`, 
                 [
@@ -158,6 +159,7 @@ export class ReservationModel {
                     reservationData.nights,
                     reservationData.pricePerNight,
                     reservationData.cleaningFee,
+                    (reservationData as any).cancellationFee ?? 0,
                     reservationData.otherExpenses,
                     reservationData.taxes,
                     reservationData.totalAmount,
@@ -247,6 +249,7 @@ export class ReservationModel {
                 r.nights,
                 r.price_per_night as "pricePerNight",
                 r.cleaning_fee as "cleaningFee",
+                r.cancellation_fee as "cancellationFee",
                 r.other_expenses as "otherExpenses",
                 r.taxes,
                 r.total_amount as "totalAmount",
