@@ -437,24 +437,42 @@ export default class PdfService {
             yPos = 40;
         }
 
-        // Terms & Conditions
+        // Detalles
         const apartmentAddress = reservation.apartmentAddress || 'Not specified';
         const apartmentDescription = reservation.apartmentDescription || 'Not specified';
+        const apartmentBedrooms = reservation.apartmentBedrooms || 'Not specified';
+        const apartmentBathrooms = reservation.apartmentBathrooms || 'Not specified';
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
            .fillColor('white')
-           .text('Terms & Conditions', 40, yPos);
-        yPos += 15;
+           .text('DETAILS', 40, yPos);
+        yPos += 20;
 
-        doc.font('Helvetica')
+        doc.font('Helvetica-Bold')
            .fillColor('white')
-           .text(`Apartment Address: ${apartmentAddress}`, 40, yPos);
+           .text('Apartment Address: ', 40, yPos, { continued: true })
+           .font('Helvetica')
+           .text(`${apartmentAddress}`);
         yPos += 15;
-        doc.font('Helvetica')
+        doc.font('Helvetica-Bold')
            .fillColor('white')
-           .text(`Apartment Description: ${apartmentDescription}`, 40, yPos);
-        yPos += 45;
+           .text('Apartment Description: ', 40, yPos, { continued: true })
+           .font('Helvetica')
+           .text(`${apartmentDescription}`);
+        yPos += 15;
+        doc.font('Helvetica-Bold')
+           .fillColor('white')
+           .text('Rooms: ', 40, yPos, { continued: true })
+           .font('Helvetica')
+           .text(`${apartmentBedrooms}`);
+        yPos += 15;
+        doc.font('Helvetica-Bold')
+           .fillColor('white')
+           .text('Bathrooms: ', 40, yPos, { continued: true })
+           .font('Helvetica')
+           .text(`${apartmentBathrooms}`);
+        yPos += 30;
 
         // --- Cálculo de altura de las notas y salto de página si es necesario ---
         doc.font('Helvetica-Bold').fontSize(12);

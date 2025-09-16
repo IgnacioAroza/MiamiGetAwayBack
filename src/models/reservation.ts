@@ -154,7 +154,9 @@ export class ReservationModel {
                     c.notes as "clientNotes",
                     a.name as "apartmentName",
                     a.address as "apartmentAddress",
-                    a.description as "apartmentDescription"
+                    a.description as "apartmentDescription",
+                    a.bathrooms as "apartmentBathrooms",
+                    a.rooms as "apartmentBedrooms"
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
@@ -309,7 +311,9 @@ export class ReservationModel {
                 c.country as "clientCountry",
                 a.name as "apartmentName",
                 a.address as "apartmentAddress",
-                a.description as "apartmentDescription"
+                a.description as "apartmentDescription",
+                a.bathrooms as "apartmentBathrooms",
+                a.rooms as "apartmentBedrooms"
             FROM reservations r
             LEFT JOIN clients c ON r.client_id = c.id
             LEFT JOIN apartments a ON r.apartment_id = a.id
