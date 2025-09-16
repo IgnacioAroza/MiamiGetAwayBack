@@ -86,12 +86,26 @@ export class ReservationModel {
                 
                 // Determinar la fecha base para comparación
                 if (filters.fromDate) {
-                    // Convertir fromDate de MM-DD-YYYY a YYYY-MM-DD para comparar
+                    // Convertir fromDate de MM-DD-YYYY a fecha comparable
                     queryParams.push(filters.fromDate);
-                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')`);
+                    conditions.push(`
+                        CASE 
+                            WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
+                                r.check_in_date >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')
+                            ELSE 
+                                to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') >= to_date($${queryParams.length}, 'MM-DD-YYYY')
+                        END
+                    `);
                 } else {
-                    // Usar fecha actual en formato YYYY-MM-DD
-                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(CURRENT_DATE, 'YYYY-MM-DD')`);
+                    // Usar fecha actual para comparación, manejando ambos formatos
+                    conditions.push(`
+                        CASE 
+                            WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
+                                r.check_in_date >= to_char(CURRENT_DATE, 'YYYY-MM-DD')
+                            ELSE 
+                                to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') >= CURRENT_DATE
+                        END
+                    `);
                 }
                 
                 // Si se especifica withinDays, agregar límite superior
@@ -99,9 +113,23 @@ export class ReservationModel {
                     queryParams.push(filters.withinDays);
                     if (filters.fromDate) {
                         const fromDateParam = queryParams.findIndex(p => p === filters.fromDate) + 1;
-                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                        conditions.push(`
+                            CASE 
+                                WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
+                                    r.check_in_date < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')
+                                ELSE 
+                                    to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') < to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval
+                            END
+                        `);
                     } else {
-                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                        conditions.push(`
+                            CASE 
+                                WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
+                                    r.check_in_date < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')
+                                ELSE 
+                                    to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') < CURRENT_DATE + ($${queryParams.length} || ' days')::interval
+                            END
+                        `);
                     }
                 }
             }
