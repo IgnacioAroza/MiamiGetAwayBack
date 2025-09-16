@@ -37,13 +37,13 @@ export class ReservationModel {
         try {
             // Añadir filtros si existen
             if (filters.startDate) {
-                queryParams.push(toDBDateFormat(filters.startDate));
+                queryParams.push(filters.startDate);
                 conditions.push(`r.check_in_date >= $${queryParams.length}`);
             }
             
             if (filters.endDate) {
                 // Para incluir todo el día, si no tiene hora, agregamos 23:59
-                let endDate = toDBDateFormat(filters.endDate);
+                let endDate = filters.endDate;
                 if (endDate.endsWith('00:00')) endDate = endDate.replace('00:00', '23:59');
                 queryParams.push(endDate);
                 conditions.push(`r.check_out_date <= $${queryParams.length}`);
