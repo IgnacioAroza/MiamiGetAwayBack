@@ -2,10 +2,36 @@ import db from '../utils/db_render.js';
 import { Apartment } from '../types/index.js';
 import { validateApartment } from '../schemas/apartmentSchema.js';
 
+export interface ApartmentFilters {
+    minPrice?: number
+    maxPrice?: number
+    q?: string // free-text search over address
+}
+
 export default class ApartmentModel {
-    static async getAll(): Promise<Apartment[]> {
+    static async getAll(filters?: ApartmentFilters): Promise<Apartment[]> {
         try {
-            const { rows } = await db.query('SELECT * FROM apartments');
+            // Build dynamic filtering when filters are provided
+            const conditions: string[] = []
+            const values: any[] = []
+
+            if (filters?.minPrice !== undefined) {
+                values.push(filters.minPrice)
+                conditions.push(`price >= $${values.length}`)
+            }
+            if (filters?.maxPrice !== undefined) {
+                values.push(filters.maxPrice)
+                conditions.push(`price <= $${values.length}`)
+            }
+            if (filters?.q) {
+                values.push(`%${filters.q}%`)
+                conditions.push(`address ILIKE $${values.length}`)
+            }
+
+            const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+            const query = `SELECT * FROM apartments ${whereClause}`
+
+            const { rows } = await db.query(query, values)
             return rows.map(row => this.mapDatabaseToApartment(row));
         } catch (error) {
             throw error;

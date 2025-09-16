@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import ApartmentModel from '../models/apartment.js'
+import ApartmentModel, { ApartmentFilters } from '../models/apartment.js'
 import { validateApartment, validatePartialApartment } from '../schemas/apartmentSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
@@ -8,7 +8,21 @@ import { Apartment, CreateApartmentDTO, UpdateApartmentDTO } from '../types/inde
 class ApartmentController {
     static async getAllApartments(req: Request, res: Response): Promise<void> {
         try {
-            const apartments = await ApartmentModel.getAll()
+            const filters: ApartmentFilters = {}
+
+            if (req.query.minPrice !== undefined) {
+                const n = Number(req.query.minPrice)
+                if (!isNaN(n)) filters.minPrice = n
+            }
+            if (req.query.maxPrice !== undefined) {
+                const n = Number(req.query.maxPrice)
+                if (!isNaN(n)) filters.maxPrice = n
+            }
+            if (req.query.q !== undefined && typeof req.query.q === 'string' && req.query.q.trim() !== '') {
+                filters.q = req.query.q.trim()
+            }
+
+            const apartments = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined)
             res.status(200).json(apartments)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
