@@ -166,7 +166,12 @@ export default class ReservationService {
         endDate?: string,   // Cambiado de Date a string
         status?: string,
         clientName?: string,
-        clientEmail?: string
+        clientEmail?: string,
+        q?: string,
+        clientLastname?: string,
+        upcoming?: boolean,
+        fromDate?: string,
+        withinDays?: number
     } = {}): Promise<Reservation[]> {
         return ReservationModel.getAllReservations(filters);
     }

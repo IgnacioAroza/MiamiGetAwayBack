@@ -56,6 +56,59 @@ export class ReservationController {
             if (req.query.clientEmail) {
                 filters.clientEmail = req.query.clientEmail as string;
             }
+
+            // Nuevos filtros
+            if (req.query.q) {
+                filters.q = req.query.q as string;
+            }
+
+            if (req.query.clientLastname) {
+                filters.clientLastname = req.query.clientLastname as string;
+            }
+
+            // Filtro upcoming
+            if (req.query.upcoming) {
+                const upcomingStr = req.query.upcoming as string;
+                if (upcomingStr === 'true' || upcomingStr === '1') {
+                    filters.upcoming = true;
+                } else if (upcomingStr === 'false' || upcomingStr === '0') {
+                    filters.upcoming = false;
+                } else {
+                    res.status(400).json({ error: 'upcoming parameter must be true, false, 1, or 0' });
+                    return;
+                }
+            }
+
+            // Filtro fromDate (solo válido con upcoming=true)
+            if (req.query.fromDate) {
+                if (!filters.upcoming) {
+                    res.status(400).json({ error: 'fromDate can only be used with upcoming=true' });
+                    return;
+                }
+                
+                const fromDate = req.query.fromDate as string;
+                const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
+                if (!dateRegex.test(fromDate)) {
+                    res.status(400).json({ error: 'fromDate format is invalid. Use MM-DD-YYYY' });
+                    return;
+                }
+                filters.fromDate = fromDate;
+            }
+
+            // Filtro withinDays (solo válido con upcoming=true)
+            if (req.query.withinDays) {
+                if (!filters.upcoming) {
+                    res.status(400).json({ error: 'withinDays can only be used with upcoming=true' });
+                    return;
+                }
+                
+                const withinDays = parseInt(req.query.withinDays as string);
+                if (isNaN(withinDays) || withinDays <= 0) {
+                    res.status(400).json({ error: 'withinDays must be a positive integer' });
+                    return;
+                }
+                filters.withinDays = withinDays;
+            }
             
             const reservations = await ReservationService.getAllReservations(filters);
             res.status(200).json(reservations);

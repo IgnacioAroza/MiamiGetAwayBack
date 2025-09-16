@@ -8,36 +8,33 @@ export class ReservationModel {
         endDate?: string,   // Cambiado de Date a string
         status?: string,
         clientName?: string,
-        clientEmail?: string
+        clientEmail?: string,
+        q?: string,
+        clientLastname?: string,
+        upcoming?: boolean,
+        fromDate?: string,
+        withinDays?: number
     } = {}): Promise<Reservation[]> {
+        let query = `
+            SELECT r.*, 
+                c.name as client_name,
+                c.lastname as client_lastname,
+                c.email as client_email,
+                c.phone as client_phone,
+                c.address as client_address,
+                c.city as client_city,
+                c.country as client_country,
+                c.notes as client_notes,
+                a.name as apartment_name,
+                a.address as apartment_address
+            FROM reservations r
+            LEFT JOIN clients c ON r.client_id = c.id
+            LEFT JOIN apartments a ON r.apartment_id = a.id
+        `;
+        const queryParams: any[] = [];
+        const conditions: string[] = [];
+        
         try {
-            let query = `
-                SELECT r.*, 
-                    c.name as client_name,
-                    c.lastname as client_lastname,
-                    c.email as client_email,
-                    c.phone as client_phone,
-                    c.address as client_address,
-                    c.city as client_city,
-                    c.country as client_country,
-                    c.notes as client_notes,
-                    a.name as apartment_name,
-                    a.address as apartment_address
-                FROM reservations r
-                LEFT JOIN clients c ON r.client_id = c.id
-                LEFT JOIN apartments a ON r.apartment_id = a.id
-            `;
-            const queryParams: any[] = [];
-            const conditions: string[] = [];
-            
-            // Convierte 'MM-DD-YYYY HH:mm' o 'MM-DD-YYYY' a 'MM-DD-YYYY HH:mm'
-            function toDBDateFormat(dateStr: string): string {
-                // Si ya tiene hora, lo dejamos igual
-                if (/\d{2}-\d{2}-\d{4} \d{2}:\d{2}/.test(dateStr)) return dateStr;
-                // Si solo tiene fecha, agregamos 00:00
-                if (/\d{2}-\d{2}-\d{4}/.test(dateStr)) return dateStr + ' 00:00';
-                return dateStr;
-            }
             // Añadir filtros si existen
             if (filters.startDate) {
                 queryParams.push(toDBDateFormat(filters.startDate));
@@ -66,6 +63,48 @@ export class ReservationModel {
                 queryParams.push(filters.clientEmail);
                 conditions.push(`c.email = $${queryParams.length}`);
             }
+
+            // Nuevo filtro: búsqueda general por nombre o apellido
+            if (filters.q) {
+                queryParams.push(`%${filters.q}%`);
+                const paramIndex1 = queryParams.length;
+                queryParams.push(`%${filters.q}%`);
+                const paramIndex2 = queryParams.length;
+                conditions.push(`(c.name ILIKE $${paramIndex1} OR c.lastname ILIKE $${paramIndex2})`);
+            }
+
+            // Nuevo filtro: búsqueda por apellido específico
+            if (filters.clientLastname) {
+                queryParams.push(`%${filters.clientLastname}%`);
+                conditions.push(`c.lastname ILIKE $${queryParams.length}`);
+            }
+
+            // Nuevo filtro: próximas reservas
+            if (filters.upcoming) {
+                // Excluir reservas con check_in_date null cuando upcoming=true
+                conditions.push(`r.check_in_date IS NOT NULL`);
+                
+                // Determinar la fecha base para comparación
+                if (filters.fromDate) {
+                    // Convertir fromDate de MM-DD-YYYY a YYYY-MM-DD para comparar
+                    queryParams.push(filters.fromDate);
+                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')`);
+                } else {
+                    // Usar fecha actual en formato YYYY-MM-DD
+                    conditions.push(`substr(r.check_in_date, 1, 10) >= to_char(CURRENT_DATE, 'YYYY-MM-DD')`);
+                }
+                
+                // Si se especifica withinDays, agregar límite superior
+                if (filters.withinDays !== undefined) {
+                    queryParams.push(filters.withinDays);
+                    if (filters.fromDate) {
+                        const fromDateParam = queryParams.findIndex(p => p === filters.fromDate) + 1;
+                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                    } else {
+                        conditions.push(`substr(r.check_in_date, 1, 10) < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')`);
+                    }
+                }
+            }
             
             // Añadir condiciones a la consulta
             if (conditions.length > 0) {
@@ -78,6 +117,7 @@ export class ReservationModel {
             const { rows } = await db.query(query, queryParams);
             return rows;
         } catch (error) {
+            console.error('Error in getAllReservations:', error);
             throw error;
         }
     }

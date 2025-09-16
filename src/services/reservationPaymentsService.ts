@@ -5,24 +5,29 @@ import { ReservationPayment, CreateReservationPaymentDTO } from '../types/reserv
 export default class ReservationPaymentsService {
     // Función para recalcular y actualizar los campos de pago de la reserva
     static async recalculateReservationPayments(reservationId: number): Promise<void> {
-        // Obtener todos los pagos de la reserva
-        const payments = await ReservationPaymentModel.getPaymentsByReservation(reservationId);
-        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        try {
+            // Obtener todos los pagos de la reserva
+            const payments = await ReservationPaymentModel.getPaymentsByReservation(reservationId);
+            const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
-        // Obtener la reserva
-        const reservation = await ReservationModel.getReservationById(reservationId);
-        if (!reservation) return;
+            // Obtener la reserva
+            const reservation = await ReservationModel.getReservationById(reservationId);
+            if (!reservation) return;
 
-        const amountDue = reservation.totalAmount - totalPaid;
-        let paymentStatus: 'pending' | 'partial' | 'complete' = 'pending';
-        if (amountDue <= 0 && totalPaid > 0) paymentStatus = 'complete';
-        else if (totalPaid > 0 && amountDue > 0) paymentStatus = 'partial';
+            const amountDue = reservation.totalAmount - totalPaid;
+            let paymentStatus: 'pending' | 'partial' | 'complete' = 'pending';
+            if (amountDue <= 0 && totalPaid > 0) paymentStatus = 'complete';
+            else if (totalPaid > 0 && amountDue > 0) paymentStatus = 'partial';
 
-        await ReservationModel.updateReservation(reservationId, {
-            amountPaid: totalPaid,
-            amountDue: Math.max(0, amountDue),
-            paymentStatus
-        });
+            await ReservationModel.updateReservation(reservationId, {
+                amountPaid: totalPaid,
+                amountDue: Math.max(0, amountDue),
+                paymentStatus
+            });
+        } catch (error) {
+            console.error('Error in recalculateReservationPayments:', error);
+            throw error;
+        }
     }
 
     static async createPayment(data: CreateReservationPaymentDTO): Promise<ReservationPayment> {
@@ -44,8 +49,18 @@ export default class ReservationPaymentsService {
         return ReservationPaymentModel.getPaymentsByReservation(reservationId);
     }
 
-    static async getAllPayments(): Promise<ReservationPayment[]> {
-        return ReservationPaymentModel.getAllReservationPayments();
+    static async getAllPayments(filters: {
+        startDate?: string,
+        endDate?: string,
+        paymentMethod?: string,
+        clientName?: string,
+        clientEmail?: string,
+        q?: string,
+        clientLastname?: string,
+        reservationId?: number
+        // status?: string - comentado temporalmente porque la columna no existe
+    } = {}): Promise<ReservationPayment[]> {
+        return ReservationPaymentModel.getAllReservationPayments(filters);
     }
 
     static async getPaymentById(paymentId: number): Promise<ReservationPayment | null> {
