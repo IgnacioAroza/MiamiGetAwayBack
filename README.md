@@ -126,6 +126,48 @@ npm run test:coverage
 - `PUT /api/apartments/:id`: Actualizar un apartamento
 - `DELETE /api/apartments/:id`: Eliminar un apartamento
 
+### Autos
+
+- `GET /api/cars`: Obtener todos los autos
+- `GET /api/cars/:id`: Obtener un auto por ID
+- `POST /api/cars`: Crear un nuevo auto
+- `PUT /api/cars/:id`: Actualizar un auto
+- `DELETE /api/cars/:id`: Eliminar un auto
+
+#### Query Parameters disponibles para filtrar autos:
+
+**Filtros por precio:**
+- `minPrice`: Precio mínimo (ej: `100.50`)
+- `maxPrice`: Precio máximo (ej: `500.00`)
+
+**Filtros por capacidad:**
+- `passengers`: Cantidad mínima de pasajeros (ej: `4`)
+
+#### Ejemplos de uso:
+
+```bash
+# Obtener todos los autos
+GET /api/cars
+
+# Filtrar por rango de precio
+GET /api/cars?minPrice=100&maxPrice=300
+
+# Filtrar por cantidad de pasajeros
+GET /api/cars?passengers=4
+
+# Filtrar por precio y pasajeros combinados
+GET /api/cars?minPrice=150&maxPrice=400&passengers=2
+
+# Solo precio mínimo
+GET /api/cars?minPrice=200
+
+# Solo precio máximo  
+GET /api/cars?maxPrice=250
+
+# Para frontend con barra deslizante de precio
+GET /api/cars?minPrice=100.50&maxPrice=350.75&passengers=4
+```
+
 ### Usuarios
 
 - `POST /api/auth/register`: Registrar un nuevo usuario

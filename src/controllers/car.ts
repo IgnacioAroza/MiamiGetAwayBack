@@ -1,18 +1,53 @@
 import { Request, Response } from 'express'
 import CarModel from '../models/car.js'
-import { validateCar, validatePartialCar } from '../schemas/carSchema.js'
+import { validateCar, validatePartialCar, validateCarFilters } from '../schemas/carSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
-import { Cars, CreateCarsDTO, UpdateCarsDTO } from '../types/index.js'
+import { Cars, CreateCarsDTO, UpdateCarsDTO, CarFilters } from '../types/index.js'
 
 class CarController {
     static async getAllCars(req: Request, res: Response): Promise<void> {
         try {
-            const cars = await CarModel.getAll()
-            res.status(200).json(cars)
+            // Extraer parámetros de query para filtros
+            const filters: CarFilters = {
+                minPrice: req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined,
+                maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined,
+                passengers: req.query.passengers ? parseInt(req.query.passengers as string) : undefined,
+            };
+
+            // Limpiar filtros undefined
+            const cleanFilters: CarFilters = {};
+            if (filters.minPrice !== undefined && !isNaN(filters.minPrice)) {
+                cleanFilters.minPrice = filters.minPrice;
+            }
+            if (filters.maxPrice !== undefined && !isNaN(filters.maxPrice)) {
+                cleanFilters.maxPrice = filters.maxPrice;
+            }
+            if (filters.passengers !== undefined && !isNaN(filters.passengers)) {
+                cleanFilters.passengers = filters.passengers;
+            }
+
+            // Validar filtros si hay alguno presente
+            if (Object.keys(cleanFilters).length > 0) {
+                const validationResult = validateCarFilters(cleanFilters);
+                if (!validationResult.success) {
+                    res.status(400).json({ 
+                        message: 'Invalid filters', 
+                        error: validationResult.error.flatten() 
+                    });
+                    return;
+                }
+            }
+
+            // Obtener cars con o sin filtros
+            const cars = Object.keys(cleanFilters).length > 0 
+                ? await CarModel.getCarsWithFilters(cleanFilters)
+                : await CarModel.getAll();
+                
+            res.status(200).json(cars);
         } catch (error: any) {
-            console.error('Error in getAllCars:', error)
-            res.status(500).json({ error: 'An error occurred while fetching cars' })
+            console.error('Error in getAllCars:', error);
+            res.status(500).json({ error: 'An error occurred while fetching cars' });
         }
     }
 

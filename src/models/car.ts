@@ -1,5 +1,5 @@
 import db from '../utils/db_render.js';
-import { Cars } from '../types/index.js';
+import { Cars, CarFilters } from '../types/index.js';
 import { validateCar } from '../schemas/carSchema.js';
 
 export default class CarModel {
@@ -16,6 +16,47 @@ export default class CarModel {
             })
         } catch (error) {
             throw error
+        }
+    }
+
+    static async getCarsWithFilters(filters: CarFilters): Promise<Cars[]> {
+        try {
+            let query = 'SELECT * FROM cars WHERE 1=1';
+            const queryParams: any[] = [];
+            let paramCount = 1;
+
+            // Filtro por precio mínimo
+            if (filters.minPrice !== undefined) {
+                query += ` AND price >= $${paramCount++}`;
+                queryParams.push(filters.minPrice);
+            }
+
+            // Filtro por precio máximo
+            if (filters.maxPrice !== undefined) {
+                query += ` AND price <= $${paramCount++}`;
+                queryParams.push(filters.maxPrice);
+            }
+
+            // Filtro por cantidad de pasajeros
+            if (filters.passengers !== undefined) {
+                query += ` AND passengers >= $${paramCount++}`;
+                queryParams.push(filters.passengers);
+            }
+
+            query += ' ORDER BY id ASC';
+
+            const { rows } = await db.query(query, queryParams);
+            
+            return rows.map(car => {
+                try {
+                    car.images = JSON.parse(car.images);
+                } catch (error) {
+                    car.images = car.images ? [car.images] : [];
+                }
+                return car;
+            });
+        } catch (error) {
+            throw error;
         }
     }
     
