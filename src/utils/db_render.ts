@@ -1,22 +1,27 @@
-import dotenv from 'dotenv';
 import pg from 'pg';
 import { QueryResult as PgQueryResult } from 'pg';
 
-dotenv.config();
-
 const { Pool } = pg;
 
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.HOST,
-    database: process.env.DATABASE,
-    password: process.env.PASSWORD,
-    port: process.env.PORT_DB ? parseInt(process.env.PORT_DB) : undefined,
-    ssl: {
-        rejectUnauthorized: false
-    },
-});
+let pool: pg.Pool | null = null;
+
+// Función para crear el pool solo cuando se necesite
+function getPool(): pg.Pool {
+    if (!pool) {
+        pool = new Pool({
+            user: process.env.DB_USER,
+            host: process.env.HOST,
+            database: process.env.DATABASE,
+            password: process.env.PASSWORD,
+            port: process.env.PORT_DB ? parseInt(process.env.PORT_DB) : undefined,
+            ssl: process.env.NODE_ENV === 'production' ? {
+                rejectUnauthorized: false
+            } : false,
+        });
+    }
+    return pool;
+}
 
 export default {
-    query: (text: string, params: any[] = []): Promise<PgQueryResult> => pool.query(text, params)
+    query: (text: string, params: any[] = []): Promise<PgQueryResult> => getPool().query(text, params)
 };
