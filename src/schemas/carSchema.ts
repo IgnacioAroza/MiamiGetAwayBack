@@ -8,6 +8,10 @@ export const carSchema = z.object({
         (val) => (typeof val === 'string' ? parseFloat(val) : val),
         z.number().positive("Price must be a positive number").multipleOf(0.01, "Price must have 2 decimal places or less")
     ),
+    passengers: z.preprocess(
+        (val) => (typeof val === 'string' ? parseInt(val) : val),
+        z.number().int().positive("Passengers must be a positive integer").optional()
+    ),
     images: z.array(z.string().url()).optional()
 });
 

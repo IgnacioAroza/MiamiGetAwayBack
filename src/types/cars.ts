@@ -5,6 +5,7 @@ export interface Cars {
     model: string;
     description?: string;
     price: number;
+    passengers?: number; // Número de asientos/pasajeros
     images: string[];
 }
 
@@ -14,6 +15,7 @@ export interface CreateCarsDTO {
     model: string;
     description?: string;
     price: number;
+    passengers?: number; // Número de asientos/pasajeros
     images: string[];
 }
 
@@ -23,5 +25,6 @@ export interface UpdateCarsDTO {
     model?: string;
     description?: string;
     price?: number;
+    passengers?: number; // Número de asientos/pasajeros
     images?: string[];
 }

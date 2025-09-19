@@ -31,8 +31,11 @@ class CarController {
             const carData: CreateCarsDTO = {
                 brand: req.body.brand,
                 model: req.body.model,
-                price: parseFloat(req.body.price),
+                price: typeof req.body.price === 'string' ? parseFloat(req.body.price) : req.body.price,
                 description: req.body.description,
+                passengers: req.body.passengers ? 
+                    (typeof req.body.passengers === 'string' ? parseInt(req.body.passengers) : req.body.passengers) 
+                    : undefined,
                 images: []
             }
 
@@ -70,15 +73,17 @@ class CarController {
     static async updateCar(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
+            
             const carData: UpdateCarsDTO = {
                 brand: req.body.brand,
                 model: req.body.model,
                 description: req.body.description
             }
 
+            // Manejar price
             if (req.body.price !== undefined) {
-                const parsedPrice = parseFloat(req.body.price);
-                if (!isNaN(parsedPrice)) {
+                const parsedPrice = typeof req.body.price === 'string' ? parseFloat(req.body.price) : req.body.price;
+                if (!isNaN(parsedPrice) && parsedPrice > 0) {
                     carData.price = parsedPrice;
                 } else {
                     res.status(400).json({ message: 'Invalid price value' });
@@ -86,10 +91,23 @@ class CarController {
                 }
             }
 
-            const result = validatePartialCar(req.body)
+            // Manejar passengers
+            if (req.body.passengers !== undefined) {
+                const parsedPassengers = typeof req.body.passengers === 'string' ? parseInt(req.body.passengers) : req.body.passengers;
+                if (!isNaN(parsedPassengers) && parsedPassengers > 0) {
+                    carData.passengers = parsedPassengers;
+                } else if (req.body.passengers === null || req.body.passengers === '') {
+                    carData.passengers = undefined; // Para limpiar el campo
+                } else {
+                    res.status(400).json({ message: 'Invalid passengers value. Must be a positive integer.' });
+                    return
+                }
+            }
+
+            const result = validatePartialCar(carData) // Cambiar a carData en lugar de req.body
 
             if (!result.success) {
-                res.status(400).json({ message: 'Error updating car', error: JSON.parse(result.error.message) })
+                res.status(400).json({ message: 'Error updating car', error: result.error.flatten() })
                 return
             }
 
@@ -109,10 +127,16 @@ class CarController {
                 carData.images = await Promise.all(uploadPromises)
             }
 
-            const updatedCar = await CarModel.updateCar(Number(id), carData)
-            res.status(200).json(updatedCar)
-        } catch (error: any) {
-            res.status(500).json({ error: error.message || 'An error ocurred while updating the car' })
+            const updatedCar = await CarModel.updateCar(parseInt(id), carData);
+            
+            if (updatedCar) {
+                res.json(updatedCar);
+            } else {
+                res.status(404).json({ message: 'Car not found' });
+            }
+        } catch (error) {
+            console.error('Error in updateCar:', error);
+            res.status(500).json({ error: 'Internal server error' });
         }
     }
 
