@@ -10,3 +10,4 @@ dist/
 *.docx
 temp/
 coverage/
+docker-compose.yml
