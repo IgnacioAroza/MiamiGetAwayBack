@@ -5,6 +5,7 @@ import { validateApartment } from '../schemas/apartmentSchema.js';
 export interface ApartmentFilters {
     minPrice?: number
     maxPrice?: number
+    capacity?: number // minimum capacity (number of people)
     q?: string // free-text search over address
 }
 
@@ -22,6 +23,10 @@ export default class ApartmentModel {
             if (filters?.maxPrice !== undefined) {
                 values.push(filters.maxPrice)
                 conditions.push(`price <= $${values.length}`)
+            }
+            if (filters?.capacity !== undefined) {
+                values.push(filters.capacity)
+                conditions.push(`capacity >= $${values.length}`)
             }
             if (filters?.q) {
                 values.push(`%${filters.q}%`)
