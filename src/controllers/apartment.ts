@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import ApartmentModel, { ApartmentFilters } from '../models/apartment.js'
-import { validateApartment, validatePartialApartment } from '../schemas/apartmentSchema.js'
+import { validateApartment, validatePartialApartment, validateApartmentFilters } from '../schemas/apartmentSchema.js'
 import cloudinary from '../utils/cloudinaryConfig.js'
 import path from 'path'
 import { Apartment, CreateApartmentDTO, UpdateApartmentDTO } from '../types/index.js'
@@ -18,8 +18,24 @@ class ApartmentController {
                 const n = Number(req.query.maxPrice)
                 if (!isNaN(n)) filters.maxPrice = n
             }
+            if (req.query.capacity !== undefined) {
+                const n = Number(req.query.capacity)
+                if (!isNaN(n) && n > 0) filters.capacity = n
+            }
             if (req.query.q !== undefined && typeof req.query.q === 'string' && req.query.q.trim() !== '') {
                 filters.q = req.query.q.trim()
+            }
+
+            // Validar filtros si hay alguno presente
+            if (Object.keys(filters).length > 0) {
+                const validationResult = validateApartmentFilters(filters);
+                if (!validationResult.success) {
+                    res.status(400).json({ 
+                        message: 'Invalid filters', 
+                        error: validationResult.error.flatten() 
+                    });
+                    return;
+                }
             }
 
             const apartments = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined)

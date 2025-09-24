@@ -126,6 +126,88 @@ npm run test:coverage
 - `PUT /api/apartments/:id`: Actualizar un apartamento
 - `DELETE /api/apartments/:id`: Eliminar un apartamento
 
+#### Query Parameters disponibles para filtrar apartamentos:
+
+**Filtros por precio:**
+- `minPrice`: Precio mínimo (ej: `100.50`)
+- `maxPrice`: Precio máximo (ej: `500.00`)
+
+**Filtros por capacidad:**
+- `capacity`: Cantidad mínima de personas (ej: `4`)
+
+**Filtros por ubicación:**
+- `q`: Búsqueda por texto en la dirección (ej: `miami beach`)
+
+#### Ejemplos de uso:
+
+```bash
+# Obtener todos los apartamentos
+GET /api/apartments
+
+# Filtrar por rango de precio
+GET /api/apartments?minPrice=150&maxPrice=400
+
+# Filtrar por capacidad mínima de personas
+GET /api/apartments?capacity=4
+
+# Filtrar por ubicación
+GET /api/apartments?q=miami beach
+
+# Filtros combinados: precio, capacidad y ubicación
+GET /api/apartments?minPrice=200&maxPrice=350&capacity=2&q=downtown
+
+# Solo precio mínimo
+GET /api/apartments?minPrice=100
+
+# Solo precio máximo
+GET /api/apartments?maxPrice=300
+
+# Para frontend con barra deslizante de precio
+GET /api/apartments?minPrice=150.75&maxPrice=425.50&capacity=6
+```
+
+### Autos
+
+- `GET /api/cars`: Obtener todos los autos
+- `GET /api/cars/:id`: Obtener un auto por ID
+- `POST /api/cars`: Crear un nuevo auto
+- `PUT /api/cars/:id`: Actualizar un auto
+- `DELETE /api/cars/:id`: Eliminar un auto
+
+#### Query Parameters disponibles para filtrar autos:
+
+**Filtros por precio:**
+- `minPrice`: Precio mínimo (ej: `100.50`)
+- `maxPrice`: Precio máximo (ej: `500.00`)
+
+**Filtros por capacidad:**
+- `passengers`: Cantidad mínima de pasajeros (ej: `4`)
+
+#### Ejemplos de uso:
+
+```bash
+# Obtener todos los autos
+GET /api/cars
+
+# Filtrar por rango de precio
+GET /api/cars?minPrice=100&maxPrice=300
+
+# Filtrar por cantidad de pasajeros
+GET /api/cars?passengers=4
+
+# Filtrar por precio y pasajeros combinados
+GET /api/cars?minPrice=150&maxPrice=400&passengers=2
+
+# Solo precio mínimo
+GET /api/cars?minPrice=200
+
+# Solo precio máximo  
+GET /api/cars?maxPrice=250
+
+# Para frontend con barra deslizante de precio
+GET /api/cars?minPrice=100.50&maxPrice=350.75&passengers=4
+```
+
 ### Usuarios
 
 - `POST /api/auth/register`: Registrar un nuevo usuario

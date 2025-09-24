@@ -1,5 +1,5 @@
 import db from '../utils/db_render.js';
-import { Cars } from '../types/index.js';
+import { Cars, CarFilters } from '../types/index.js';
 import { validateCar } from '../schemas/carSchema.js';
 
 export default class CarModel {
@@ -16,6 +16,47 @@ export default class CarModel {
             })
         } catch (error) {
             throw error
+        }
+    }
+
+    static async getCarsWithFilters(filters: CarFilters): Promise<Cars[]> {
+        try {
+            let query = 'SELECT * FROM cars WHERE 1=1';
+            const queryParams: any[] = [];
+            let paramCount = 1;
+
+            // Filtro por precio mínimo
+            if (filters.minPrice !== undefined) {
+                query += ` AND price >= $${paramCount++}`;
+                queryParams.push(filters.minPrice);
+            }
+
+            // Filtro por precio máximo
+            if (filters.maxPrice !== undefined) {
+                query += ` AND price <= $${paramCount++}`;
+                queryParams.push(filters.maxPrice);
+            }
+
+            // Filtro por cantidad de pasajeros
+            if (filters.passengers !== undefined) {
+                query += ` AND passengers >= $${paramCount++}`;
+                queryParams.push(filters.passengers);
+            }
+
+            query += ' ORDER BY id ASC';
+
+            const { rows } = await db.query(query, queryParams);
+            
+            return rows.map(car => {
+                try {
+                    car.images = JSON.parse(car.images);
+                } catch (error) {
+                    car.images = car.images ? [car.images] : [];
+                }
+                return car;
+            });
+        } catch (error) {
+            throw error;
         }
     }
     
@@ -37,7 +78,7 @@ export default class CarModel {
     }
 
     static async createCar(carData: Cars): Promise<Cars> {
-        const { brand, model, price, description, images } = carData
+        const { brand, model, price, description, passengers, images } = carData
         const imagesJson = JSON.stringify(images || [])
 
         const validateResult = validateCar(carData)
@@ -48,18 +89,18 @@ export default class CarModel {
 
         try {
             const { rows } = await db.query(
-                'INSERT INTO cars (brand, model, price, description, images) VALUES ($1, $2, $3, $4, $5) RETURNING *;',
-                [brand, model, price, description, imagesJson]
+                'INSERT INTO cars (brand, model, price, description, passengers, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
+                [brand, model, price, description, passengers || null, imagesJson]
             )
             const { id, ...dataWithoutId } = carData
-            return { id: rows[0].id, ...dataWithoutId, images: images || [] }
+            return { id: rows[0].id, ...dataWithoutId, images: images || [], passengers: passengers || undefined }
         } catch (error) {
             throw error
         }
     }
 
     static async updateCar(id: number, carData: Partial<Cars>): Promise<Cars> {
-        const { brand, model, description, price, images } = carData
+        const { brand, model, description, price, passengers, images } = carData
         const updateFields = []
         const updatedValues = []
         let paramCount = 1
@@ -79,6 +120,10 @@ export default class CarModel {
         if (price !== undefined) {
             updateFields.push(`price = $${paramCount++}`)
             updatedValues.push(price)
+        }
+        if (passengers !== undefined) {
+            updateFields.push(`passengers = $${paramCount++}`)
+            updatedValues.push(passengers)
         }
         if (images !== undefined) {
             updateFields.push(`images = $${paramCount++}`)
