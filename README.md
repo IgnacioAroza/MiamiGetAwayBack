@@ -38,7 +38,11 @@ CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
 ```
 
-4. Ejecuta las migraciones de la base de datos:
+4. Para Google My Business Reviews, agrega el archivo de credenciales OAuth:
+   - Descarga `client_secret_OAtuh_MGA_reviews.json` desde Google Cloud Console
+   - Colócalo en la raíz del proyecto (mismo nivel que package.json)
+
+5. Ejecuta las migraciones de la base de datos:
 
 ```bash
 npm run migrate
@@ -93,6 +97,111 @@ npm run test:coverage
 - `dist/`: Código compilado
 
 ## API Endpoints
+
+### Google My Business Reviews
+
+Sistema completo de integración con Google My Business para gestionar reviews de manera automática.
+
+#### Autenticación OAuth
+
+- `GET /api/google-mybusiness/auth-status`: Verificar estado de autenticación
+- `GET /api/google-mybusiness/auth/start`: Iniciar proceso de autenticación OAuth con Google
+- `GET /api/google-mybusiness/callback`: Callback de OAuth (manejado automáticamente)
+
+#### Reviews - Endpoints para Frontend
+
+- `GET /api/google-mybusiness/reviews`: **Obtener reviews desde base de datos local** (recomendado para frontend)
+  - Query params:
+    - `limit` (número): Cantidad de reviews por página (default: 50)
+    - `offset` (número): Desplazamiento para paginación (default: 0)
+  - Respuesta:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "reviews": [
+          {
+            "id": 1,
+            "google_review_id": "AbFvOqloz_XyevxiRF4EoXoq0ZZidDd8oE9VBXnneSDoyoXj5WTZeWFR2znS0GSt08jdbON9uTo4",
+            "reviewer_name": "Juan Pérez",
+            "reviewer_photo_url": "https://...",
+            "rating": 5,
+            "comment": "Excelente servicio...",
+            "google_create_time": "2024-12-15T10:30:00Z",
+            "google_update_time": "2024-12-15T10:30:00Z",
+            "reply_comment": "Gracias por su comentario...",
+            "sync_status": "active",
+            "local_created_at": "2025-09-29T15:00:00Z"
+          }
+        ],
+        "count": 44,
+        "total": 44
+      }
+    }
+    ```
+
+- `GET /api/google-mybusiness/reviews/stats`: **Estadísticas de reviews** (ideal para dashboards)
+  - Respuesta:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "totalReviews": 44,
+        "averageRating": 4.8,
+        "ratingDistribution": {
+          "1": 0,
+          "2": 1,
+          "3": 2,
+          "4": 8,
+          "5": 33
+        },
+        "lastSync": "2025-09-29T15:00:14.860Z",
+        "recentReviews": 5
+      }
+    }
+    ```
+
+- `GET /api/google-mybusiness/reviews/search`: **Buscar reviews por texto**
+  - Query params:
+    - `q` (string, requerido): Término de búsqueda en comentarios
+    - `limit` (número): Cantidad de resultados (default: 20)
+  - Respuesta: Mismo formato que `/reviews` pero filtrado
+
+#### Reviews - Endpoints de Administración
+
+- `GET /api/google-mybusiness/reviews/fetch`: Obtener reviews directamente desde Google API (sin guardar)
+- `POST /api/google-mybusiness/reviews/sync`: **Sincronizar reviews** (fetch desde Google + guardar en BD)
+- `GET /api/google-mybusiness/admin/tokens`: Información de tokens OAuth (auth requerido)
+- `GET /api/google-mybusiness/admin/sync-info`: Información de sincronización (auth requerido)
+- `POST /api/google-mybusiness/admin/initialize`: Forzar inicialización (auth requerido)
+- `GET /api/google-mybusiness/health`: Health check del servicio
+
+#### Ejemplos de uso para Frontend:
+
+```bash
+# Obtener todas las reviews (paginadas)
+GET /api/google-mybusiness/reviews?limit=10&offset=0
+
+# Obtener estadísticas para dashboard
+GET /api/google-mybusiness/reviews/stats
+
+# Buscar reviews que mencionen "excelente"
+GET /api/google-mybusiness/reviews/search?q=excelente&limit=5
+
+# Verificar estado de autenticación
+GET /api/google-mybusiness/auth-status
+
+# Sincronizar reviews (para admin)
+POST /api/google-mybusiness/reviews/sync
+```
+
+#### Casos de uso Frontend:
+
+1. **Widget de Reviews**: Usar `/reviews?limit=5` para mostrar las 5 reviews más recientes
+2. **Dashboard de Stats**: Usar `/reviews/stats` para mostrar métricas y gráficos
+3. **Página completa de Reviews**: Usar `/reviews` con paginación
+4. **Búsqueda de Reviews**: Usar `/reviews/search?q=...` para búsqueda en tiempo real
+5. **Panel de Administración**: Usar endpoints `/admin/*` para gestión
 
 ### Summaries / Reportes
 
@@ -339,6 +448,15 @@ Para contribuir:
 Este proyecto está licenciado bajo la Licencia MIT.
 
 ## Mejoras Recientes
+
+- **Integración con Google My Business**: Sistema completo de reviews con autenticación OAuth2, sincronización automática y almacenamiento local. Incluye endpoints optimizados para frontend con paginación, búsqueda y estadísticas.
+
+- **Sistema de Reviews**: 
+  - Autenticación OAuth2 con Google My Business API
+  - Sincronización automática de reviews con base de datos PostgreSQL
+  - Endpoints REST optimizados para frontend con paginación y búsqueda
+  - Conversión automática de ratings (FIVE → 5, FOUR → 4, etc.)
+  - Dashboard de estadísticas con distribución de ratings y métricas
 
 - **Restructuración de Modelos**: Se eliminó el código de creación de tablas de los modelos. La creación de tablas ahora solo ocurre en los archivos de pruebas para garantizar un entorno limpio durante las pruebas. Esto mejora el rendimiento y la seguridad de la aplicación en producción.
 
