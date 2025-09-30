@@ -11,3 +11,4 @@ dist/
 temp/
 coverage/
 docker-compose.yml
+/docs

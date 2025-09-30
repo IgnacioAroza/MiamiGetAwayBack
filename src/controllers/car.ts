@@ -1,8 +1,7 @@
 import { Request, Response } from 'express'
 import CarModel from '../models/car.js'
 import { validateCar, validatePartialCar, validateCarFilters } from '../schemas/carSchema.js'
-import cloudinary from '../utils/cloudinaryConfig.js'
-import path from 'path'
+import ImageService from '../services/imageService.js'
 import { Cars, CreateCarsDTO, UpdateCarsDTO, CarFilters } from '../types/index.js'
 
 class CarController {
@@ -80,21 +79,21 @@ class CarController {
                 return
             }
 
-            // Handle image uploads
+            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
-                    new Promise<string>((resolve, reject) => {
-                        const uploadStream = cloudinary.uploader.upload_stream(
-                            { folder: 'cars' },
-                            (error: any, result: any) => {
-                                if (error) reject(error)
-                                else resolve(result.secure_url)
-                            }
-                        )
-                        uploadStream.end(file.buffer)
-                    })
-                )
-                carData.images = await Promise.all(uploadPromises)
+                const uploadResult = await ImageService.uploadImages(req.files, {
+                    entityType: 'cars'
+                });
+
+                if (!uploadResult.success) {
+                    res.status(400).json({ 
+                        error: 'Error uploading images', 
+                        details: uploadResult.errors 
+                    });
+                    return;
+                }
+
+                carData.images = uploadResult.urls;
             }
 
             const newCar = await CarModel.createCar(carData as unknown as Cars)
@@ -146,20 +145,21 @@ class CarController {
                 return
             }
 
+            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadPromises = (req.files as Express.Multer.File[]).map((file: Express.Multer.File) =>
-                    new Promise<string>((resolve, reject) => {
-                        const uploadStream = cloudinary.uploader.upload_stream(
-                            { folder: 'cars' },
-                            (error: any, result: any) => {
-                                if (error) reject(error)
-                                else resolve(result.secure_url)
-                            }
-                        )
-                        uploadStream.end(file.buffer)
-                    })
-                )
-                carData.images = await Promise.all(uploadPromises)
+                const uploadResult = await ImageService.uploadImages(req.files, {
+                    entityType: 'cars'
+                });
+
+                if (!uploadResult.success) {
+                    res.status(400).json({ 
+                        error: 'Error uploading images', 
+                        details: uploadResult.errors 
+                    });
+                    return;
+                }
+
+                carData.images = uploadResult.urls;
             }
 
             const updatedCar = await CarModel.updateCar(parseInt(id), carData);
@@ -185,20 +185,14 @@ class CarController {
                 return
             }
 
-            // Eliminar imágenes de Cloudinary
+            // Eliminar imágenes usando el servicio centralizado
             if (car.images && Array.isArray(car.images)) {
-                const deletePromises = car.images.map(async (imageUrl: string) => {
-                    const publicId = CarController.getPublicIdFromUrl(imageUrl)
-                    try {
-                        if (publicId) { // Verificar que publicId no es null
-                            await cloudinary.uploader.destroy(publicId)
-                            console.log(`Image deleted from Cloudinary: ${publicId}`)
-                        }
-                    } catch (error: any) {
-                        console.error(`Error deleting image from Cloudinary: ${error.message}`)
-                    }
-                })
-                await Promise.all(deletePromises)
+                const deleteResult = await ImageService.deleteImages(car.images, 'cars');
+                
+                if (!deleteResult.success && deleteResult.errors.length > 0) {
+                    console.warn('Algunas imágenes no pudieron ser eliminadas:', deleteResult.errors);
+                    // Continuamos con la eliminación del coche aunque algunas imágenes fallen
+                }
             }
 
             const result = await CarModel.deleteCar(Number(id))
@@ -212,18 +206,6 @@ class CarController {
         } catch (error: any) {
             console.error('Error in deleteCar:', error)
             res.status(500).json({ error: error.message || 'An error occurred while deleting the car' })
-        }
-    }
-
-    static getPublicIdFromUrl(url: string): string | null {
-        try {
-            const parsedUrl = new URL(url)
-            const pathnameParts = parsedUrl.pathname.split('/')
-            const filenameWithExtension = pathnameParts[pathnameParts.length - 1]
-            const filename = path.parse(filenameWithExtension).name
-            return `cars/${filename}`
-        } catch (error) {
-            return null
         }
     }
 }
