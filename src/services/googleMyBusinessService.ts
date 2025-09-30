@@ -41,6 +41,10 @@ export default class GoogleMyBusinessService {
                 token_uri: process.env.GOOGLE_TOKEN_URI,
                 auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT_URL
             };
+            
+            if (process.env.NODE_ENV === 'development') {
+                console.log('✅ OAuth credentials loaded from environment variables');
+            }
         } catch (error) {
             console.error('❌ Error loading credentials:', error);
             throw error;
@@ -160,7 +164,9 @@ export default class GoogleMyBusinessService {
 
             // Guardar en base de datos
             const savedTokens = await GoogleMyBusinessModel.saveOAuthTokens(tokenData);
-            console.log('✅ Tokens saved successfully');
+            if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Tokens saved successfully');
+            }
 
             return savedTokens;
         } catch (error) {
@@ -193,7 +199,9 @@ export default class GoogleMyBusinessService {
             const expiresAt = credentials.expiry_date ? new Date(credentials.expiry_date).toISOString() : null;
             await GoogleMyBusinessModel.updateTokens(tokens.id!, credentials.access_token!, expiresAt);
 
-            console.log('✅ Token refreshed successfully');
+            if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Token refreshed successfully');
+            }
             return true;
         } catch (error) {
             console.error('❌ Error refreshing token:', error);
@@ -284,10 +292,14 @@ export default class GoogleMyBusinessService {
             }
 
             // El formato del name en API v1 es: accounts/{accountId}/locations/{locationId}
-            console.log('🔍 Location name format:', locations[0].name);
+            if (process.env.NODE_ENV === 'development') {
+                console.log('🔍 Location name format:', locations[0].name);
+            }
             const locationNameParts = locations[0].name.split('/');
             const locationId = locationNameParts[locationNameParts.length - 1];
-            console.log('🎯 Extracted locationId:', locationId);
+            if (process.env.NODE_ENV === 'development') {
+                console.log('🎯 Extracted locationId:', locationId);
+            }
 
             if (!locationId || locationId === 'undefined') {
                 throw new Error(`Invalid locationId extracted from: ${locations[0].name}`);
