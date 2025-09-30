@@ -16,6 +16,7 @@ import reservationRoutes from './routes/reservation.js'
 import reservationPaymentsRoutes from './routes/reservationPayments.js'
 import cronRoutes from './routes/cron.js'
 import monthlySummaryRoutes from './routes/monthlySummary.js'
+import googleMyBusinessRoutes from './routes/googleMyBusiness.js'
 
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
@@ -57,7 +58,7 @@ app.use('/api/apartments', apartmentRoutes)
 app.use('/api/cars', carRoutes)
 app.use('/api/villas', villaRoutes)
 app.use('/api/yachts', yachtRoutes)
-app.use('/api/reviews', reviewRoutes)
+// app.use('/api/reviews', reviewRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
@@ -65,6 +66,7 @@ app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)
 app.use('/api/cron', cronRoutes)
 app.use('/api/summaries', monthlySummaryRoutes)
+app.use('/api/google-mybusiness', googleMyBusinessRoutes)
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
