@@ -1,15 +1,28 @@
 import { Request, Response } from 'express'
 import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
-import cloudinary from '../utils/cloudinaryConfig.js'
-import path from 'path'
+import ImageService from '../services/imageService.js'
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js'
 
 class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
             const yachts = await YachtModel.getAll()
-            res.status(200).json(yachts)
+            
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedYachts = yachts.map(yacht => {
+                if (yacht.images && Array.isArray(yacht.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'list');
+                    return {
+                        ...yacht,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: yacht.images // URLs originales como backup
+                    };
+                }
+                return yacht;
+            });
+
+            res.status(200).json(optimizedYachts)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -20,7 +33,19 @@ class YachtController {
             const { id } = req.params
             const yacht = await YachtModel.getYachtById(Number(id))
             if (yacht) {
-                res.status(200).json(yacht)
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (yacht.images && Array.isArray(yacht.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'detail');
+                    const yachtWithOptimizedImages = {
+                        ...yacht,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: yacht.images // URLs originales como backup
+                    };
+                    res.status(200).json(yachtWithOptimizedImages);
+                } else {
+                    res.status(200).json(yacht);
+                }
             } else {
                 res.status(404).json({ message: 'Yacht not found' })
             }
@@ -48,25 +73,21 @@ class YachtController {
                 return;
             }
 
-            // Procesar imágenes si se proporcionan
-            if (req.files) {
-                const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-                if (files.length > 0) {
-                    const uploadPromises = files.map((file: any) => {
-                        return new Promise<string>((resolve, reject) => {
-                            const uploadStream = cloudinary.uploader.upload_stream(
-                                { folder: 'yachts' },
-                                (error, result) => {
-                                    if (error) reject(error);
-                                    else resolve(result!.secure_url);
-                                }
-                            );
-                            uploadStream.end(file.buffer);
-                        });
-                    });
+            // Procesar imágenes usando el servicio centralizado
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadResult = await ImageService.uploadImages(req.files, {
+                    entityType: 'yachts'
+                });
 
-                    yachtData.images = await Promise.all(uploadPromises);
+                if (!uploadResult.success) {
+                    res.status(400).json({ 
+                        error: 'Error uploading images', 
+                        details: uploadResult.errors 
+                    });
+                    return;
                 }
+
+                yachtData.images = uploadResult.urls;
             }
 
             const createdYacht = await YachtModel.createYacht(yachtData);
@@ -77,6 +98,7 @@ class YachtController {
             if (error instanceof Error) {
                 if (error.message.includes('validation')) {
                     res.status(400).json({ error: 'Validation error in yacht data' });
+                    return;
                 }
             }
             
@@ -112,34 +134,25 @@ class YachtController {
                 return;
             }
 
-            // Procesar imágenes si se proporcionan
-            if (req.files) {
-                const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-                if (files.length > 0) {
-                    const uploadPromises = files.map((file: any) => {
-                        return new Promise<string>((resolve, reject) => {
-                            const uploadStream = cloudinary.uploader.upload_stream(
-                                { folder: 'yachts' },
-                                (error, result) => {
-                                    if (error) {
-                                        reject(error);
-                                    } else {
-                                        resolve(result!.secure_url);
-                                    }
-                                }
-                            );
-                            uploadStream.end(file.buffer);
-                        });
-                    });
+            // Procesar imágenes usando el servicio centralizado
+            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+                const uploadResult = await ImageService.uploadImages(req.files, {
+                    entityType: 'yachts'
+                });
 
-                    const uploadedUrls = await Promise.all(uploadPromises);
-                    
-                    // Añadir las nuevas URLs a las existentes si ya hay imágenes
-                    if (existingYacht && existingYacht.images) {
-                        yachtData.images = [...existingYacht.images, ...uploadedUrls];
-                    } else {
-                        yachtData.images = uploadedUrls;
-                    }
+                if (!uploadResult.success) {
+                    res.status(400).json({ 
+                        error: 'Error uploading images', 
+                        details: uploadResult.errors 
+                    });
+                    return;
+                }
+                
+                // Añadir las nuevas URLs a las existentes si ya hay imágenes
+                if (existingYacht && existingYacht.images) {
+                    yachtData.images = [...existingYacht.images, ...uploadResult.urls];
+                } else {
+                    yachtData.images = uploadResult.urls;
                 }
             }
 
@@ -156,6 +169,7 @@ class YachtController {
                 } else if (error.message.includes('validation')) {
                     res.status(400).json({ message: 'Validation error in yacht data' });
                 }
+                return;
             }
             
             res.status(500).json({ error: 'Database error' });
@@ -177,20 +191,13 @@ class YachtController {
                 return;
             }
 
-            // Eliminar imágenes de Cloudinary
+            // Eliminar imágenes usando el servicio centralizado
             if (Array.isArray(yacht.images) && yacht.images.length > 0) {
-                for (const imageUrl of yacht.images) {
-                    try {
-                        if (typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
-                            const publicId = YachtController.getPublicIdFromUrl(imageUrl);
-                            if (publicId) {
-                                await cloudinary.uploader.destroy(publicId);
-                                console.log(`Image deleted from Cloudinary: ${publicId}`);
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Error removing image: ${imageUrl}`, error);
-                    }
+                const deleteResult = await ImageService.deleteImages(yacht.images, 'yachts');
+                
+                if (!deleteResult.success && deleteResult.errors.length > 0) {
+                    console.warn('Algunas imágenes no pudieron ser eliminadas:', deleteResult.errors);
+                    // Continuamos con la eliminación del yate aunque algunas imágenes fallen
                 }
             }
 
@@ -200,33 +207,9 @@ class YachtController {
             console.error('Error deleting yacht:', error);
             if (error instanceof Error && error.message === 'Yacht not found') {
                 res.status(404).json({ message: 'Yacht not found' });
+                return;
             }
             res.status(500).json({ error: 'Error deleting yacht' });
-        }
-    }
-
-    static getPublicIdFromUrl(url: string): string | null {
-        try {
-            // Si la URL es una ruta simple como "image1.jpg", construir un public ID directamente
-            if (!url.includes('://')) {
-                const filename = path.parse(url).name;
-                return `yachts/${filename}`;
-            }
-            
-            // Manejar URLs completas
-            const parsedUrl = new URL(url);
-            const pathnameParts = parsedUrl.pathname.split('/');
-            const filenameWithExtension = pathnameParts[pathnameParts.length - 1];
-            const filename = path.parse(filenameWithExtension).name;
-            return `yachts/${filename}`;
-        } catch (error) {
-            // Si algo falla, intentar extraer el nombre de archivo directamente
-            try {
-                const filename = path.parse(url).name;
-                return `yachts/${filename}`;
-            } catch (e) {
-                return null;
-            }
         }
     }
 }

@@ -1,20 +1,28 @@
 import { Request, Response } from 'express'
 import VillaModel from '../models/villa.js'
 import { validateVilla } from '../schemas/villaSchema.js'
-import cloudinary from '../utils/cloudinaryConfig.js'
-import path from 'path'
+import ImageService from '../services/imageService.js'
 import { CreateVillaDTO } from '../types/index.js'
-
-interface MulterFile {
-  buffer: Buffer
-  [key: string]: any
-}
 
 class VillaController {
     static async getAllVillas(req: Request, res: Response): Promise<void> {
         try {
             const villas = await VillaModel.getAll()
-            res.status(200).json(villas)
+            
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedVillas = villas.map(villa => {
+                if (villa.images && Array.isArray(villa.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(villa.images, 'list');
+                    return {
+                        ...villa,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: villa.images // URLs originales como backup
+                    };
+                }
+                return villa;
+            });
+
+            res.status(200).json(optimizedVillas)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -25,7 +33,19 @@ class VillaController {
             const { id } = req.params
             const villa = await VillaModel.getVillaById(Number(id))
             if (villa) {
-                res.status(200).json(villa)
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (villa.images && Array.isArray(villa.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(villa.images, 'detail');
+                    const villaWithOptimizedImages = {
+                        ...villa,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: villa.images // URLs originales como backup
+                    };
+                    res.status(200).json(villaWithOptimizedImages);
+                } else {
+                    res.status(200).json(villa);
+                }
             } else {
                 res.status(404).json({ message: 'Villa not found' })
             }
@@ -59,24 +79,23 @@ class VillaController {
                 return;
             }
 
-            // Procesar imágenes si se proporcionan
+            // Procesar imágenes usando el servicio centralizado
             if (req.files) {
                 const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
                 if (files.length > 0) {
-                    const uploadPromises = files.map((file: any) => {
-                        return new Promise<string>((resolve, reject) => {
-                            const uploadStream = cloudinary.uploader.upload_stream(
-                                { folder: 'villas' },
-                                (error, result) => {
-                                    if (error) reject(error);
-                                    else resolve(result!.secure_url);
-                                }
-                            );
-                            uploadStream.end(file.buffer);
-                        });
+                    const uploadResult = await ImageService.uploadImages(files, {
+                        entityType: 'villas'
                     });
 
-                    villaData.images = await Promise.all(uploadPromises);
+                    if (!uploadResult.success) {
+                        res.status(400).json({ 
+                            error: 'Error uploading images', 
+                            details: uploadResult.errors 
+                        });
+                        return;
+                    }
+
+                    villaData.images = uploadResult.urls;
                 }
             }
 
@@ -88,6 +107,7 @@ class VillaController {
             if (error instanceof Error) {
                 if (error.message.includes('validation')) {
                     res.status(400).json({ error: 'Validation error in villa data' });
+                    return;
                 }
             }
             
@@ -127,33 +147,27 @@ class VillaController {
                 return;
             }
 
-            // Procesar imágenes si se proporcionan
+            // Procesar imágenes usando el servicio centralizado
             if (req.files) {
                 const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
                 if (files.length > 0) {
-                    const uploadPromises = files.map((file: any) => {
-                        return new Promise<string>((resolve, reject) => {
-                            const uploadStream = cloudinary.uploader.upload_stream(
-                                { folder: 'villas' },
-                                (error, result) => {
-                                    if (error) {
-                                        reject(error);
-                                    } else {
-                                        resolve(result!.secure_url);
-                                    }
-                                }
-                            );
-                            uploadStream.end(file.buffer);
-                        });
+                    const uploadResult = await ImageService.uploadImages(files, {
+                        entityType: 'villas'
                     });
 
-                    const uploadedUrls = await Promise.all(uploadPromises);
-                    
+                    if (!uploadResult.success) {
+                        res.status(400).json({ 
+                            error: 'Error uploading images', 
+                            details: uploadResult.errors 
+                        });
+                        return;
+                    }
+
                     // Añadir las nuevas URLs a las existentes si ya hay imágenes
                     if (existingVilla && existingVilla.images) {
-                        villaData.images = [...existingVilla.images, ...uploadedUrls];
+                        villaData.images = [...existingVilla.images, ...uploadResult.urls];
                     } else {
-                        villaData.images = uploadedUrls;
+                        villaData.images = uploadResult.urls;
                     }
                 }
             }
@@ -171,6 +185,7 @@ class VillaController {
                 } else if (error.message.includes('validation')) {
                     res.status(400).json({ message: 'Validation error in villa data' });
                 }
+                return;
             }
             
             res.status(500).json({ error: 'Database error' });
@@ -191,14 +206,13 @@ class VillaController {
                 return;
             }
 
-            // Eliminar imágenes de Cloudinary
+            // Eliminar imágenes usando el servicio centralizado
             if (Array.isArray(villa.images) && villa.images.length > 0) {
-                for (const imageUrl of villa.images) {
-                    const publicId = VillaController.getPublicIdFromUrl(imageUrl);
-                    if (publicId) {
-                        await cloudinary.uploader.destroy(publicId);
-                        console.log(`Image deleted from Cloudinary: ${publicId}`);
-                    }
+                const deleteResult = await ImageService.deleteImages(villa.images, 'villas');
+                
+                if (!deleteResult.success && deleteResult.errors.length > 0) {
+                    console.warn('Algunas imágenes no pudieron ser eliminadas:', deleteResult.errors);
+                    // Continuamos con la eliminación aunque algunas imágenes fallen
                 }
             }
 
@@ -208,34 +222,9 @@ class VillaController {
             console.error('Error deleting villa:', error);
             if (error instanceof Error && error.message === 'Villa not found') {
                 res.status(404).json({ error: 'Villa not found' });
+                return;
             }
             res.status(500).json({ error: 'Error deleting villa' });
-        }
-    }
-
-    static getPublicIdFromUrl(url: string): string | null {
-        try {
-            // Si la URL es una ruta simple como "image1.jpg", construir un public ID directamente
-            if (!url.includes('://')) {
-                const filename = path.parse(url).name;
-                return `villas/${filename}`;
-            }
-            
-            // Manejar URLs completas
-            const parsedUrl = new URL(url);
-            const pathnameParts = parsedUrl.pathname.split('/');
-            const filenameWithExtension = pathnameParts[pathnameParts.length - 1];
-            const filename = path.parse(filenameWithExtension).name;
-            return `villas/${filename}`;
-        } catch (error) {
-            console.log('Error parsing URL:', error);
-            // Si algo falla, intentar extraer el nombre de archivo directamente
-            try {
-                const filename = path.parse(url).name;
-                return `villas/${filename}`;
-            } catch (e) {
-                return null;
-            }
         }
     }
 }

@@ -7,10 +7,14 @@ export default class CarModel {
         try {
             const { rows } = await db.query('SELECT * FROM cars');
             return rows.map(car => {
-                try {
-                    car.images = JSON.parse(car.images)
-                } catch (error) {
-                    car.images = car.images ? [car.images] : []
+                if (typeof car.images === 'string') {
+                    try {
+                        car.images = JSON.parse(car.images)
+                    } catch (error) {
+                        car.images = []
+                    }
+                } else if (!Array.isArray(car.images)) {
+                    car.images = []
                 }
                 return car
             })
@@ -48,10 +52,14 @@ export default class CarModel {
             const { rows } = await db.query(query, queryParams);
             
             return rows.map(car => {
-                try {
-                    car.images = JSON.parse(car.images);
-                } catch (error) {
-                    car.images = car.images ? [car.images] : [];
+                if (typeof car.images === 'string') {
+                    try {
+                        car.images = JSON.parse(car.images);
+                    } catch (error) {
+                        car.images = [];
+                    }
+                } else if (!Array.isArray(car.images)) {
+                    car.images = [];
                 }
                 return car;
             });
@@ -64,10 +72,14 @@ export default class CarModel {
         try {
             const { rows } = await db.query('SELECT * FROM cars WHERE id = $1', [id])
             if (rows[0]) {
-                try {
-                    rows[0].images = JSON.parse(rows[0].images)
-                } catch (error) {
-                    rows[0].images = rows[0].images ? [rows[0].images] : []
+                if (typeof rows[0].images === 'string') {
+                    try {
+                        rows[0].images = JSON.parse(rows[0].images)
+                    } catch (error) {
+                        rows[0].images = []
+                    }
+                } else if (!Array.isArray(rows[0].images)) {
+                    rows[0].images = []
                 }
                 return rows[0]
             }
