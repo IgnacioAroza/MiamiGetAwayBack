@@ -38,7 +38,21 @@ class ApartmentController {
             }
 
             const apartments = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined)
-            res.status(200).json(apartments)
+            
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedApartments = apartments.map(apartment => {
+                if (apartment.images && Array.isArray(apartment.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(apartment.images, 'list');
+                    return {
+                        ...apartment,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: apartment.images // URLs originales como backup
+                    };
+                }
+                return apartment;
+            });
+
+            res.status(200).json(optimizedApartments)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -49,7 +63,19 @@ class ApartmentController {
             const { id } = req.params
             const apartment = await ApartmentModel.getApartmentById(Number(id))
             if (apartment) {
-                res.status(200).json(apartment)
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (apartment.images && Array.isArray(apartment.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(apartment.images, 'detail');
+                    const apartmentWithOptimizedImages = {
+                        ...apartment,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: apartment.images // URLs originales como backup
+                    };
+                    res.status(200).json(apartmentWithOptimizedImages);
+                } else {
+                    res.status(200).json(apartment);
+                }
             } else {
                 res.status(404).json({ message: 'Apartment not found' })
             }

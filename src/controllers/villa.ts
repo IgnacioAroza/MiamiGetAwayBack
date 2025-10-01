@@ -8,7 +8,21 @@ class VillaController {
     static async getAllVillas(req: Request, res: Response): Promise<void> {
         try {
             const villas = await VillaModel.getAll()
-            res.status(200).json(villas)
+            
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedVillas = villas.map(villa => {
+                if (villa.images && Array.isArray(villa.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(villa.images, 'list');
+                    return {
+                        ...villa,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: villa.images // URLs originales como backup
+                    };
+                }
+                return villa;
+            });
+
+            res.status(200).json(optimizedVillas)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -19,7 +33,19 @@ class VillaController {
             const { id } = req.params
             const villa = await VillaModel.getVillaById(Number(id))
             if (villa) {
-                res.status(200).json(villa)
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (villa.images && Array.isArray(villa.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(villa.images, 'detail');
+                    const villaWithOptimizedImages = {
+                        ...villa,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: villa.images // URLs originales como backup
+                    };
+                    res.status(200).json(villaWithOptimizedImages);
+                } else {
+                    res.status(200).json(villa);
+                }
             } else {
                 res.status(404).json({ message: 'Villa not found' })
             }

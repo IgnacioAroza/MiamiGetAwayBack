@@ -42,8 +42,22 @@ class CarController {
             const cars = Object.keys(cleanFilters).length > 0 
                 ? await CarModel.getCarsWithFilters(cleanFilters)
                 : await CarModel.getAll();
+
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedCars = cars.map(car => {
+                if (car.images && Array.isArray(car.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(car.images, 'list');
+                    
+                    return {
+                        ...car,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: car.images // URLs originales como backup
+                    };
+                }
+                return car;
+            });
                 
-            res.status(200).json(cars);
+            res.status(200).json(optimizedCars);
         } catch (error: any) {
             console.error('Error in getAllCars:', error);
             res.status(500).json({ error: 'An error occurred while fetching cars' });
@@ -54,7 +68,24 @@ class CarController {
         try {
             const { id } = req.params
             const car = await CarModel.getCarById(Number(id))
-            res.status(200).send(car)
+            
+            if (car) {
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (car.images && Array.isArray(car.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(car.images, 'detail');
+                    const carWithOptimizedImages = {
+                        ...car,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: car.images // URLs originales como backup
+                    };
+                    res.status(200).send(carWithOptimizedImages);
+                } else {
+                    res.status(200).send(car);
+                }
+            } else {
+                res.status(404).json({ message: 'Car not found' });
+            }
         } catch (error: any) {
             res.status(500).send(error.message)
         }

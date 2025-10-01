@@ -299,6 +299,174 @@ class ImageService {
             return originalUrl;
         }
     }
+
+    /**
+     * Optimiza una URL de imagen existente sin re-subirla
+     */
+    static optimizeExistingImageUrl(originalUrl: string, options: {
+        format?: 'auto' | 'webp' | 'avif' | 'jpg' | 'png';
+        quality?: 'auto' | 'auto:best' | 'auto:good' | 'auto:eco' | number;
+        width?: number;
+        height?: number;
+        crop?: 'fill' | 'fit' | 'limit' | 'scale' | 'crop' | 'thumb';
+    } = {}): string {
+        if (!originalUrl || !originalUrl.includes('res.cloudinary.com')) {
+            return originalUrl; // No es una URL de Cloudinary
+        }
+
+        const {
+            format = 'auto',
+            quality = 'auto',
+            width,
+            height,
+            crop = 'limit'
+        } = options;
+
+        try {
+            const parts = originalUrl.split('/upload/');
+            if (parts.length !== 2) return originalUrl;
+
+            const transformations = [];
+            
+            // Formato automático (WebP cuando sea compatible)
+            if (format) transformations.push(`f_${format}`);
+            
+            // Calidad automática/específica
+            if (quality) transformations.push(`q_${quality}`);
+            
+            // Dimensiones
+            if (width) transformations.push(`w_${width}`);
+            if (height) transformations.push(`h_${height}`);
+            if ((width || height) && crop) transformations.push(`c_${crop}`);
+
+            const transformString = transformations.join(',');
+            return `${parts[0]}/upload/${transformString}/${parts[1]}`;
+        } catch (error) {
+            console.error('Error optimizing image URL:', error);
+            return originalUrl;
+        }
+    }
+
+    /**
+     * Genera múltiples tamaños optimizados de una imagen
+     */
+    static generateResponsiveImageUrls(originalUrl: string): {
+        thumbnail: string;
+        small: string;
+        medium: string;
+        large: string;
+        optimized: string;
+        original: string;
+    } {
+        if (!originalUrl) {
+            const emptyUrl = '';
+            return {
+                thumbnail: emptyUrl,
+                small: emptyUrl,
+                medium: emptyUrl,
+                large: emptyUrl,
+                optimized: emptyUrl,
+                original: emptyUrl
+            };
+        }
+
+        return {
+            thumbnail: this.optimizeExistingImageUrl(originalUrl, { 
+                width: 300, 
+                height: 200, 
+                crop: 'fill', 
+                quality: 70,
+                format: 'auto'
+            }),
+            small: this.optimizeExistingImageUrl(originalUrl, { 
+                width: 600, 
+                height: 400, 
+                quality: 80,
+                format: 'auto'
+            }),
+            medium: this.optimizeExistingImageUrl(originalUrl, { 
+                width: 1000, 
+                height: 667, 
+                quality: 85,
+                format: 'auto'
+            }),
+            large: this.optimizeExistingImageUrl(originalUrl, { 
+                width: 1600, 
+                height: 1067, 
+                quality: 90,
+                format: 'auto'
+            }),
+            optimized: this.optimizeExistingImageUrl(originalUrl, { 
+                format: 'auto', 
+                quality: 'auto'
+            }),
+            original: originalUrl
+        };
+    }
+
+    /**
+     * Optimiza un array de URLs de imágenes
+     */
+    static optimizeImageArray(imageUrls: string[], defaultSize: 'thumbnail' | 'small' | 'medium' | 'large' | 'optimized' = 'optimized'): string[] {
+        if (!Array.isArray(imageUrls)) {
+            return [];
+        }
+
+        return imageUrls.map(url => {
+            if (!url) return '';
+            
+            const responsiveUrls = this.generateResponsiveImageUrls(url);
+            return responsiveUrls[defaultSize];
+        });
+    }
+
+    /**
+     * Optimiza imágenes para uso específico en el backend
+     */
+    static optimizeForContext(imageUrls: string[], context: 'list' | 'detail' | 'thumbnail' | 'gallery'): any {
+        if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+            return {
+                images: [],
+                responsiveImages: []
+            };
+        }
+
+        const responsiveImages = imageUrls.map(url => this.generateResponsiveImageUrls(url));
+
+        // Configuración por contexto
+        const contextConfig = {
+            list: { 
+                primary: 'small' as keyof ReturnType<typeof this.generateResponsiveImageUrls>, 
+                fallback: 'thumbnail' as keyof ReturnType<typeof this.generateResponsiveImageUrls>,
+                includeResponsive: false 
+            },
+            detail: { 
+                primary: 'large' as keyof ReturnType<typeof this.generateResponsiveImageUrls>, 
+                fallback: 'medium' as keyof ReturnType<typeof this.generateResponsiveImageUrls>,
+                includeResponsive: true 
+            },
+            thumbnail: { 
+                primary: 'thumbnail' as keyof ReturnType<typeof this.generateResponsiveImageUrls>, 
+                fallback: 'small' as keyof ReturnType<typeof this.generateResponsiveImageUrls>,
+                includeResponsive: false 
+            },
+            gallery: { 
+                primary: 'medium' as keyof ReturnType<typeof this.generateResponsiveImageUrls>, 
+                fallback: 'small' as keyof ReturnType<typeof this.generateResponsiveImageUrls>,
+                includeResponsive: true 
+            }
+        };
+
+        const config = contextConfig[context];
+        
+        return {
+            images: imageUrls.map((url, index) => {
+                const responsive = responsiveImages[index];
+                return responsive[config.primary] || responsive[config.fallback] || url;
+            }),
+            ...(config.includeResponsive && { responsiveImages })
+        };
+    }
 }
 
 export default ImageService;

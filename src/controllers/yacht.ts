@@ -8,7 +8,21 @@ class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
             const yachts = await YachtModel.getAll()
-            res.status(200).json(yachts)
+            
+            // Optimizar imágenes para listado (contexto 'list')
+            const optimizedYachts = yachts.map(yacht => {
+                if (yacht.images && Array.isArray(yacht.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'list');
+                    return {
+                        ...yacht,
+                        images: optimizedImages.images, // URLs optimizadas para listado
+                        originalImages: yacht.images // URLs originales como backup
+                    };
+                }
+                return yacht;
+            });
+
+            res.status(200).json(optimizedYachts)
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -19,7 +33,19 @@ class YachtController {
             const { id } = req.params
             const yacht = await YachtModel.getYachtById(Number(id))
             if (yacht) {
-                res.status(200).json(yacht)
+                // Optimizar imágenes para vista detalle (contexto 'detail')
+                if (yacht.images && Array.isArray(yacht.images)) {
+                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'detail');
+                    const yachtWithOptimizedImages = {
+                        ...yacht,
+                        images: optimizedImages.images, // URLs principales optimizadas
+                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
+                        originalImages: yacht.images // URLs originales como backup
+                    };
+                    res.status(200).json(yachtWithOptimizedImages);
+                } else {
+                    res.status(200).json(yacht);
+                }
             } else {
                 res.status(404).json({ message: 'Yacht not found' })
             }
