@@ -15,8 +15,7 @@ class VillaController {
                     const optimizedImages = ImageService.optimizeForContext(villa.images, 'list');
                     return {
                         ...villa,
-                        images: optimizedImages.images, // URLs optimizadas para listado
-                        originalImages: villa.images // URLs originales como backup
+                        images: optimizedImages.images // URLs optimizadas para listado
                     };
                 }
                 return villa;
@@ -39,8 +38,7 @@ class VillaController {
                     const villaWithOptimizedImages = {
                         ...villa,
                         images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
-                        originalImages: villa.images // URLs originales como backup
+                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
                     };
                     res.status(200).json(villaWithOptimizedImages);
                 } else {

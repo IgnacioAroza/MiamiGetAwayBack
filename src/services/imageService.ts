@@ -310,7 +310,13 @@ class ImageService {
         height?: number;
         crop?: 'fill' | 'fit' | 'limit' | 'scale' | 'crop' | 'thumb';
     } = {}): string {
-        if (!originalUrl || !originalUrl.includes('res.cloudinary.com')) {
+        // Validar que originalUrl sea un string
+        if (!originalUrl || typeof originalUrl !== 'string') {
+            console.warn('optimizeExistingImageUrl: originalUrl is not a string', typeof originalUrl);
+            return ''; // Retornar string vacío si no es válido
+        }
+        
+        if (!originalUrl.includes('res.cloudinary.com')) {
             return originalUrl; // No es una URL de Cloudinary
         }
 
@@ -358,7 +364,9 @@ class ImageService {
         optimized: string;
         original: string;
     } {
-        if (!originalUrl) {
+        // Validar que originalUrl sea un string
+        if (!originalUrl || typeof originalUrl !== 'string') {
+            console.warn('generateResponsiveImageUrls: originalUrl is not a string', typeof originalUrl);
             const emptyUrl = '';
             return {
                 thumbnail: emptyUrl,
@@ -431,7 +439,28 @@ class ImageService {
             };
         }
 
-        const responsiveImages = imageUrls.map(url => this.generateResponsiveImageUrls(url));
+        // Filtrar solo strings válidos y aplanar arrays anidados si existen
+        const validUrls: string[] = imageUrls.reduce((acc: string[], item: any) => {
+            if (typeof item === 'string' && item.trim() !== '') {
+                acc.push(item);
+            } else if (Array.isArray(item)) {
+                // Si es un array anidado, aplanarlo
+                const flatItems = item.filter((subItem: any) => typeof subItem === 'string' && subItem.trim() !== '');
+                acc.push(...flatItems);
+            } else {
+                console.warn('optimizeForContext: Invalid image URL type', typeof item);
+            }
+            return acc;
+        }, []);
+
+        if (validUrls.length === 0) {
+            return {
+                images: [],
+                responsiveImages: []
+            };
+        }
+
+        const responsiveImages = validUrls.map(url => this.generateResponsiveImageUrls(url));
 
         // Configuración por contexto
         const contextConfig = {
@@ -460,7 +489,7 @@ class ImageService {
         const config = contextConfig[context];
         
         return {
-            images: imageUrls.map((url, index) => {
+            images: validUrls.map((url, index) => {
                 const responsive = responsiveImages[index];
                 return responsive[config.primary] || responsive[config.fallback] || url;
             }),

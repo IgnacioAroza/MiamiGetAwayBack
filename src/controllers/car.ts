@@ -50,8 +50,7 @@ class CarController {
                     
                     return {
                         ...car,
-                        images: optimizedImages.images, // URLs optimizadas para listado
-                        originalImages: car.images // URLs originales como backup
+                        images: optimizedImages.images // URLs optimizadas para listado
                     };
                 }
                 return car;
@@ -76,8 +75,7 @@ class CarController {
                     const carWithOptimizedImages = {
                         ...car,
                         images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
-                        originalImages: car.images // URLs originales como backup
+                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
                     };
                     res.status(200).send(carWithOptimizedImages);
                 } else {

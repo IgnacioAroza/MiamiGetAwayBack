@@ -3,10 +3,51 @@ import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js';
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js';
 
 export default class YachtModel {
+    /**
+     * Normaliza el array de imágenes, soportando múltiples formatos:
+     * - Array de strings: ['url1', 'url2']
+     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
+     * - Mix de ambos
+     */
+    private static normalizeImageArray(imageData: any): string[] {
+        if (!Array.isArray(imageData)) {
+            return [];
+        }
+
+        return imageData
+            .map((item: any) => {
+                // Si es un string, devolverlo directamente
+                if (typeof item === 'string') {
+                    return item;
+                }
+                // Si es un objeto con propiedad 'url', extraer la URL
+                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
+                    return item.url;
+                }
+                // Si no es ninguno de los formatos esperados, ignorar
+                return null;
+            })
+            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
+    }
+
     static async getAll(): Promise<Yacht[]> {
         try {
             const { rows } = await db.query('SELECT * FROM yachts');
-            return rows;
+            return rows.map(yacht => {
+                if (typeof yacht.images === 'string') {
+                    try {
+                        yacht.images = this.normalizeImageArray(JSON.parse(yacht.images));
+                    } catch (error) {
+                        console.error('Error parsing yacht images:', error);
+                        yacht.images = [];
+                    }
+                } else if (Array.isArray(yacht.images)) {
+                    yacht.images = this.normalizeImageArray(yacht.images);
+                } else {
+                    yacht.images = [];
+                }
+                return yacht;
+            });
         } catch (error) {
             console.error('Error getting all yachts:', error);
             throw new Error('Database error');
@@ -16,7 +57,23 @@ export default class YachtModel {
     static async getYachtById(id: number): Promise<Yacht | null> {
         try {
             const { rows } = await db.query('SELECT * FROM yachts WHERE id = $1', [id]);
-            return rows[0] || null;
+            if (rows.length === 0) return null;
+            
+            const yacht = rows[0];
+            if (typeof yacht.images === 'string') {
+                try {
+                    yacht.images = this.normalizeImageArray(JSON.parse(yacht.images));
+                } catch (error) {
+                    console.error('Error parsing yacht images:', error);
+                    yacht.images = [];
+                }
+            } else if (Array.isArray(yacht.images)) {
+                yacht.images = this.normalizeImageArray(yacht.images);
+            } else {
+                yacht.images = [];
+            }
+            
+            return yacht;
         } catch (error) {
             console.error('Error getting yacht by ID:', error);
             throw new Error('Database error');
@@ -138,13 +195,18 @@ export default class YachtModel {
                 updatedYacht.price = yachtData.price;
             }
             
-            if (updatedYacht.images && typeof updatedYacht.images === 'string') {
+            // Normalizar imágenes
+            if (typeof updatedYacht.images === 'string') {
                 try {
-                    updatedYacht.images = JSON.parse(updatedYacht.images);
+                    updatedYacht.images = this.normalizeImageArray(JSON.parse(updatedYacht.images));
                 } catch (error) {
-                    console.error('Error parsing images:', error);
+                    console.error('Error parsing yacht images:', error);
                     updatedYacht.images = [];
                 }
+            } else if (Array.isArray(updatedYacht.images)) {
+                updatedYacht.images = this.normalizeImageArray(updatedYacht.images);
+            } else {
+                updatedYacht.images = [];
             }
 
             return updatedYacht;

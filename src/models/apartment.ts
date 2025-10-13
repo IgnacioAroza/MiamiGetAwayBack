@@ -171,8 +171,50 @@ export default class ApartmentModel {
         }
     }
 
+    /**
+     * Normaliza el array de imágenes, soportando múltiples formatos:
+     * - Array de strings: ['url1', 'url2']
+     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
+     * - Mix de ambos
+     */
+    private static normalizeImageArray(imageData: any): string[] {
+        if (!Array.isArray(imageData)) {
+            return [];
+        }
+
+        return imageData
+            .map((item: any) => {
+                // Si es un string, devolverlo directamente
+                if (typeof item === 'string') {
+                    return item;
+                }
+                // Si es un objeto con propiedad 'url', extraer la URL
+                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
+                    return item.url;
+                }
+                // Si no es ninguno de los formatos esperados, ignorar
+                return null;
+            })
+            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
+    }
+
     static mapDatabaseToApartment(dbApartment: any): Apartment {
         // Manejar el mapeo de snake_case a camelCase
+        // PostgreSQL puede devolver JSONB como string o como array parseado
+        let images: string[] = [];
+        
+        if (typeof dbApartment.images === 'string') {
+            try {
+                const parsed = JSON.parse(dbApartment.images);
+                images = this.normalizeImageArray(parsed);
+            } catch (error) {
+                console.error('Error parsing apartment images:', error);
+                images = [];
+            }
+        } else if (Array.isArray(dbApartment.images)) {
+            images = this.normalizeImageArray(dbApartment.images);
+        }
+
         return {
             id: dbApartment.id,
             name: dbApartment.name,
@@ -183,7 +225,7 @@ export default class ApartmentModel {
             rooms: dbApartment.rooms,
             price: dbApartment.price,
             unitNumber: dbApartment.unit_number,
-            images: Array.isArray(dbApartment.images) ? dbApartment.images : []
+            images: images
         };
     }
 }

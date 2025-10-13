@@ -15,8 +15,7 @@ class YachtController {
                     const optimizedImages = ImageService.optimizeForContext(yacht.images, 'list');
                     return {
                         ...yacht,
-                        images: optimizedImages.images, // URLs optimizadas para listado
-                        originalImages: yacht.images // URLs originales como backup
+                        images: optimizedImages.images // URLs optimizadas para listado
                     };
                 }
                 return yacht;
@@ -39,8 +38,7 @@ class YachtController {
                     const yachtWithOptimizedImages = {
                         ...yacht,
                         images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
-                        originalImages: yacht.images // URLs originales como backup
+                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
                     };
                     res.status(200).json(yachtWithOptimizedImages);
                 } else {

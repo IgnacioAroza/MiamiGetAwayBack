@@ -443,10 +443,31 @@ export class ReservationController {
                 return;
             }
 
+            // Verificar si la reserva tiene pagos asociados
+            const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
+            if (payments && payments.length > 0) {
+                res.status(409).json({ 
+                    error: 'Cannot delete reservation',
+                    message: 'This reservation has associated payments and cannot be deleted. Please remove all payments first.',
+                    paymentsCount: payments.length
+                });
+                return;
+            }
+
             // Intentar eliminar la reserva
             await ReservationService.deleteReservation(parseInt(id));
             res.status(200).json({ message: 'Reservation deleted successfully' });
-        } catch (error) {
+        } catch (error: any) {
+            // Manejar error de clave foránea (por si acaso)
+            if (error.code === '23503' || error.message?.includes('foreign key')) {
+                res.status(409).json({ 
+                    error: 'Cannot delete reservation',
+                    message: 'This reservation has associated records and cannot be deleted.'
+                });
+                return;
+            }
+            
+            console.error('Error deleting reservation:', error);
             res.status(500).json({ error: 'Error deleting reservation' });
         }
     }
