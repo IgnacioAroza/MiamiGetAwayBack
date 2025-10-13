@@ -3,10 +3,51 @@ import { Villa, CreateVillaDTO, UpdateVillaDTO } from '../types/index.js';
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js';
 
 export default class VillaModel {
+    /**
+     * Normaliza el array de imágenes, soportando múltiples formatos:
+     * - Array de strings: ['url1', 'url2']
+     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
+     * - Mix de ambos
+     */
+    private static normalizeImageArray(imageData: any): string[] {
+        if (!Array.isArray(imageData)) {
+            return [];
+        }
+
+        return imageData
+            .map((item: any) => {
+                // Si es un string, devolverlo directamente
+                if (typeof item === 'string') {
+                    return item;
+                }
+                // Si es un objeto con propiedad 'url', extraer la URL
+                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
+                    return item.url;
+                }
+                // Si no es ninguno de los formatos esperados, ignorar
+                return null;
+            })
+            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
+    }
+
     static async getAll(): Promise<Villa[]> {
         try {
             const { rows } = await db.query('SELECT * FROM villas');
-            return rows;
+            return rows.map(villa => {
+                if (typeof villa.images === 'string') {
+                    try {
+                        villa.images = this.normalizeImageArray(JSON.parse(villa.images));
+                    } catch (error) {
+                        console.error('Error parsing villa images:', error);
+                        villa.images = [];
+                    }
+                } else if (Array.isArray(villa.images)) {
+                    villa.images = this.normalizeImageArray(villa.images);
+                } else {
+                    villa.images = [];
+                }
+                return villa;
+            });
         } catch (error) {
             console.error('Error getting all villas:', error);
             throw new Error('Database error');
@@ -16,7 +57,23 @@ export default class VillaModel {
     static async getVillaById(id: number): Promise<Villa | null> {
         try {
             const { rows } = await db.query('SELECT * FROM villas WHERE id = $1', [id]);
-            return rows[0] || null;
+            if (rows.length === 0) return null;
+            
+            const villa = rows[0];
+            if (typeof villa.images === 'string') {
+                try {
+                    villa.images = this.normalizeImageArray(JSON.parse(villa.images));
+                } catch (error) {
+                    console.error('Error parsing villa images:', error);
+                    villa.images = [];
+                }
+            } else if (Array.isArray(villa.images)) {
+                villa.images = this.normalizeImageArray(villa.images);
+            } else {
+                villa.images = [];
+            }
+            
+            return villa;
         } catch (error) {
             console.error('Error getting villa by ID:', error);
             throw new Error('Database error');
@@ -151,13 +208,18 @@ export default class VillaModel {
                 updatedVilla.price = villaData.price;
             }
             
-            if (updatedVilla.images && typeof updatedVilla.images === 'string') {
+            // Normalizar imágenes
+            if (typeof updatedVilla.images === 'string') {
                 try {
-                    updatedVilla.images = JSON.parse(updatedVilla.images);
+                    updatedVilla.images = this.normalizeImageArray(JSON.parse(updatedVilla.images));
                 } catch (error) {
-                    console.error('Error parsing images:', error);
+                    console.error('Error parsing villa images:', error);
                     updatedVilla.images = [];
                 }
+            } else if (Array.isArray(updatedVilla.images)) {
+                updatedVilla.images = this.normalizeImageArray(updatedVilla.images);
+            } else {
+                updatedVilla.images = [];
             }
 
             return updatedVilla;

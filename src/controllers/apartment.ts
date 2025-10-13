@@ -45,8 +45,7 @@ class ApartmentController {
                     const optimizedImages = ImageService.optimizeForContext(apartment.images, 'list');
                     return {
                         ...apartment,
-                        images: optimizedImages.images, // URLs optimizadas para listado
-                        originalImages: apartment.images // URLs originales como backup
+                        images: optimizedImages.images // URLs optimizadas para listado
                     };
                 }
                 return apartment;
@@ -69,8 +68,7 @@ class ApartmentController {
                     const apartmentWithOptimizedImages = {
                         ...apartment,
                         images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages, // Todas las variantes de tamaño
-                        originalImages: apartment.images // URLs originales como backup
+                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
                     };
                     res.status(200).json(apartmentWithOptimizedImages);
                 } else {
