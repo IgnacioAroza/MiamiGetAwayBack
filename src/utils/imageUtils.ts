@@ -28,8 +28,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
-            quality: 85,
-            format: 'auto'
+            quality: 85
         }
     },
     cars: {
@@ -38,8 +37,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
-            quality: 85,
-            format: 'auto'
+            quality: 85
         }
     },
     villas: {
@@ -48,8 +46,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
-            quality: 85,
-            format: 'auto'
+            quality: 85
         }
     },
     yachts: {
@@ -58,8 +55,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
-            quality: 85,
-            format: 'auto'
+            quality: 85
         }
     }
 };
@@ -70,22 +66,19 @@ export const TRANSFORMATION_PRESETS = {
         width: 300,
         height: 200,
         crop: 'fill',
-        quality: 70,
-        format: 'auto'
+        quality: 70
     },
     medium: {
         width: 800,
         height: 600,
         crop: 'limit',
-        quality: 80,
-        format: 'auto'
+        quality: 80
     },
     large: {
         width: 1200,
         height: 900,
         crop: 'limit',
-        quality: 85,
-        format: 'auto'
+        quality: 85
     }
 };
 
