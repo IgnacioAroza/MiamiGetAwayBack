@@ -705,33 +705,29 @@ export class ReservationController {
                     await EmailService.sendStatusChangeNotification(reservationData, reservationData.status);
                     break;
                 case 'payment':
-                    // Specific validation for payment notifications
-                    if (Number(reservationData.amountDue) > 0) {
-                        const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
-                        
-                        if (!payments || payments.length === 0) {
-                            res.status(400).json({ 
-                                error: 'Cannot send payment notifications without registered payments',
-                                details: 'Please register at least one payment before sending the notification'
-                            });
-                            return;
-                        }
-
-                        const lastPayment = payments[0];
-                        const isPaymentComplete = Number(reservationData.amountDue) <= 0;
-
-                        await EmailService.sendPaymentNotification(
-                            reservationData,
-                            lastPayment.amount,
-                            isPaymentComplete
-                        );
-                    } else {
+                    // Validar que existan pagos registrados
+                    const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
+                    
+                    if (!payments || payments.length === 0) {
                         res.status(400).json({ 
-                            error: 'Payment notification not required',
-                            details: 'The pending amount is 0, there are no pending payments to notify'
+                            error: 'Cannot send payment notifications without registered payments',
+                            details: 'Please register at least one payment before sending the notification'
                         });
                         return;
                     }
+
+                    // Obtener el último pago registrado
+                    const lastPayment = payments[0];
+                    
+                    // Determinar si el pago está completo basándose en el monto pendiente
+                    const isPaymentComplete = Number(reservationData.amountDue) <= 0;
+
+                    // Enviar notificación de pago (funciona para pagos parciales y completos)
+                    await EmailService.sendPaymentNotification(
+                        reservationData,
+                        lastPayment.amount,
+                        isPaymentComplete
+                    );
                     break;
                 default:
                     res.status(400).json({ error: 'Invalid notification type' });
