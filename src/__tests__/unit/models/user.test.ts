@@ -44,8 +44,19 @@ describe('UserModel', () => {
             
             const result = await UserModel.getAll();
             
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM clients');
+            expect(db.query).toHaveBeenCalledWith('SELECT * FROM clients', []);
             expect(result).toEqual([{ id: 1, name: 'John' }]);
+        });
+
+        it('debería aplicar filtros correctamente', async () => {
+            (db.query as any).mockResolvedValueOnce({ rows: [] });
+
+            await UserModel.getAll({ name: 'John', email: 'example' });
+
+            expect(db.query).toHaveBeenCalledWith(
+                'SELECT * FROM clients WHERE name ILIKE $1 AND email ILIKE $2',
+                ['%John%', '%example%']
+            );
         });
         
         it('debería devolver un array vacío cuando hay un error', async () => {

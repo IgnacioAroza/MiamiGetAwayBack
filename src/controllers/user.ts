@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
 import UserModel from '../models/user.js'
-import { validateUser } from '../schemas/userSchema.js'
+import { validateUser, validateUserFilters } from '../schemas/userSchema.js'
 import { Client } from '../types/index.js'
+import type { UserFilters } from '../schemas/userSchema.js'
 
 interface CreateUserData {
   name: string;
@@ -17,7 +18,33 @@ interface CreateUserData {
 class UserController {
     static async getAllUsers(req: Request, res: Response): Promise<void> {
         try {
-            const users = await UserModel.getAll()
+            const filters: UserFilters = {}
+
+            if (typeof req.query.name === 'string' && req.query.name.trim() !== '') {
+                filters.name = req.query.name.trim()
+            }
+            if (typeof req.query.lastname === 'string' && req.query.lastname.trim() !== '') {
+                filters.lastname = req.query.lastname.trim()
+            }
+            if (typeof req.query.email === 'string' && req.query.email.trim() !== '') {
+                filters.email = req.query.email.trim()
+            }
+            if (typeof req.query.phone === 'string' && req.query.phone.trim() !== '') {
+                filters.phone = req.query.phone.trim()
+            }
+
+            if (Object.keys(filters).length > 0) {
+                const validationResult = validateUserFilters(filters)
+                if (!validationResult.success) {
+                    res.status(400).json({
+                        message: 'Invalid filters',
+                        error: validationResult.error.flatten()
+                    })
+                    return
+                }
+            }
+
+            const users = await UserModel.getAll(Object.keys(filters).length ? filters : undefined)
             res.status(200).json(users)
         } catch (error: any) {
             res.status(500).json({ error: error.message })

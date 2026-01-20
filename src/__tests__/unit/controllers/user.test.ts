@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import UserController from '../../../controllers/user.js';
 import UserModel from '../../../models/user.js';
-import { validateUser } from '../../../schemas/userSchema.js';
+import { validateUser, validateUserFilters } from '../../../schemas/userSchema.js';
 
 // Mock del modelo
 vi.mock('../../../models/user.js', () => ({
@@ -14,7 +14,8 @@ vi.mock('../../../models/user.js', () => ({
 
 // Mock del schema
 vi.mock('../../../schemas/userSchema.js', () => ({
-    validateUser: vi.fn()
+    validateUser: vi.fn(),
+    validateUserFilters: vi.fn()
 }));
 
 describe('UserController', () => {
@@ -29,7 +30,8 @@ describe('UserController', () => {
         };
         
         mockRequest = {
-            body: {}
+            body: {},
+            query: {}
         };
         
         mockResponse = {
@@ -44,6 +46,7 @@ describe('UserController', () => {
         };
 
         vi.clearAllMocks();
+        (validateUserFilters as any).mockReturnValue({ success: true, data: {} });
     });
 
     describe('getAllUsers', () => {
@@ -62,6 +65,32 @@ describe('UserController', () => {
             expect(mockResponse.json).toHaveBeenCalledWith(mockUsers);
             expect(responseObject.statusCode).toBe(200);
             expect(responseObject.body).toEqual(mockUsers);
+        });
+
+        it('debería aplicar filtros de búsqueda y pasar valores normalizados al modelo', async () => {
+            mockRequest.query = { name: ' John ', email: 'example', phone: '123' };
+            (UserModel.getAll as any).mockResolvedValueOnce([]);
+
+            await UserController.getAllUsers(mockRequest as Request, mockResponse as Response);
+
+            expect(validateUserFilters).toHaveBeenCalledWith({ name: 'John', email: 'example', phone: '123' });
+            expect(UserModel.getAll).toHaveBeenCalledWith({ name: 'John', email: 'example', phone: '123' });
+            expect(mockResponse.status).toHaveBeenCalledWith(200);
+        });
+
+        it('debería devolver 400 si los filtros son inválidos', async () => {
+            mockRequest.query = { lastname: 'Doe' };
+            (validateUserFilters as any).mockReturnValueOnce({
+                success: false,
+                error: { flatten: () => ({ issues: ['invalid'] }) }
+            });
+
+            await UserController.getAllUsers(mockRequest as Request, mockResponse as Response);
+
+            expect(UserModel.getAll).not.toHaveBeenCalled();
+            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(responseObject.statusCode).toBe(400);
+            expect(responseObject.body).toHaveProperty('message', 'Invalid filters');
         });
 
         it('debería manejar errores y devolver status 500', async () => {

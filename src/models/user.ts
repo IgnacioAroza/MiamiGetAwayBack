@@ -1,11 +1,36 @@
 import db from '../utils/db_render.js';
 import { Client } from '../types/index.js';
 import { validateUser } from '../schemas/userSchema.js';
+import type { UserFilters } from '../schemas/userSchema.js';
 
 export default class UserModel {
-    static async getAll(): Promise<Client[]> {
+    static async getAll(filters?: UserFilters): Promise<Client[]> {
         try {
-            const { rows } = await db.query('SELECT * FROM clients');
+            const conditions: string[] = [];
+            const values: any[] = [];
+
+            if (filters?.name) {
+                values.push(`%${filters.name}%`);
+                conditions.push(`name ILIKE $${values.length}`);
+            }
+            if (filters?.lastname) {
+                values.push(`%${filters.lastname}%`);
+                conditions.push(`lastname ILIKE $${values.length}`);
+            }
+            if (filters?.email) {
+                values.push(`%${filters.email}%`);
+                conditions.push(`email ILIKE $${values.length}`);
+            }
+            if (filters?.phone) {
+                values.push(`%${filters.phone}%`);
+                conditions.push(`phone ILIKE $${values.length}`);
+            }
+
+            const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+            const baseQuery = 'SELECT * FROM clients';
+            const query = whereClause ? `${baseQuery} ${whereClause}` : baseQuery;
+
+            const { rows } = await db.query(query, values);
             return rows;
         } catch (error) {
             console.error('Error en getAll:', error);
