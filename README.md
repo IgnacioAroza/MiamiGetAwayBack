@@ -1,6 +1,6 @@
 # MiamiGetAwayBack
 
-Backend para la aplicación MiamiGetAway, un servicio de alquiler de apartamentos en Miami.
+Backend para la aplicación MiamiGetAway, un servicio de alquiler de propiedades y servicios en Miami (apartamentos, villas, yates, autos).
 
 ## Tecnologías utilizadas
 
@@ -10,14 +10,17 @@ Backend para la aplicación MiamiGetAway, un servicio de alquiler de apartamento
 - PostgreSQL
 - Vitest (para pruebas)
 - Cloudinary (para almacenamiento de imágenes)
+- Nodemailer + Zoho SMTP (para envío de emails)
+- PDFKit (para generación de PDFs)
+- Google My Business API (para sincronización de reviews)
 
 ## Instalación
 
 1. Clona el repositorio:
 
 ```bash
-git clone https://github.com/tu-usuario/miamigetaway.git
-cd miamigetaway
+git clone https://github.com/IgnacioAroza/MiamiGetAwayBack.git
+cd MiamiGetAwayBack
 ```
 
 2. Instala las dependencias:
@@ -28,21 +31,47 @@ npm install
 
 3. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
-```
-PORT=3000
-DATABASE_URL=postgres://usuario:contraseña@localhost:5432/miamigetaway
+```env
+# Servidor
+PORT=3001
+NODE_ENV=development
+
+# CORS — orígenes permitidos separados por coma
+ALLOWED_ORIGINS=http://localhost:5173,https://tu-frontend.com
+
+# Base de datos (variables individuales usadas por db_render.ts)
+DB_USER=tu_usuario
+HOST=tu_host
+DATABASE=tu_base_de_datos
+PASSWORD=tu_password
+PORT_DB=5432
+
+# JWT
 JWT_SECRET=tu_secreto_jwt
-JWT_EXPIRES_IN=1d
+
+# Cloudinary
 CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
+
+# Email (SMTP)
+EMAIL_HOST=smtp.zoho.com
+EMAIL_PORT=587
+EMAIL_USER=tu_email@dominio.com
+EMAIL_PASSWORD=tu_password_email
+ADMIN_EMAIL=admin@dominio.com
+
+# Google My Business (OAuth2)
+GOOGLE_CLIENT_ID=tu_client_id
+GOOGLE_CLIENT_SECRET=tu_client_secret
+GOOGLE_PROJECT_ID=tu_project_id
+GOOGLE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+GOOGLE_TOKEN_URI=https://oauth2.googleapis.com/token
+GOOGLE_AUTH_PROVIDER_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3001/api/google-mybusiness/callback
 ```
 
-4. Para Google My Business Reviews, agrega el archivo de credenciales OAuth:
-   - Descarga `client_secret_OAtuh_MGA_reviews.json` desde Google Cloud Console
-   - Colócalo en la raíz del proyecto (mismo nivel que package.json)
-
-5. Ejecuta las migraciones de la base de datos:
+4. Ejecuta las migraciones de la base de datos:
 
 ```bash
 npm run migrate
@@ -65,376 +94,282 @@ npm start
 
 ## Pruebas
 
-Para ejecutar las pruebas:
-
 ```bash
+# Ejecutar todas las pruebas
 npm test
-```
 
-Para ejecutar las pruebas en modo watch:
-
-```bash
+# Modo watch
 npm run test:watch
-```
 
-Para ver la cobertura de código:
-
-```bash
+# Cobertura de código
 npm run test:coverage
 ```
 
 ## Estructura del proyecto
 
-- `src/`: Código fuente
-  - `controllers/`: Controladores de la API
-  - `models/`: Modelos de datos
-  - `routes/`: Rutas de la API
-  - `middleware/`: Middlewares
-  - `utils/`: Utilidades
-  - `schemas/`: Esquemas de validación
-  - `types/`: Tipos de TypeScript
-  - `__tests__/`: Pruebas
-- `dist/`: Código compilado
+```
+src/
+├── controllers/     # Lógica de cada endpoint
+├── models/          # Queries a la base de datos
+├── routes/          # Definición de rutas
+├── services/        # Lógica de negocio reutilizable
+│   ├── emailService.ts          # Envío de emails (Nodemailer)
+│   ├── pdfService.ts            # Generación de PDFs
+│   ├── imageService.ts          # Manejo centralizado de Cloudinary
+│   ├── cronService.ts           # Jobs automáticos (actualmente desactivado)
+│   ├── googleMyBusinessService.ts
+│   ├── reservationService.ts
+│   ├── reservationPaymentsService.ts
+│   └── monthlySummaryService.ts
+├── middleware/      # Auth y upload
+├── schemas/         # Validación con Zod
+├── types/           # Tipos TypeScript
+├── utils/           # DB connection, Cloudinary config
+└── __tests__/       # Pruebas unitarias e integración
+migrations/
+└── scripts/         # Archivos SQL de migraciones
+```
 
 ## API Endpoints
 
-### Google My Business Reviews
+> Los endpoints marcados con **(auth)** requieren header `Authorization: Bearer <token>`.
 
-Sistema completo de integración con Google My Business para gestionar reviews de manera automática.
+---
 
-#### Autenticación OAuth
+### Autenticación
 
-- `GET /api/google-mybusiness/auth-status`: Verificar estado de autenticación
-- `GET /api/google-mybusiness/auth/start`: Iniciar proceso de autenticación OAuth con Google
-- `GET /api/google-mybusiness/callback`: Callback de OAuth (manejado automáticamente)
+- `POST /api/auth/login` — Iniciar sesión como administrador
+  - Body: `{ "username": "string", "password": "string" }`
+  - Respuesta: `{ "token": "...", "admin": { "id", "username" } }`
 
-#### Reviews - Endpoints para Frontend
+---
 
-- `GET /api/google-mybusiness/reviews`: **Obtener reviews desde base de datos local** (recomendado para frontend)
-  - Query params:
-    - `limit` (número): Cantidad de reviews por página (default: 50)
-    - `offset` (número): Desplazamiento para paginación (default: 0)
-  - Respuesta:
-    ```json
-    {
-      "success": true,
-      "data": {
-        "reviews": [
-          {
-            "id": 1,
-            "google_review_id": "AbFvOqloz_XyevxiRF4EoXoq0ZZidDd8oE9VBXnneSDoyoXj5WTZeWFR2znS0GSt08jdbON9uTo4",
-            "reviewer_name": "Juan Pérez",
-            "reviewer_photo_url": "https://...",
-            "rating": 5,
-            "comment": "Excelente servicio...",
-            "google_create_time": "2024-12-15T10:30:00Z",
-            "google_update_time": "2024-12-15T10:30:00Z",
-            "reply_comment": "Gracias por su comentario...",
-            "sync_status": "active",
-            "local_created_at": "2025-09-29T15:00:00Z"
-          }
-        ],
-        "count": 44,
-        "total": 44
-      }
-    }
-    ```
+### Administradores
 
-- `GET /api/google-mybusiness/reviews/stats`: **Estadísticas de reviews** (ideal para dashboards)
-  - Respuesta:
-    ```json
-    {
-      "success": true,
-      "data": {
-        "totalReviews": 44,
-        "averageRating": 4.8,
-        "ratingDistribution": {
-          "1": 0,
-          "2": 1,
-          "3": 2,
-          "4": 8,
-          "5": 33
-        },
-        "lastSync": "2025-09-29T15:00:14.860Z",
-        "recentReviews": 5
-      }
-    }
-    ```
+- `GET /api/admins` — Obtener todos los administradores
+- `GET /api/admins/:id` — Obtener un administrador por ID
+- `POST /api/admins` — Crear un nuevo administrador
+- `PUT /api/admins/:id` — Actualizar un administrador
+- `DELETE /api/admins/:id` — Eliminar un administrador
 
-- `GET /api/google-mybusiness/reviews/search`: **Buscar reviews por texto**
-  - Query params:
-    - `q` (string, requerido): Término de búsqueda en comentarios
-    - `limit` (número): Cantidad de resultados (default: 20)
-  - Respuesta: Mismo formato que `/reviews` pero filtrado
-
-#### Reviews - Endpoints de Administración
-
-- `GET /api/google-mybusiness/reviews/fetch`: Obtener reviews directamente desde Google API (sin guardar)
-- `POST /api/google-mybusiness/reviews/sync`: **Sincronizar reviews** (fetch desde Google + guardar en BD)
-- `GET /api/google-mybusiness/admin/tokens`: Información de tokens OAuth (auth requerido)
-- `GET /api/google-mybusiness/admin/sync-info`: Información de sincronización (auth requerido)
-- `POST /api/google-mybusiness/admin/initialize`: Forzar inicialización (auth requerido)
-- `GET /api/google-mybusiness/health`: Health check del servicio
-
-#### Ejemplos de uso para Frontend:
-
-```bash
-# Obtener todas las reviews (paginadas)
-GET /api/google-mybusiness/reviews?limit=10&offset=0
-
-# Obtener estadísticas para dashboard
-GET /api/google-mybusiness/reviews/stats
-
-# Buscar reviews que mencionen "excelente"
-GET /api/google-mybusiness/reviews/search?q=excelente&limit=5
-
-# Verificar estado de autenticación
-GET /api/google-mybusiness/auth-status
-
-# Sincronizar reviews (para admin)
-POST /api/google-mybusiness/reviews/sync
-```
-
-#### Casos de uso Frontend:
-
-1. **Widget de Reviews**: Usar `/reviews?limit=5` para mostrar las 5 reviews más recientes
-2. **Dashboard de Stats**: Usar `/reviews/stats` para mostrar métricas y gráficos
-3. **Página completa de Reviews**: Usar `/reviews` con paginación
-4. **Búsqueda de Reviews**: Usar `/reviews/search?q=...` para búsqueda en tiempo real
-5. **Panel de Administración**: Usar endpoints `/admin/*` para gestión
-
-### Summaries / Reportes
-
-- `GET /api/summaries/sales-volume` (auth requerido): Reporte de volumen de ventas basado en pagos.
-  - Query params:
-    - `from` (YYYY-MM-DD) requerido
-    - `to` (YYYY-MM-DD) requerido
-    - `groupBy` opcional: `day | month | year` (por defecto `month`)
-  - Respuesta:
-    - `{ from, to, groupBy, series: [{ period, totalRevenue, totalPayments }], totals: { totalRevenue, totalPayments } }`
-  - Ejemplos:
-    ```bash
-    # Ventas por mes en Q1 2025
-    GET /api/summaries/sales-volume?from=2025-01-01&to=2025-03-31&groupBy=month
-
-    # Ventas diarias en enero 2025
-    GET /api/summaries/sales-volume?from=2025-01-01&to=2025-01-31&groupBy=day
-    ```
-
-- Endpoints existentes de resúmenes mensuales (auth requerido):
-  - `POST /api/summaries/generate` — genera/actualiza el resumen del mes. Body: `{ month, year }`.
-  - `GET /api/summaries/:year/:month` — obtiene detalles del resumen (reservas y pagos del mes).
-  - `GET /api/summaries/:year/:month/pdf` — descarga PDF del resumen mensual.
-  - `POST /api/summaries/:year/:month/send` — envía el resumen mensual por email.
-
-### Apartamentos
-
-- `GET /api/apartments`: Obtener todos los apartamentos
-- `GET /api/apartments/:id`: Obtener un apartamento por ID
-- `POST /api/apartments`: Crear un nuevo apartamento
-- `PUT /api/apartments/:id`: Actualizar un apartamento
-- `DELETE /api/apartments/:id`: Eliminar un apartamento
-
-#### Query Parameters disponibles para filtrar apartamentos:
-
-**Filtros por precio:**
-- `minPrice`: Precio mínimo (ej: `100.50`)
-- `maxPrice`: Precio máximo (ej: `500.00`)
-
-**Filtros por capacidad:**
-- `capacity`: Cantidad mínima de personas (ej: `4`)
-
-**Filtros por ubicación:**
-- `q`: Búsqueda por texto en la dirección (ej: `miami beach`)
-
-#### Ejemplos de uso:
-
-```bash
-# Obtener todos los apartamentos
-GET /api/apartments
-
-# Filtrar por rango de precio
-GET /api/apartments?minPrice=150&maxPrice=400
-
-# Filtrar por capacidad mínima de personas
-GET /api/apartments?capacity=4
-
-# Filtrar por ubicación
-GET /api/apartments?q=miami beach
-
-# Filtros combinados: precio, capacidad y ubicación
-GET /api/apartments?minPrice=200&maxPrice=350&capacity=2&q=downtown
-
-# Solo precio mínimo
-GET /api/apartments?minPrice=100
-
-# Solo precio máximo
-GET /api/apartments?maxPrice=300
-
-# Para frontend con barra deslizante de precio
-GET /api/apartments?minPrice=150.75&maxPrice=425.50&capacity=6
-```
-
-### Autos
-
-- `GET /api/cars`: Obtener todos los autos
-- `GET /api/cars/:id`: Obtener un auto por ID
-- `POST /api/cars`: Crear un nuevo auto
-- `PUT /api/cars/:id`: Actualizar un auto
-- `DELETE /api/cars/:id`: Eliminar un auto
-
-#### Query Parameters disponibles para filtrar autos:
-
-**Filtros por precio:**
-- `minPrice`: Precio mínimo (ej: `100.50`)
-- `maxPrice`: Precio máximo (ej: `500.00`)
-
-**Filtros por capacidad:**
-- `passengers`: Cantidad mínima de pasajeros (ej: `4`)
-
-#### Ejemplos de uso:
-
-```bash
-# Obtener todos los autos
-GET /api/cars
-
-# Filtrar por rango de precio
-GET /api/cars?minPrice=100&maxPrice=300
-
-# Filtrar por cantidad de pasajeros
-GET /api/cars?passengers=4
-
-# Filtrar por precio y pasajeros combinados
-GET /api/cars?minPrice=150&maxPrice=400&passengers=2
-
-# Solo precio mínimo
-GET /api/cars?minPrice=200
-
-# Solo precio máximo  
-GET /api/cars?maxPrice=250
-
-# Para frontend con barra deslizante de precio
-GET /api/cars?minPrice=100.50&maxPrice=350.75&passengers=4
-```
+---
 
 ### Usuarios
 
-- `POST /api/auth/register`: Registrar un nuevo usuario
-- `POST /api/auth/login`: Iniciar sesión
-- `GET /api/users/me`: Obtener información del usuario actual
+- `GET /api/users` — Obtener todos los usuarios
+- `GET /api/users/:id` — Obtener un usuario por ID
+- `POST /api/users` — Crear un usuario
+- `PUT /api/users/:id` **(auth)** — Actualizar un usuario
+- `DELETE /api/users/:id` **(auth)** — Eliminar un usuario
+
+---
+
+### Apartamentos
+
+- `GET /api/apartments` — Obtener todos los apartamentos
+- `GET /api/apartments/:id` — Obtener un apartamento por ID
+- `POST /api/apartments` **(auth)** — Crear un apartamento (acepta imágenes: `multipart/form-data`, campo `images`, máx. 30)
+- `PUT /api/apartments/:id` **(auth)** — Actualizar un apartamento (acepta imágenes)
+- `DELETE /api/apartments/:id` **(auth)** — Eliminar un apartamento
+
+#### Query Parameters para filtrar:
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `minPrice` | número | Precio mínimo |
+| `maxPrice` | número | Precio máximo |
+| `capacity` | número | Capacidad mínima de personas |
+| `q` | string | Búsqueda por texto en la dirección |
+
+```bash
+GET /api/apartments?minPrice=150&maxPrice=400&capacity=4&q=miami beach
+```
+
+---
+
+### Villas
+
+- `GET /api/villas` — Obtener todas las villas
+- `GET /api/villas/:id` — Obtener una villa por ID
+- `POST /api/villas` **(auth)** — Crear una villa (acepta imágenes: `multipart/form-data`, campo `images`, máx. 30)
+- `PUT /api/villas/:id` **(auth)** — Actualizar una villa (acepta imágenes)
+- `DELETE /api/villas/:id` **(auth)** — Eliminar una villa
+
+---
+
+### Yates
+
+- `GET /api/yachts` — Obtener todos los yates
+- `GET /api/yachts/:id` — Obtener un yate por ID
+- `POST /api/yachts` **(auth)** — Crear un yate (acepta imágenes: `multipart/form-data`, campo `images`, máx. 30)
+- `PUT /api/yachts/:id` **(auth)** — Actualizar un yate (acepta imágenes)
+- `DELETE /api/yachts/:id` **(auth)** — Eliminar un yate
+
+---
+
+### Autos
+
+- `GET /api/cars` — Obtener todos los autos
+- `GET /api/cars/:id` — Obtener un auto por ID
+- `POST /api/cars` **(auth)** — Crear un auto (acepta imágenes: `multipart/form-data`, campo `images`, máx. 30)
+- `PUT /api/cars/:id` **(auth)** — Actualizar un auto (acepta imágenes)
+- `DELETE /api/cars/:id` **(auth)** — Eliminar un auto
+
+#### Query Parameters para filtrar:
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `minPrice` | número | Precio mínimo |
+| `maxPrice` | número | Precio máximo |
+| `passengers` | número | Cantidad mínima de pasajeros |
+
+```bash
+GET /api/cars?minPrice=100&maxPrice=300&passengers=4
+```
+
+---
+
+### Reviews (internas)
+
+Endpoint para reviews guardadas localmente (distintas de Google My Business).
+
+- `GET /api/reviews` — Obtener todas las reviews
+- `POST /api/reviews` — Crear una review
+- `DELETE /api/reviews/:id` — Eliminar una review
+
+---
 
 ### Reservaciones
 
-- `GET /api/reservations`: Obtener todas las reservaciones
+- `GET /api/reservations` **(auth)** — Obtener todas las reservaciones
+- `GET /api/reservations/:id` **(auth)** — Obtener una reservación por ID
+- `POST /api/reservations` **(auth)** — Crear una reservación
+- `PUT /api/reservations/:id` **(auth)** — Actualizar una reservación
+- `PATCH /api/reservations/:id` **(auth)** — Actualizar parcialmente una reservación
+- `DELETE /api/reservations/:id` **(auth)** — Eliminar una reservación
+- `GET /api/reservations/:id/payments` **(auth)** — Obtener los pagos de una reservación
+- `POST /api/reservations/:id/payments` **(auth)** — Registrar un pago en una reservación
+- `PATCH /api/reservations/:id/payment-status` **(auth)** — Actualizar el estado de pago
+- `POST /api/reservations/:id/pdf` **(auth)** — Generar el PDF de una reservación
+- `GET /api/reservations/:id/pdf/download` **(auth)** — Descargar el PDF de una reservación
+- `POST /api/reservations/:id/send-notification` **(auth)** — Enviar notificación por email al cliente
 
-#### Query Parameters disponibles para filtrar reservaciones:
+#### Query Parameters para filtrar:
 
-**Filtros básicos:**
-- `startDate`: Fecha de inicio en formato `MM-DD-YYYY HH:mm`
-- `endDate`: Fecha de fin en formato `MM-DD-YYYY HH:mm`
-- `status`: Estado de la reservación (pending, confirmed, checked_in, checked_out, cancelled)
-- `clientName`: Buscar por nombre del cliente (coincidencia parcial)
-- `clientEmail`: Buscar por email exacto del cliente
-
-**Nuevos filtros:**
-- `q`: Búsqueda general por nombre o apellido del cliente (coincidencia parcial)
-- `clientLastname`: Buscar por apellido del cliente (coincidencia parcial)
-- `upcoming`: Filtrar reservaciones futuras (`true`, `false`, `1`, `0`)
-- `fromDate`: Fecha base para el filtro `upcoming` en formato `MM-DD-YYYY` (solo con `upcoming=true`)
-- `withinDays`: Limitar reservaciones futuras a N días desde la fecha base (solo con `upcoming=true`)
-
-#### Ejemplos de uso:
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `startDate` | `MM-DD-YYYY HH:mm` | Fecha de inicio |
+| `endDate` | `MM-DD-YYYY HH:mm` | Fecha de fin |
+| `status` | string | `pending`, `confirmed`, `checked_in`, `checked_out`, `cancelled` |
+| `clientName` | string | Búsqueda parcial por nombre |
+| `clientLastname` | string | Búsqueda parcial por apellido |
+| `clientEmail` | string | Email exacto del cliente |
+| `q` | string | Búsqueda general por nombre o apellido |
+| `upcoming` | `true/false` | Filtrar reservaciones futuras |
+| `fromDate` | `MM-DD-YYYY` | Fecha base para `upcoming` |
+| `withinDays` | número | Limitar a N días desde `fromDate` (solo con `upcoming=true`) |
 
 ```bash
-# Obtener todas las reservaciones
-GET /api/reservations
+# Reservaciones confirmadas futuras en los próximos 30 días
+GET /api/reservations?status=confirmed&upcoming=true&withinDays=30
 
-# Buscar por nombre o apellido
-GET /api/reservations?q=john
-
-# Reservaciones futuras
-GET /api/reservations?upcoming=true
-
-# Reservaciones futuras desde una fecha específica
-GET /api/reservations?upcoming=true&fromDate=01-15-2025
-
-# Reservaciones futuras en los próximos 30 días
-GET /api/reservations?upcoming=true&withinDays=30
-
-# Reservaciones futuras en los próximos 7 días desde una fecha específica
-GET /api/reservations?upcoming=true&fromDate=01-15-2025&withinDays=7
-
-# Combinar filtros: reservaciones confirmadas futuras de un cliente
-GET /api/reservations?status=confirmed&upcoming=true&clientLastname=smith
+# Buscar por apellido
+GET /api/reservations?q=smith
 ```
+
+---
 
 ### Pagos de Reservaciones
 
-- `GET /api/reservationPayments`: Obtener todos los pagos de reservaciones
+- `GET /api/reservation-payments` **(auth)** — Obtener todos los pagos
+- `GET /api/reservation-payments/:id` **(auth)** — Obtener un pago por ID
+- `POST /api/reservation-payments` **(auth)** — Crear un pago
+- `PUT /api/reservation-payments/:id` **(auth)** — Actualizar un pago
+- `DELETE /api/reservation-payments/:id` **(auth)** — Eliminar un pago
 
-#### Query Parameters disponibles para filtrar pagos:
+#### Query Parameters para filtrar:
 
-**Filtros por fechas:**
-- `startDate`: Fecha de inicio de pagos en formato `MM-DD-YYYY`
-- `endDate`: Fecha de fin de pagos en formato `MM-DD-YYYY`
-
-**Filtros por pago:**
-- `paymentMethod`: Método de pago (ej: cash, card, transfer)
-- `status`: Estado del pago
-- `reservationId`: ID específico de reservación
-
-**Filtros por cliente:**
-- `clientName`: Buscar por nombre del cliente (coincidencia parcial)
-- `clientEmail`: Buscar por email exacto del cliente
-- `clientLastname`: Buscar por apellido del cliente (coincidencia parcial)
-- `q`: Búsqueda general por nombre o apellido del cliente (coincidencia parcial)
-
-#### Ejemplos de uso:
-
-```bash
-# Obtener todos los pagos
-GET /api/reservation-payments
-
-# Pagos por método
-GET /api/reservation-payments?paymentMethod=card
-
-# Pagos de un cliente específico
-GET /api/reservation-payments?q=john
-
-# Pagos en un rango de fechas
-GET /api/reservation-payments?startDate=01-01-2025&endDate=12-31-2025
-
-# Pagos de una reservación específica
-GET /api/reservation-payments?reservationId=123
-
-# Combinar filtros: pagos con tarjeta de un cliente en enero
-GET /api/reservation-payments?paymentMethod=card&clientLastname=smith&startDate=01-01-2025&endDate=01-31-2025
-```
-
-## Ejemplo de uso de la API
-
-**Registrar usuario:**
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `startDate` | `MM-DD-YYYY` | Fecha de inicio |
+| `endDate` | `MM-DD-YYYY` | Fecha de fin |
+| `paymentMethod` | string | Método de pago (`cash`, `card`, `transfer`) |
+| `status` | string | Estado del pago |
+| `reservationId` | número | ID de una reservación específica |
+| `clientName` | string | Búsqueda parcial por nombre |
+| `clientLastname` | string | Búsqueda parcial por apellido |
+| `clientEmail` | string | Email exacto del cliente |
+| `q` | string | Búsqueda general por nombre o apellido |
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@correo.com","password":"123456"}'
+GET /api/reservation-payments?paymentMethod=card&startDate=01-01-2025&endDate=12-31-2025
 ```
 
-**Obtener apartamentos:**
+---
+
+### Resúmenes / Reportes
+
+Todos los endpoints requieren **(auth)**.
+
+- `GET /api/summaries/sales-volume` — Reporte de volumen de ventas
+  - Query params: `from` (YYYY-MM-DD, requerido), `to` (YYYY-MM-DD, requerido), `groupBy` (`day | month | year`, default `month`)
+- `POST /api/summaries/generate` — Generar/actualizar resumen mensual. Body: `{ "month": number, "year": number }`
+- `GET /api/summaries/:year/:month` — Obtener detalles de un resumen mensual
+- `GET /api/summaries/:year/:month/pdf` — Descargar PDF del resumen mensual
+- `POST /api/summaries/:year/:month/send` — Enviar resumen mensual por email
 
 ```bash
-curl http://localhost:3000/api/apartments
+# Ventas por mes en Q1 2025
+GET /api/summaries/sales-volume?from=2025-01-01&to=2025-03-31&groupBy=month
 ```
+
+---
+
+### Google My Business Reviews
+
+Sistema de integración con Google My Business para gestionar reviews automáticamente.
+
+#### Autenticación OAuth
+
+- `GET /api/google-mybusiness/auth-status` — Verificar estado de autenticación
+- `GET /api/google-mybusiness/auth/start` — Iniciar proceso OAuth con Google
+- `GET /api/google-mybusiness/callback` — Callback de OAuth (manejado automáticamente)
+- `GET /api/google-mybusiness/health` — Health check del servicio
+
+#### Reviews — Endpoints para Frontend
+
+- `GET /api/google-mybusiness/reviews` — Obtener reviews desde base de datos local
+  - Query params: `limit` (default: 50), `offset` (default: 0)
+
+- `GET /api/google-mybusiness/reviews/stats` — Estadísticas de reviews (para dashboards)
+
+- `GET /api/google-mybusiness/reviews/search` — Buscar reviews por texto
+  - Query params: `q` (requerido), `limit` (default: 20)
+
+#### Reviews — Endpoints de Administración
+
+- `GET /api/google-mybusiness/reviews/fetch` — Obtener reviews desde Google API (sin guardar)
+- `POST /api/google-mybusiness/reviews/sync` — Sincronizar reviews (fetch + guardar en BD)
+- `GET /api/google-mybusiness/admin/tokens` **(auth)** — Información de tokens OAuth
+- `GET /api/google-mybusiness/admin/sync-info` **(auth)** — Información de sincronización
+- `POST /api/google-mybusiness/admin/initialize` **(auth)** — Forzar inicialización
+
+---
+
+### Cron
+
+- `POST /api/cron/update-reservation-statuses` **(auth)** — Ejecutar manualmente la actualización de estados de reservaciones
+
+---
 
 ## Despliegue
 
-Puedes desplegar este backend en plataformas como [Railway](https://railway.app/), [Render](https://render.com/) o [Heroku](https://heroku.com/).  
-Asegúrate de configurar correctamente las variables de entorno en el panel de la plataforma elegida.
+Podés desplegar este backend en plataformas como [Railway](https://railway.app/), [Render](https://render.com/) o [Heroku](https://heroku.com/).
+Asegurate de configurar todas las variables de entorno en el panel de la plataforma elegida.
 
 ## Contribución
 
-¡Las contribuciones son bienvenidas!  
+¡Las contribuciones son bienvenidas!
 Para contribuir:
 
 1. Haz un fork del repositorio.
@@ -447,22 +382,7 @@ Para contribuir:
 
 Este proyecto está licenciado bajo la Licencia MIT.
 
-## Mejoras Recientes
-
-- **Integración con Google My Business**: Sistema completo de reviews con autenticación OAuth2, sincronización automática y almacenamiento local. Incluye endpoints optimizados para frontend con paginación, búsqueda y estadísticas.
-
-- **Sistema de Reviews**: 
-  - Autenticación OAuth2 con Google My Business API
-  - Sincronización automática de reviews con base de datos PostgreSQL
-  - Endpoints REST optimizados para frontend con paginación y búsqueda
-  - Conversión automática de ratings (FIVE → 5, FOUR → 4, etc.)
-  - Dashboard de estadísticas con distribución de ratings y métricas
-
-- **Restructuración de Modelos**: Se eliminó el código de creación de tablas de los modelos. La creación de tablas ahora solo ocurre en los archivos de pruebas para garantizar un entorno limpio durante las pruebas. Esto mejora el rendimiento y la seguridad de la aplicación en producción.
-
-- **Mejora en el Manejo de Errores**: Los modelos ahora gestionan mejor los casos donde pueden devolverse resultados nulos, proporcionando respuestas más consistentes y fáciles de manejar por los controladores.
-
 ## Contacto
 
-¿Dudas o sugerencias?  
-Puedes abrir un issue o escribir a [ignacioaroza.ia@gmail.com](mailto:ignacioaroza.ia@gmail.com).
+¿Dudas o sugerencias?
+Podés abrir un issue o escribir a [ignacioaroza.ia@gmail.com](mailto:ignacioaroza.ia@gmail.com).
