@@ -12,3 +12,4 @@ temp/
 coverage/
 docker-compose.yml
 /docs
+.claude/settings.local.json
