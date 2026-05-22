@@ -1,17 +1,8 @@
 import { Request, Response } from 'express'
-import dotenv from 'dotenv'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import db from '../utils/db_render.js'
 import { Admin } from '../types/index.js'
-
-dotenv.config()
-
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!process.env.JWT_SECRET) {
-    console.warn('WARNING: JWT_SECRET is not set in the envoriment variables')
-}
 
 interface LoginRequest {
     username: string;
@@ -44,6 +35,7 @@ class AuthController {
                 return
             }
 
+            const JWT_SECRET = process.env.JWT_SECRET
             if (!JWT_SECRET) {
                 throw new Error('JWT_SECRET is not defined')
             }
