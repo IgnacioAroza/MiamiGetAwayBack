@@ -53,7 +53,9 @@ migrations/
 
 ## Memoria del proyecto
 
-Al inicio de cada conversación, leer `docs/MEMORY.md` para retomar contexto: cambios pendientes del cliente, decisiones tomadas y estado actual del proyecto.
+Al inicio de cada conversación:
+1. Leer `docs/memory/` — buscar el archivo `.md` con la fecha más reciente para ver en qué quedó la última sesión
+2. Leer `docs/MEMORY.md` — contexto general del proyecto, entidades, pendientes del cliente
 
 ## Approach
 
