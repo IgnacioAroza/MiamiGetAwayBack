@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 import dotenv from 'dotenv'
 import morgan from 'morgan'
 
@@ -36,14 +38,24 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 // Configuración de middlewares
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean)
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS?.split(','),
+    origin: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    maxAge: 86400 // 24 horas
+    maxAge: 86400
 }
 
+const loginRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    limit: 10,
+    message: { message: 'Too many login attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
+app.use(helmet())
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -60,7 +72,7 @@ app.use('/api/villas', villaRoutes)
 app.use('/api/yachts', yachtRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/admins', adminRoutes)
-app.use('/api/auth', authRoutes)
+app.use('/api/auth', loginRateLimit, authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)

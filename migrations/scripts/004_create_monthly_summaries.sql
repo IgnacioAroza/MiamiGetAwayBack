@@ -30,6 +30,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_monthly_summaries_updated_at ON monthly_summaries;
 CREATE TRIGGER update_monthly_summaries_updated_at
     BEFORE UPDATE ON monthly_summaries
     FOR EACH ROW
