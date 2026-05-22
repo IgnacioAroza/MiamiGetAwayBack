@@ -40,7 +40,7 @@ describe('AdminModel', () => {
             const result = await AdminModel.getAll();
             
             expect(result).toEqual(mockAdmins);
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM admins');
+            expect(db.query).toHaveBeenCalledWith('SELECT id, username, email FROM admins');
         });
 
         it('debería manejar errores y reenviarlos', async () => {
@@ -57,7 +57,7 @@ describe('AdminModel', () => {
             const result = await AdminModel.getAdminById(1);
 
             expect(result).toEqual(mockAdmin);
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM admins WHERE id = $1', [1]);
+            expect(db.query).toHaveBeenCalledWith('SELECT id, username, email FROM admins WHERE id = $1', [1]);
         });
 
         it('debería devolver null cuando el administrador no existe', async () => {
@@ -66,7 +66,7 @@ describe('AdminModel', () => {
             const result = await AdminModel.getAdminById(999);
 
             expect(result).toBeNull();
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM admins WHERE id = $1', [999]);
+            expect(db.query).toHaveBeenCalledWith('SELECT id, username, email FROM admins WHERE id = $1', [999]);
         });
 
         it('debería manejar errores y reenviarlos', async () => {
@@ -81,16 +81,15 @@ describe('AdminModel', () => {
             const { id, ...newAdmin } = mockAdmin;
 
             (validateAdmin as any).mockReturnValueOnce({ success: true, data: newAdmin });
-            (db.query as any).mockResolvedValueOnce({ 
-                rows: [{ id: 1, ...newAdmin }] 
-            });
+            const safeAdmin = { id: 1, username: newAdmin.username, email: newAdmin.email };
+            (db.query as any).mockResolvedValueOnce({ rows: [safeAdmin] });
 
             const result = await AdminModel.createAdmin(newAdmin as Admin);
 
-            expect(result).toEqual({ id: 1, ...newAdmin });
+            expect(result).toEqual(safeAdmin);
             expect(db.query).toHaveBeenCalledWith(
-                'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING *;',
-                [newAdmin.username, newAdmin.email, newAdmin.password]
+                'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email;',
+                [newAdmin.username, newAdmin.email, expect.any(String)]
             );
         });
 

@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 export default class AdminModel {
     static async getAll(): Promise<Admin[]> {
         try {
-            const { rows } = await db.query('SELECT * FROM admins');
+            const { rows } = await db.query('SELECT id, username, email FROM admins');
             return rows;
         } catch (error) {
             throw error;
@@ -15,7 +15,7 @@ export default class AdminModel {
 
     static async getAdminById(id: number): Promise<Admin | null> {
         try {
-            const { rows } = await db.query('SELECT * FROM admins WHERE id = $1', [id]);
+            const { rows } = await db.query('SELECT id, username, email FROM admins WHERE id = $1', [id]);
             return rows[0] || null;
         } catch (error) {
             throw error;
@@ -40,12 +40,11 @@ export default class AdminModel {
             const hashedPassword = await bcrypt.hash(password, saltRounds);
 
             const { rows } = await db.query(
-                'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING *;',
+                'INSERT INTO admins (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email;',
                 [username, email, hashedPassword]
             );
 
-            const { id, ...dataWithoutId } = adminData;
-            return { id: rows[0].id, ...dataWithoutId };
+            return rows[0];
         } catch (error) {
             throw error;
         }
@@ -81,7 +80,7 @@ export default class AdminModel {
             const query = `UPDATE admins SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
             await db.query(query, updatedValues);
 
-            const { rows } = await db.query('SELECT * FROM admins WHERE id = $1', [id]);
+            const { rows } = await db.query('SELECT id, username, email FROM admins WHERE id = $1', [id]);
 
             if (rows.length > 0) {
                 const updatedAdmin = rows[0];
