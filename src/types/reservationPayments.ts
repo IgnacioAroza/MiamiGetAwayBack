@@ -6,6 +6,7 @@ export interface ReservationPayment {
     paymentMethod: string;
     paymentReference?: string;
     notes?: string;
+    receiptImage?: string | null;
 }
 
 export interface CreateReservationPaymentDTO {
@@ -15,6 +16,7 @@ export interface CreateReservationPaymentDTO {
     paymentReference?: string;
     notes?: string;
     paymentDate?: Date;
+    receiptImage?: string | null;
 }
 
 export interface UpdateReservationPaymentDTO {
@@ -22,4 +24,5 @@ export interface UpdateReservationPaymentDTO {
     paymentMethod?: string;
     paymentReference?: string;
     notes?: string;
+    receiptImage?: string | null;
 }

@@ -15,7 +15,7 @@ export class ReservationPaymentModel {
         status?: string
     } = {}): Promise<ReservationPayment[]> {
         let query = `
-            SELECT 
+            SELECT
                 rp.id,
                 rp.reservation_id as "reservationId",
                 rp.amount,
@@ -23,6 +23,7 @@ export class ReservationPaymentModel {
                 rp.payment_method as "paymentMethod",
                 rp.payment_reference as "paymentReference",
                 rp.notes,
+                rp.receipt_image as "receiptImage",
                 c.name as "clientName",
                 c.lastname as "clientLastname",
                 c.email as "clientEmail",
@@ -111,14 +112,15 @@ export class ReservationPaymentModel {
     static async getReservationPaymentById(id: number): Promise<ReservationPayment | null> {
         try {
             const { rows } = await db.query(`
-                SELECT 
+                SELECT
                     id,
                     reservation_id as "reservationId",
                     amount,
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    notes
+                    notes,
+                    receipt_image as "receiptImage"
                 FROM reservation_payments
                 WHERE id = $1
             `, [id]);
@@ -136,24 +138,26 @@ export class ReservationPaymentModel {
         
         try {
             const { rows } = await db.query(`
-                INSERT INTO reservation_payments 
-                    (reservation_id, amount, payment_date, payment_method, payment_reference, notes) 
-                VALUES ($1, $2, $3, $4, $5, $6) 
-                RETURNING 
+                INSERT INTO reservation_payments
+                    (reservation_id, amount, payment_date, payment_method, payment_reference, notes, receipt_image)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING
                     id,
                     reservation_id as "reservationId",
                     amount,
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    notes
+                    notes,
+                    receipt_image as "receiptImage"
             `, [
                 reservationPaymentData.reservationId,
                 reservationPaymentData.amount,
                 reservationPaymentData.paymentDate,
                 reservationPaymentData.paymentMethod,
                 reservationPaymentData.paymentReference,
-                reservationPaymentData.notes
+                reservationPaymentData.notes,
+                reservationPaymentData.receiptImage ?? null
             ]);
             
             return rows[0];
@@ -183,14 +187,15 @@ export class ReservationPaymentModel {
                 `UPDATE reservation_payments 
                 SET ${setClause} 
                 WHERE id = $${values.length} 
-                RETURNING 
+                RETURNING
                     id,
                     reservation_id as "reservationId",
                     amount,
                     payment_date as "paymentDate",
                     payment_method as "paymentMethod",
                     payment_reference as "paymentReference",
-                    notes
+                    notes,
+                    receipt_image as "receiptImage"
                 `,
                 values
             );
@@ -214,14 +219,15 @@ export class ReservationPaymentModel {
 
     static async getPaymentsByReservation(reservationId: number): Promise<ReservationPayment[]> {
         const { rows } = await db.query(`
-            SELECT 
+            SELECT
                 id,
                 reservation_id as "reservationId",
                 amount,
                 payment_date as "paymentDate",
                 payment_method as "paymentMethod",
                 payment_reference as "paymentReference",
-                notes
+                notes,
+                receipt_image as "receiptImage"
             FROM reservation_payments
             WHERE reservation_id = $1
             ORDER BY payment_date DESC

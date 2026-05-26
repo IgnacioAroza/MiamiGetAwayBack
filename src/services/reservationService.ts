@@ -39,19 +39,20 @@ export default class ReservationService {
     }
 
     // Registrar pago con notificacion
-    static async registerPayment(id: number, amount: number, paymentMethod: string, paymentReference?: string, notes?: string): Promise<Reservation> {
+    static async registerPayment(id: number, amount: number, paymentMethod: string, paymentReference?: string, notes?: string, receiptImage?: string | null): Promise<Reservation> {
         const currentReservation = await ReservationModel.getReservationById(id) as ReservationWithClient;
         if (!currentReservation) {
             throw new Error('Reservation not found');
         }
-        
+
         // Crear el pago en la tabla de pagos
         await ReservationPaymentsService.createPayment({
             reservationId: id,
             amount,
             paymentMethod,
             paymentReference,
-            notes
+            notes,
+            receiptImage
         });
         
         // Obtener reserva actualizada

@@ -6,6 +6,7 @@ import { ReservationModel } from '../models/reservation.js';
 import EmailService from '../services/emailService.js';
 import db from '../utils/db_render.js';
 import PdfService from '../services/pdfService.js';
+import ImageService from '../services/imageService.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -476,24 +477,35 @@ export class ReservationController {
     static async registerPayment(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
         const { amount, paymentMethod, paymentReference, notes } = req.body;
-        
+
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             res.status(400).json({ error: 'Valid payment amount is required' });
             return;
         }
-        
+
         if (!paymentMethod) {
             res.status(400).json({ error: 'Payment method is required' });
             return;
         }
-        
+
         try {
+            let receiptImage: string | null = null;
+            if (req.file) {
+                const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
+                if (!result.success || result.urls.length === 0) {
+                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    return;
+                }
+                receiptImage = result.urls[0];
+            }
+
             const updatedReservation = await ReservationService.registerPayment(
                 parseInt(id),
                 Number(amount),
                 paymentMethod,
                 paymentReference,
-                notes
+                notes,
+                receiptImage
             );
             res.status(200).json(updatedReservation);
         } catch (error) {

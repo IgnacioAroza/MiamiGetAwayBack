@@ -14,6 +14,7 @@ export const reservationPaymentSchema = z.object({
     paymentMethod: z.enum(["card", "cash", "transfer", "paypal", "zelle", "stripe", "other"]),
     paymentReference: z.string().nullable().optional(),
     notes: z.string().optional(),
+    receiptImage: z.string().nullable().optional(),
 });
 
 export type ReservationPayment = z.infer<typeof reservationPaymentSchema>;
