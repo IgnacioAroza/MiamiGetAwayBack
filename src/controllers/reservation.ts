@@ -202,8 +202,9 @@ export class ReservationController {
 
             // Si no hay pago inicial, devolver la reserva creada
             res.status(201).json(newReservation);
-        } catch (error) {
-            res.status(500).json({ error: 'Error creating reservation' });
+        } catch (error: any) {
+            console.error('Error in createReservation:', error);
+            res.status(500).json({ error: error.message || 'Error creating reservation' });
         }
     }
 
