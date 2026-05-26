@@ -509,8 +509,9 @@ export class ReservationController {
                 receiptImage
             );
             res.status(200).json(updatedReservation);
-        } catch (error) {
-            res.status(500).json({ error: 'Error registering payment' });
+        } catch (error: any) {
+            console.error('Error in registerPayment:', error);
+            res.status(500).json({ error: error.message || 'Error registering payment' });
         }
     }
     
