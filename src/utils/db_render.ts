@@ -20,7 +20,7 @@ function getPool(): pg.Pool {
         });
 
         pool.on('connect', (client) => {
-            client.query("SET datestyle = 'SQL, MDY'");
+            client.query("SET datestyle = 'ISO, MDY'");
         });
     }
     return pool;
