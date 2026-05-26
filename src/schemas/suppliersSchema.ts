@@ -10,9 +10,9 @@ export const supplierSchema = z.object({
 export const partialSupplierSchema = supplierSchema.partial();
 
 export const assignSupplierSchema = z.object({
-    supplierId: z.number().int().positive(),
-    payoutPerNight: z.number().positive(),
-    paymentTerms: z.string().optional()
+    supplier_id: z.number().int().positive(),
+    payout_per_night: z.number().positive(),
+    payment_terms: z.string().optional()
 });
 
 const supplierPaymentMethodEnum = z.enum(['cash', 'wire', 'card', 'transfer']);

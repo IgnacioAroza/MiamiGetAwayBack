@@ -32,4 +32,8 @@ router.put('/:id/supplier', authMiddleware, ReservationSupplierController.update
 router.delete('/:id/supplier', authMiddleware, ReservationSupplierController.unassign);
 router.patch('/:id/supplier-status', authMiddleware, ReservationSupplierController.setStatus);
 
+// Supplier payments nested under reservation
+router.get('/:id/supplier/payments', authMiddleware, ReservationSupplierController.getPayments);
+router.post('/:id/supplier/payments', authMiddleware, upload.array('receipt_images', 10), ReservationSupplierController.createPayment);
+
 export default router;

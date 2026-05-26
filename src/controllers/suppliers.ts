@@ -141,6 +141,44 @@ export class ReservationSupplierController {
             res.status(error.status ?? 500).json({ error: error.message });
         }
     }
+
+    static async getPayments(req: Request, res: Response): Promise<void> {
+        try {
+            const reservationId = parseInt(req.params.id);
+            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            const row = await SupplierService.getReservationSupplierRow(reservationId);
+            if (!row) { res.status(404).json({ error: 'No supplier assigned to this reservation' }); return; }
+            const payments = await SupplierService.getPaymentsByReservationSupplier(row.id);
+            res.status(200).json(payments);
+        } catch (error: any) {
+            res.status(error.status ?? 500).json({ error: error.message });
+        }
+    }
+
+    static async createPayment(req: Request, res: Response): Promise<void> {
+        try {
+            const reservationId = parseInt(req.params.id);
+            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            const row = await SupplierService.getReservationSupplierRow(reservationId);
+            if (!row) { res.status(404).json({ error: 'No supplier assigned to this reservation' }); return; }
+
+            const body = {
+                ...req.body,
+                reservationSupplierId: row.id,
+                amount: Number(req.body.amount)
+            };
+            const result = validateSupplierPayment(body);
+            if (!result.success) {
+                res.status(400).json({ error: JSON.parse(result.error.message) });
+                return;
+            }
+            const files = req.files as Express.Multer.File[] | undefined;
+            const payment = await SupplierService.createSupplierPayment(result.data, files);
+            res.status(201).json(payment);
+        } catch (error: any) {
+            res.status(error.status ?? 500).json({ error: error.message });
+        }
+    }
 }
 
 // ---- Supplier payments ----

@@ -11,19 +11,22 @@ export class ReservationSupplierModel {
                 rs.payout_per_night as "payoutPerNight",
                 rs.payment_terms as "paymentTerms",
                 rs.created_at as "createdAt",
+                s.id as "supplierIdRef",
                 s.name as "supplierName",
                 s.company as "supplierCompany",
                 s.email as "supplierEmail",
                 s.phone as "supplierPhone",
                 r.nights * rs.payout_per_night as "totalPayout",
                 COALESCE(SUM(sp.amount), 0) as "totalPaid",
-                (r.nights * rs.payout_per_night) - COALESCE(SUM(sp.amount), 0) as "balance"
+                (r.nights * rs.payout_per_night) - COALESCE(SUM(sp.amount), 0) as "balance",
+                COALESCE(SUM(rp.amount), 0) as "totalRevenue"
             FROM reservation_suppliers rs
             JOIN suppliers s ON rs.supplier_id = s.id
             JOIN reservations r ON rs.reservation_id = r.id
             LEFT JOIN supplier_payments sp ON sp.reservation_supplier_id = rs.id
+            LEFT JOIN reservation_payments rp ON rp.reservation_id = r.id
             WHERE rs.reservation_id = $1
-            GROUP BY rs.id, s.name, s.company, s.email, s.phone, r.nights
+            GROUP BY rs.id, s.id, s.name, s.company, s.email, s.phone, r.nights
         `, [reservationId]);
         return rows[0] || null;
     }
@@ -60,7 +63,7 @@ export class ReservationSupplierModel {
                 payout_per_night as "payoutPerNight",
                 payment_terms as "paymentTerms",
                 created_at as "createdAt"
-        `, [reservationId, data.supplierId, data.payoutPerNight, data.paymentTerms ?? null]);
+        `, [reservationId, data.supplier_id, data.payout_per_night, data.payment_terms ?? null]);
         return rows[0];
     }
 
@@ -69,9 +72,9 @@ export class ReservationSupplierModel {
         if (fields.length === 0) return ReservationSupplierModel.getByReservation(reservationId);
 
         const colMap: Record<string, string> = {
-            supplierId: 'supplier_id',
-            payoutPerNight: 'payout_per_night',
-            paymentTerms: 'payment_terms'
+            supplier_id: 'supplier_id',
+            payout_per_night: 'payout_per_night',
+            payment_terms: 'payment_terms'
         };
 
         const setClause = fields

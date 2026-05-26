@@ -18,6 +18,10 @@ function getPool(): pg.Pool {
                 rejectUnauthorized: false
             } : false,
         });
+
+        pool.on('connect', (client) => {
+            client.query("SET datestyle = 'SQL, MDY'");
+        });
     }
     return pool;
 }

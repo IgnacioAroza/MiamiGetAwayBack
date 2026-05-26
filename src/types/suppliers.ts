@@ -28,7 +28,8 @@ export interface ReservationSupplier {
     payoutPerNight: number;
     paymentTerms?: string | null;
     createdAt: Date;
-    // Computed fields (returned by JOIN queries)
+    // Raw JOIN fields (internal use)
+    supplierIdRef?: number;
     supplierName?: string;
     supplierCompany?: string | null;
     supplierEmail?: string | null;
@@ -36,12 +37,33 @@ export interface ReservationSupplier {
     totalPayout?: number;
     totalPaid?: number;
     balance?: number;
+    totalRevenue?: number;
+}
+
+export interface ReservationSupplierResponse {
+    id: number;
+    reservation_id: number;
+    supplier: {
+        id: number;
+        name: string;
+        company?: string | null;
+        email?: string | null;
+        phone?: string | null;
+    };
+    payout_per_night: number;
+    payment_terms?: string | null;
+    calculated: {
+        total: number;
+        paid: number;
+        balance: number;
+        profit: number;
+    };
 }
 
 export interface AssignSupplierDTO {
-    supplierId: number;
-    payoutPerNight: number;
-    paymentTerms?: string;
+    supplier_id: number;
+    payout_per_night: number;
+    payment_terms?: string;
 }
 
 export interface SupplierPayment {

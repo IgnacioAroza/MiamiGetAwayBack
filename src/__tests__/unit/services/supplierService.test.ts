@@ -70,16 +70,19 @@ describe('SupplierService', () => {
 
     describe('assignSupplier', () => {
         it('assigns supplier and sets supplierStatus to confirmed', async () => {
+            const fullRow = { ...MOCK_RESERVATION_SUPPLIER, supplierIdRef: 1, supplierName: 'Carolina Méndez', supplierCompany: 'Coastal Stays', supplierEmail: 'c@test.com', supplierPhone: '555-1234', totalPayout: 700, totalPaid: 0, balance: 700, totalRevenue: 0 };
             vi.mocked(ReservationModel.getReservationById).mockResolvedValue({ id: 5 } as any);
-            vi.mocked(ReservationSupplierModel.getByReservation).mockResolvedValue(null);
+            vi.mocked(ReservationSupplierModel.getByReservation)
+                .mockResolvedValueOnce(null)       // first call: check no existing
+                .mockResolvedValueOnce(fullRow);   // second call: fetch full row after assign
             vi.mocked(ReservationSupplierModel.assign).mockResolvedValue(MOCK_RESERVATION_SUPPLIER);
             vi.mocked(ReservationModel.updateReservation).mockResolvedValue({} as any);
 
-            const result = await SupplierService.assignSupplier(5, { supplierId: 1, payoutPerNight: 100 });
+            const result = await SupplierService.assignSupplier(5, { supplier_id: 1, payout_per_night: 100 });
 
-            expect(ReservationSupplierModel.assign).toHaveBeenCalledWith(5, { supplierId: 1, payoutPerNight: 100 });
+            expect(ReservationSupplierModel.assign).toHaveBeenCalledWith(5, { supplier_id: 1, payout_per_night: 100 });
             expect(ReservationModel.updateReservation).toHaveBeenCalledWith(5, { supplier_status: 'confirmed' });
-            expect(result).toEqual(MOCK_RESERVATION_SUPPLIER);
+            expect(result).toMatchObject({ reservation_id: 5, supplier: { id: 1 } });
         });
 
         it('throws 409 when reservation already has a supplier', async () => {
