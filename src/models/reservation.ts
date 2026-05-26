@@ -16,17 +16,36 @@ export class ReservationModel {
         withinDays?: number
     } = {}): Promise<Reservation[]> {
         let query = `
-            SELECT r.*, 
-                c.name as client_name,
-                c.lastname as client_lastname,
-                c.email as client_email,
-                c.phone as client_phone,
-                c.address as client_address,
-                c.city as client_city,
-                c.country as client_country,
-                c.notes as client_notes,
-                a.name as apartment_name,
-                a.address as apartment_address
+            SELECT r.id,
+                r.apartment_id as "apartmentId",
+                r.client_id as "clientId",
+                r.check_in_date as "checkInDate",
+                r.check_out_date as "checkOutDate",
+                r.nights,
+                r.price_per_night as "pricePerNight",
+                r.cleaning_fee as "cleaningFee",
+                r.cancellation_fee as "cancellationFee",
+                r.other_expenses as "otherExpenses",
+                r.taxes,
+                r.total_amount as "totalAmount",
+                r.amount_paid as "amountPaid",
+                r.amount_due as "amountDue",
+                r.parking_fee as "parkingFee",
+                r.status,
+                r.payment_status as "paymentStatus",
+                r.supplier_status as "supplierStatus",
+                r.notes,
+                r.created_at as "createdAt",
+                c.name as "clientName",
+                c.lastname as "clientLastname",
+                c.email as "clientEmail",
+                c.phone as "clientPhone",
+                c.address as "clientAddress",
+                c.city as "clientCity",
+                c.country as "clientCountry",
+                c.notes as "clientNotes",
+                a.name as "apartmentName",
+                a.address as "apartmentAddress"
             FROM reservations r
             LEFT JOIN clients c ON r.client_id = c.id
             LEFT JOIN apartments a ON r.apartment_id = a.id
