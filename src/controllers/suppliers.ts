@@ -81,8 +81,7 @@ export class ReservationSupplierController {
             const reservationId = parseInt(req.params.id);
             if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
             const data = await SupplierService.getReservationSupplier(reservationId);
-            if (!data) { res.status(404).json({ error: 'No supplier assigned to this reservation' }); return; }
-            res.status(200).json(data);
+            res.status(200).json(data ?? null);
         } catch (error: any) {
             res.status(error.status ?? 500).json({ error: error.message });
         }
@@ -147,7 +146,7 @@ export class ReservationSupplierController {
             const reservationId = parseInt(req.params.id);
             if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
             const row = await SupplierService.getReservationSupplierRow(reservationId);
-            if (!row) { res.status(404).json({ error: 'No supplier assigned to this reservation' }); return; }
+            if (!row) { res.status(200).json([]); return; }
             const payments = await SupplierService.getPaymentsByReservationSupplier(row.id);
             res.status(200).json(payments);
         } catch (error: any) {

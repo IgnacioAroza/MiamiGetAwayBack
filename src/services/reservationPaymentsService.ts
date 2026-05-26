@@ -57,7 +57,9 @@ export default class ReservationPaymentsService {
         };
 
         try {
-            return await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+            const payment = await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+            await this.recalculateReservationPayments(paymentData.reservationId);
+            return payment;
         } catch (error) {
             throw new Error(`Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
