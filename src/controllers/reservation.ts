@@ -201,6 +201,7 @@ export class ReservationController {
             }
 
             // Si no hay pago inicial, devolver la reserva creada
+            console.log('[createReservation] keys returned:', Object.keys(newReservation));
             res.status(201).json(newReservation);
         } catch (error: any) {
             console.error('Error in createReservation:', error);
@@ -427,7 +428,8 @@ export class ReservationController {
 
             // Actualizar la reserva con todos los valores calculados
             const updatedReservation = await ReservationModel.updateReservation(parseInt(id), formattedData);
-            
+
+            console.log('[updateReservation] keys returned:', Object.keys(updatedReservation));
             res.status(200).json(updatedReservation);
         } catch (error) {
             console.error('Error in updateReservation:', error); // Log detallado del error

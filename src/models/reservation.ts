@@ -210,8 +210,28 @@ export class ReservationModel {
                     $1, $2, 
                     $3, $4, $5, $6, $7, $8, $9, $10, $11, 
                     $12, $13, $14, $15, $16, $17, $18
-                ) 
-                RETURNING *`, 
+                )
+                RETURNING
+                    id,
+                    apartment_id as "apartmentId",
+                    client_id as "clientId",
+                    check_in_date as "checkInDate",
+                    check_out_date as "checkOutDate",
+                    nights,
+                    price_per_night as "pricePerNight",
+                    cleaning_fee as "cleaningFee",
+                    cancellation_fee as "cancellationFee",
+                    other_expenses as "otherExpenses",
+                    taxes,
+                    total_amount as "totalAmount",
+                    amount_paid as "amountPaid",
+                    amount_due as "amountDue",
+                    parking_fee as "parkingFee",
+                    status,
+                    payment_status as "paymentStatus",
+                    supplier_status as "supplierStatus",
+                    notes,
+                    created_at as "createdAt"`,
                 [
                     reservationData.apartmentId,
                     reservationData.clientId,
