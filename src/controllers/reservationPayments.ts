@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { validateReservationPayment, validatePartialReservationPayment } from '../schemas/reservationPaymentsSchema.js';
 import ReservationPaymentsService from '../services/reservationPaymentsService.js';
+import ImageService from '../services/imageService.js';
 
 export class ReservationPaymentController {
     static async getAllReservationPayments(req: Request, res: Response): Promise<void> {
@@ -88,14 +89,31 @@ export class ReservationPaymentController {
     }
 
     static async createReservationPayment(req: Request, res: Response): Promise<void> {
-        const { error } = validateReservationPayment(req.body);
+        // Cuando llega como multipart, los números vienen como strings — coercionar
+        const body = {
+            ...req.body,
+            reservationId: req.body.reservationId ? Number(req.body.reservationId) : undefined,
+            amount: req.body.amount ? Number(req.body.amount) : undefined,
+        };
+
+        const { error } = validateReservationPayment(body);
         if (error) {
             res.status(400).json({ error: JSON.parse(error.message) });
             return;
         }
 
         try {
-            const newReservationPayment = await ReservationPaymentsService.createPayment(req.body);
+            let receiptImage: string | null = null;
+            if (req.file) {
+                const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
+                if (!result.success || result.urls.length === 0) {
+                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    return;
+                }
+                receiptImage = result.urls[0];
+            }
+
+            const newReservationPayment = await ReservationPaymentsService.createPayment({ ...body, receiptImage });
             res.status(201).json(newReservationPayment);
         } catch (error) {
             res.status(500).json({ error: 'Error creating reservation payment' });
@@ -121,7 +139,23 @@ export class ReservationPaymentController {
             return;
         }
         try {
-            const updatedReservationPayment = await ReservationPaymentsService.updatePayment(parseInt(id), transformedData);
+            let receiptImage: string | null | undefined = undefined;
+            if (req.file) {
+                const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
+                if (!result.success || result.urls.length === 0) {
+                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    return;
+                }
+                receiptImage = result.urls[0];
+            } else if (req.body.remove_receipt_image === 'true') {
+                receiptImage = null;
+            }
+
+            const dataToUpdate = receiptImage !== undefined
+                ? { ...transformedData, receiptImage }
+                : transformedData;
+
+            const updatedReservationPayment = await ReservationPaymentsService.updatePayment(parseInt(id), dataToUpdate);
             res.status(200).json(updatedReservationPayment);
         } catch (error) {
             res.status(500).json({ error: 'Error updating reservation payment' });

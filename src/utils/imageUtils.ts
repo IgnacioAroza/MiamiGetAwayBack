@@ -57,6 +57,15 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         transformations: {
             quality: 85
         }
+    },
+    reservation_payments: {
+        folder: 'reservation_payments',
+        maxFiles: 1,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        transformations: {
+            quality: 85
+        }
     }
 };
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ReservationController } from '../controllers/reservation.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.put('/:id', authMiddleware, ReservationController.updateReservation);
 router.patch('/:id', authMiddleware, ReservationController.updateReservation);
 router.delete('/:id', authMiddleware, ReservationController.deleteReservation);
 
-router.post('/:id/payments', authMiddleware, ReservationController.registerPayment);
+router.post('/:id/payments', authMiddleware, upload.single('receipt_image'), ReservationController.registerPayment);
 router.post('/:id/pdf', authMiddleware, ReservationController.generatePdf);
 router.get('/:id/pdf/download', authMiddleware, ReservationController.downloadPdf);
 
