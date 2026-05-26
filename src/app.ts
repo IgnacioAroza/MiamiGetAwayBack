@@ -16,6 +16,7 @@ import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
 import reservationRoutes from './routes/reservation.js'
 import reservationPaymentsRoutes from './routes/reservationPayments.js'
+import supplierRoutes, { supplierPaymentsRouter } from './routes/suppliers.js'
 import cronRoutes from './routes/cron.js'
 import monthlySummaryRoutes from './routes/monthlySummary.js'
 import googleMyBusinessRoutes from './routes/googleMyBusiness.js'
@@ -76,6 +77,8 @@ app.use('/api/auth', loginRateLimit, authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/reservation-payments', reservationPaymentsRoutes)
+app.use('/api/suppliers', supplierRoutes)
+app.use('/api/supplier-payments', supplierPaymentsRouter)
 app.use('/api/cron', cronRoutes)
 app.use('/api/summaries', monthlySummaryRoutes)
 app.use('/api/google-mybusiness', googleMyBusinessRoutes)
