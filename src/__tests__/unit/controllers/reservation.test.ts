@@ -154,6 +154,7 @@ describe('ReservationController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = mockPaymentData;
+      mockRequest.file = undefined;
       vi.mocked(ReservationService.registerPayment).mockResolvedValueOnce(mockUpdatedReservation);
 
       await ReservationController.registerPayment(mockRequest as Request, mockResponse as Response);
@@ -163,7 +164,8 @@ describe('ReservationController', () => {
         300,
         'tarjeta',
         'xyz123',
-        'Test payment'
+        'Test payment',
+        null
       );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(mockUpdatedReservation);

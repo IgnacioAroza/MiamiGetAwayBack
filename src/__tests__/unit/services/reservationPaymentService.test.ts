@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import ReservationPaymentsService from '../../../services/reservationPaymentsService.js';
 import { ReservationPaymentModel } from '../../../models/reservationPayment.js';
 import { ReservationModel } from '../../../models/reservation.js';
-import EmailService from '../../../services/emailService.js';
 import db from '../../../utils/db_render.js';
 import { Reservation } from '../../../types/reservations.js';
 import { ReservationPayment } from '../../../types/reservationPayments.js';
@@ -10,7 +9,7 @@ import { ReservationPayment } from '../../../types/reservationPayments.js';
 // Mock de dependencias
 vi.mock('../../../models/reservationPayment.js');
 vi.mock('../../../models/reservation.js');
-vi.mock('../../../services/emailService.js');
+vi.mock('../../../services/imageService.js');
 vi.mock('../../../utils/db_render.js');
 
 describe('ReservationPaymentsService', () => {
@@ -75,13 +74,7 @@ describe('ReservationPaymentsService', () => {
           paymentStatus: 'partial'
         })
       );
-      
-      expect(EmailService.sendPaymentNotification).toHaveBeenCalledWith(
-        mockUpdatedReservation,
-        300,
-        false
-      );
-      
+
       expect(result).toEqual(mockPayment);
     });
   });
