@@ -270,10 +270,30 @@ export class ReservationModel {
             values.push(id);
 
             const { rows } = await db.query(
-                `UPDATE reservations 
-                SET ${setClause} 
-                WHERE id = $${values.length} 
-                RETURNING *`,
+                `UPDATE reservations
+                SET ${setClause}
+                WHERE id = $${values.length}
+                RETURNING
+                    id,
+                    apartment_id as "apartmentId",
+                    client_id as "clientId",
+                    check_in_date as "checkInDate",
+                    check_out_date as "checkOutDate",
+                    nights,
+                    price_per_night as "pricePerNight",
+                    cleaning_fee as "cleaningFee",
+                    cancellation_fee as "cancellationFee",
+                    other_expenses as "otherExpenses",
+                    taxes,
+                    total_amount as "totalAmount",
+                    amount_paid as "amountPaid",
+                    amount_due as "amountDue",
+                    parking_fee as "parkingFee",
+                    status,
+                    payment_status as "paymentStatus",
+                    supplier_status as "supplierStatus",
+                    notes,
+                    created_at as "createdAt"`,
                 values
             );
             return rows[0];
