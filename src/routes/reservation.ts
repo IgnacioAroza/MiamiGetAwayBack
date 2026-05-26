@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ReservationController } from '../controllers/reservation.js';
+import { ReservationSupplierController } from '../controllers/suppliers.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import upload from '../middleware/uploadMiddleware.js';
 
@@ -23,5 +24,12 @@ router.patch('/:id/payment-status', authMiddleware, ReservationController.update
 
 // Ruta para enviar notificación por email al cliente
 router.post('/:id/send-notification', authMiddleware, ReservationController.sendNotification);
+
+// Supplier assignment for a reservation
+router.get('/:id/supplier', authMiddleware, ReservationSupplierController.get);
+router.post('/:id/supplier', authMiddleware, ReservationSupplierController.assign);
+router.put('/:id/supplier', authMiddleware, ReservationSupplierController.update);
+router.delete('/:id/supplier', authMiddleware, ReservationSupplierController.unassign);
+router.patch('/:id/supplier-status', authMiddleware, ReservationSupplierController.setStatus);
 
 export default router;
