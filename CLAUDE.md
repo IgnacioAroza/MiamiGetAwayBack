@@ -51,6 +51,13 @@ migrations/
 - El cron de actualización automática de estados está **desactivado** (`app.ts:93`)
 - `NODE_ENV=development` activa morgan y logs de debug
 
+## Memoria del proyecto
+
+Al inicio de cada conversación:
+1. Leer `docs/memory/` — buscar el archivo `.md` con la fecha más reciente para ver en qué quedó la última sesión
+2. Leer `docs/MEMORY.md` — contexto general del proyecto, entidades, pendientes del cliente
+
+
 ## Approach
 
 - Think before acting. Read existing files before writing code.

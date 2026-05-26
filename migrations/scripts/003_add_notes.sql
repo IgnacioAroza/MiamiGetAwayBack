@@ -1,3 +1,3 @@
 -- Agregar columna notes a la tabla reservations
 ALTER TABLE reservations
-ADD COLUMN notes TEXT;
+ADD COLUMN IF NOT EXISTS notes TEXT;
