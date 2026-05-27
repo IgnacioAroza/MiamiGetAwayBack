@@ -495,6 +495,113 @@ export default class PdfService {
            .fillColor('#1B3A5C')
            .fontSize(notesFontSize)
            .text(notesContent, 40, yPos, { width: 500, align: 'left' });
+
+        PdfService.addTermsPage(doc);
+    }
+
+    private static addTermsPage(doc: PDFKit.PDFDocument): void {
+        doc.addPage();
+        PdfService.addBackgroundImage(doc);
+
+        const margin = 40;
+        const contentWidth = doc.page.width - margin * 2;
+        const pageHeight = doc.page.height;
+        const bottomMargin = 50;
+        const COLOR = '#1B3A5C';
+        let y = 40;
+
+        const checkPageBreak = (neededHeight: number) => {
+            if (y + neededHeight > pageHeight - bottomMargin) {
+                doc.addPage();
+                PdfService.addBackgroundImage(doc);
+                y = 40;
+            }
+        };
+
+        const writeTitle = (text: string) => {
+            doc.font('Helvetica-Bold').fontSize(13).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 10);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 4;
+        };
+
+        const writeSubtitle = (text: string) => {
+            doc.font('Helvetica').fontSize(11).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 12);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 12;
+        };
+
+        const writeSectionTitle = (text: string) => {
+            doc.font('Helvetica-Bold').fontSize(10).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 16);
+            y += 8;
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 5;
+        };
+
+        const writeParagraph = (text: string) => {
+            doc.font('Helvetica').fontSize(10).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 8);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 6;
+        };
+
+        writeTitle('TÉRMINOS Y CONDICIONES DE RESERVA');
+        writeSubtitle('Alquiler Temporario de Propiedades');
+        writeParagraph('Al realizar una reserva con nuestra empresa, el huésped acepta automáticamente los siguientes términos y condiciones:');
+
+        writeSectionTitle('1. RESERVAS Y PAGOS');
+        writeParagraph('Todas las reservas deberán estar abonadas según las condiciones informadas al momento de la contratación.');
+        writeParagraph('La reserva será confirmada únicamente una vez recibido el pago correspondiente y la validación de la información del huésped.');
+        writeParagraph('Nos reservamos el derecho de cancelar cualquier reserva en caso de información falsa, actividades sospechosas o incumplimiento de estas políticas.');
+
+        writeSectionTitle('2. POLÍTICA DE CANCELACIÓN');
+        writeParagraph('Nuestra política de cancelación es estricta y aplica sin excepciones, incluyendo cambios de planes personales, problemas de viaje, clima, vuelos cancelados, enfermedades o cualquier situación ajena a la empresa.');
+        writeParagraph('Cancelaciones realizadas con más de 30 días de anticipación al check-in: Reembolso del 100% del monto abonado.\nCancelaciones realizadas entre 15 y 30 días antes del check-in: Reembolso del 50% del monto abonado.\nCancelaciones realizadas dentro de los 15 días previos al check-in: No habrá devolución de dinero.');
+        writeParagraph('En caso de salida anticipada o reducción de estadía una vez iniciado el alquiler, no se realizarán reembolsos parciales ni totales.');
+
+        writeSectionTitle('3. CHECK-IN Y CHECK-OUT');
+        writeParagraph('El horario de check-in y check-out será informado previamente a cada huésped.');
+        writeParagraph('Late check-out o early check-in estarán sujetos a disponibilidad y podrán generar cargos adicionales.');
+
+        writeSectionTitle('4. LIMPIEZA Y ESTADO DE LA PROPIEDAD');
+        writeParagraph('La propiedad será entregada limpia y en correcto estado de funcionamiento.');
+        writeParagraph('El "Cleaning Fee" corresponde exclusivamente al servicio de limpieza general y sanitización estándar entre huéspedes. Este cargo no exime al huésped de devolver la propiedad en condiciones razonables y ordenadas.');
+        writeParagraph('El huésped se compromete a:\n• Mantener la propiedad en buen estado.\n• Retirar basura y residuos excesivos.\n• No dejar daños, manchas severas, suciedad extrema o condiciones fuera del uso normal.');
+        writeParagraph('En caso de limpieza excesiva, daños, olor a humo, basura adicional, manchas, muebles dañados o cualquier condición que requiera servicios extraordinarios, se podrán aplicar cargos adicionales.');
+
+        writeSectionTitle('5. DAÑOS Y RESPONSABILIDAD');
+        writeParagraph('El huésped será completamente responsable por cualquier daño ocasionado a la propiedad, mobiliario, decoración, electrodomésticos o áreas comunes durante la estadía.');
+        writeParagraph('Nos reservamos el derecho de cobrar costos de reparación, reemplazo o limpieza adicional necesarios para restaurar la propiedad a su estado original.');
+
+        writeSectionTitle('6. OCUPACIÓN Y USO DE LA PROPIEDAD');
+        writeParagraph('Solo podrán hospedarse las personas declaradas en la reserva.');
+        writeParagraph('No se permiten fiestas, eventos, reuniones no autorizadas, actividades ilegales ni comportamientos que generen molestias a vecinos o al edificio.');
+        writeParagraph('El incumplimiento de esta política podrá resultar en la cancelación inmediata de la estadía sin derecho a reembolso.');
+
+        writeSectionTitle('7. RESPONSABILIDAD DE LA EMPRESA');
+        writeParagraph('La empresa no será responsable por:\n• Accidentes, lesiones o enfermedades ocurridas durante la estadía.\n• Pérdida, robo u olvido de objetos personales.\n• Fallas temporales de servicios externos como internet, electricidad, agua, aire acondicionado o amenities fuera de nuestro control.\n• Situaciones derivadas de fuerza mayor, clima, desastres naturales o problemas externos.');
+        writeParagraph('El huésped utiliza la propiedad bajo su propia responsabilidad.');
+
+        writeSectionTitle('8. DERECHO DE ADMISIÓN Y CANCELACIÓN');
+        writeParagraph('Nos reservamos el derecho de rechazar o cancelar reservas cuando se detecten violaciones a estas políticas, comportamientos inapropiados o riesgos para la propiedad.');
+
+        writeSectionTitle('9. ACEPTACIÓN DE LOS TÉRMINOS');
+        writeParagraph('Al realizar el pago o ingresar a la propiedad, el huésped confirma haber leído, entendido y aceptado estos términos y condiciones en su totalidad.');
+
+        // Firma
+        checkPageBreak(70);
+        y += 30;
+        doc.strokeColor(COLOR).lineWidth(0.5);
+        doc.moveTo(margin, y).lineTo(margin + 220, y).stroke();
+        y += 6;
+        doc.font('Helvetica').fontSize(9).fillColor(COLOR)
+           .text('Firma del huésped', margin, y);
     }
 
     static async generateMonthlySummaryPdf(
