@@ -142,8 +142,7 @@ export default class PdfService {
         const rightColumnStart = pageCenter + 70;
         const iconSize = 15;
 
-        // Cambiar el color del texto a blanco
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
 
         // Primera línea de información
         doc.fontSize(10);
@@ -190,18 +189,17 @@ export default class PdfService {
                 { width: rightMargin - rightColumnStart - 20 });
 
         // Línea separadora superior
-        doc.strokeColor('white');
+        doc.strokeColor('#1B3A5C');
         doc.moveTo(40, 230).lineTo(570, 230).stroke();
 
         // Títulos de sección
         doc.font('Helvetica-Bold')
            .fontSize(14)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Reservation Details', 40, 245)
            .text('RESERVATION', 350, 245);
 
-        // Restaurar color para el contenido normal
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
         
         // Contenido de la columna izquierda
         doc.font('Helvetica')
@@ -242,7 +240,7 @@ export default class PdfService {
         // Información del cliente
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Reserved By', 40, yPos);
         yPos += 20;
 
@@ -251,14 +249,14 @@ export default class PdfService {
         const clientEmail = reservation.clientEmail || 'No specified';
 
         doc.font('Helvetica')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .fontSize(10)
            .text(`${clientName} ${clientLastname}`, 40, yPos)
            .text(clientEmail, 40, yPos + 15);
         yPos += 45;
 
         // Línea separadora después de los datos del cliente
-        doc.strokeColor('white');
+        doc.strokeColor('#1B3A5C');
         doc.moveTo(40, yPos).lineTo(570, yPos).stroke();
 
         // Definir las posiciones de las columnas
@@ -286,8 +284,7 @@ export default class PdfService {
            .text('Unit Price', colX.unitPrice, startYHeader + 5, { align: 'right', width: 100 })
            .text('Amount', colX.amount, startYHeader + 5, { align: 'right', width: 60 });
 
-        // Restaurar el color del texto a blanco para el contenido
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
         
         // Iniciar posición Y para el contenido
         yPos = startYHeader + headerHeight;
@@ -295,7 +292,7 @@ export default class PdfService {
         
         // Función helper para dibujar línea horizontal
         const drawHorizontalLine = (atY: number) => {
-            doc.strokeColor('white').lineWidth(1);
+            doc.strokeColor('#1B3A5C').lineWidth(1);
             doc.moveTo(colX.description, atY).lineTo(colX.endX, atY).stroke();
         };
 
@@ -354,10 +351,10 @@ export default class PdfService {
                         Number(reservation.otherExpenses || 0);
         
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Subtotal', colX.unitPrice, currentY + 5);
         doc.font('Helvetica')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text(`$${subtotal.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 20;
 
@@ -365,10 +362,10 @@ export default class PdfService {
         if (reservation.taxes > 0) {
             const taxes = Number(reservation.taxes || 0);
             doc.font('Helvetica-Bold')
-               .fillColor('white')
+               .fillColor('#1B3A5C')
                .text('Taxes', colX.unitPrice, currentY + 5);
             doc.font('Helvetica')
-               .fillColor('white')
+               .fillColor('#1B3A5C')
                .text(`$${taxes.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
         }
@@ -379,9 +376,9 @@ export default class PdfService {
         const totalAmount = Number(reservation.totalAmount || 0);
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('TOTAL', colX.unitPrice, currentY + 5);
-        doc.fillColor('white')
+        doc.fillColor('#1B3A5C')
            .text(`$${totalAmount.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 30;
         // Pagos como filas adicionales en la misma tabla de ítems, con salto de página y encabezado si es necesario
@@ -399,7 +396,7 @@ export default class PdfService {
                 .text('Amount', colX.amount, y + 5, { align: 'right', width: 60 });
         };
         if (payments && payments.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(12).fillColor('white');
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C');
             payments.forEach(payment => {
                 // Si la siguiente fila se pasa de página, agregar página y encabezado
                 if (currentY + rowHeight + bottomMargin > pageHeight) {
@@ -424,7 +421,7 @@ export default class PdfService {
             drawTableHeader(currentY);
             currentY += headerHeight;
         }
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('white')
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C')
             .text('Amount Due', colX.unitPrice, currentY + 5)
             .text(`$${Number(reservation.amountDue || 0).toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 25;
@@ -445,30 +442,30 @@ export default class PdfService {
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('DETAILS', 40, yPos);
         yPos += 20;
 
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Apartment Address: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentAddress}`);
         yPos += 15;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Apartment Description: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentDescription}`);
         yPos += 15;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Rooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBedrooms}`);
         yPos += 15;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Bathrooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBathrooms}`);
@@ -491,11 +488,11 @@ export default class PdfService {
         }
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text(notesTitle, 40, yPos);
         yPos += notesTitleHeight + 5;
         doc.font(notesFont)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .fontSize(notesFontSize)
            .text(notesContent, 40, yPos, { width: 500, align: 'left' });
     }
@@ -706,7 +703,7 @@ export default class PdfService {
             const pageHeight = doc.page.height;
             
             doc.save();
-            doc.fillOpacity(1);
+            doc.fillOpacity(0.15);
             doc.image(imageBuffer, 0, 0, {
                 width: pageWidth,
                 height: pageHeight
