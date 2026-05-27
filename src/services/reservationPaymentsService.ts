@@ -1,6 +1,7 @@
 import { ReservationPaymentModel } from '../models/reservationPayment.js';
 import { ReservationModel } from '../models/reservation.js';
 import { ReservationPayment, CreateReservationPaymentDTO } from '../types/reservationPayments.js';
+import ImageService from './imageService.js';
 
 export default class ReservationPaymentsService {
     // Función para recalcular y actualizar los campos de pago de la reserva
@@ -51,11 +52,14 @@ export default class ReservationPaymentsService {
             paymentDate: paymentData.paymentDate || new Date(),
             paymentMethod: paymentData.paymentMethod,
             paymentReference: paymentData.paymentReference || undefined,
-            notes: paymentData.notes || undefined
+            notes: paymentData.notes || undefined,
+            receiptImage: paymentData.receiptImage ?? null
         };
 
         try {
-            return await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+            const payment = await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+            await this.recalculateReservationPayments(paymentData.reservationId);
+            return payment;
         } catch (error) {
             throw new Error(`Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -84,6 +88,13 @@ export default class ReservationPaymentsService {
     }
 
     static async updatePayment(paymentId: number, data: Partial<ReservationPayment>): Promise<ReservationPayment> {
+        // Si viene imagen nueva, borrar la anterior de Cloudinary
+        if (data.receiptImage !== undefined) {
+            const existing = await ReservationPaymentModel.getReservationPaymentById(paymentId);
+            if (existing?.receiptImage && existing.receiptImage !== data.receiptImage) {
+                await ImageService.deleteImages([existing.receiptImage], 'reservation_payments');
+            }
+        }
         const payment = await ReservationPaymentModel.updateReservationPayment(paymentId, data);
         const updatedPayment = await ReservationPaymentModel.getReservationPaymentById(paymentId);
         if (updatedPayment?.reservationId) {

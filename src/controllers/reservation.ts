@@ -6,6 +6,7 @@ import { ReservationModel } from '../models/reservation.js';
 import EmailService from '../services/emailService.js';
 import db from '../utils/db_render.js';
 import PdfService from '../services/pdfService.js';
+import ImageService from '../services/imageService.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -201,8 +202,9 @@ export class ReservationController {
 
             // Si no hay pago inicial, devolver la reserva creada
             res.status(201).json(newReservation);
-        } catch (error) {
-            res.status(500).json({ error: 'Error creating reservation' });
+        } catch (error: any) {
+            console.error('Error in createReservation:', error);
+            res.status(500).json({ error: error.message || 'Error creating reservation' });
         }
     }
 
@@ -425,7 +427,6 @@ export class ReservationController {
 
             // Actualizar la reserva con todos los valores calculados
             const updatedReservation = await ReservationModel.updateReservation(parseInt(id), formattedData);
-            
             res.status(200).json(updatedReservation);
         } catch (error) {
             console.error('Error in updateReservation:', error); // Log detallado del error
@@ -476,28 +477,40 @@ export class ReservationController {
     static async registerPayment(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
         const { amount, paymentMethod, paymentReference, notes } = req.body;
-        
+
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             res.status(400).json({ error: 'Valid payment amount is required' });
             return;
         }
-        
+
         if (!paymentMethod) {
             res.status(400).json({ error: 'Payment method is required' });
             return;
         }
-        
+
         try {
+            let receiptImage: string | null = null;
+            if (req.file) {
+                const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
+                if (!result.success || result.urls.length === 0) {
+                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    return;
+                }
+                receiptImage = result.urls[0];
+            }
+
             const updatedReservation = await ReservationService.registerPayment(
                 parseInt(id),
                 Number(amount),
                 paymentMethod,
                 paymentReference,
-                notes
+                notes,
+                receiptImage
             );
             res.status(200).json(updatedReservation);
-        } catch (error) {
-            res.status(500).json({ error: 'Error registering payment' });
+        } catch (error: any) {
+            console.error('Error in registerPayment:', error);
+            res.status(500).json({ error: error.message || 'Error registering payment' });
         }
     }
     

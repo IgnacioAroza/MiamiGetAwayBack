@@ -16,6 +16,7 @@ export interface Reservation {
     cancellationFee: number;
     status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
     paymentStatus: 'pending' | 'partial' | 'complete';
+    supplierStatus: 'unassigned' | 'searching' | 'confirmed';
     notes?: string;
     createdAt: string; // Cambiado de Date a string
 }

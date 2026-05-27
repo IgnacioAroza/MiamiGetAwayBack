@@ -16,17 +16,36 @@ export class ReservationModel {
         withinDays?: number
     } = {}): Promise<Reservation[]> {
         let query = `
-            SELECT r.*, 
-                c.name as client_name,
-                c.lastname as client_lastname,
-                c.email as client_email,
-                c.phone as client_phone,
-                c.address as client_address,
-                c.city as client_city,
-                c.country as client_country,
-                c.notes as client_notes,
-                a.name as apartment_name,
-                a.address as apartment_address
+            SELECT r.id,
+                r.apartment_id as "apartmentId",
+                r.client_id as "clientId",
+                r.check_in_date as "checkInDate",
+                r.check_out_date as "checkOutDate",
+                r.nights,
+                r.price_per_night as "pricePerNight",
+                r.cleaning_fee as "cleaningFee",
+                r.cancellation_fee as "cancellationFee",
+                r.other_expenses as "otherExpenses",
+                r.taxes,
+                r.total_amount as "totalAmount",
+                r.amount_paid as "amountPaid",
+                r.amount_due as "amountDue",
+                r.parking_fee as "parkingFee",
+                r.status,
+                r.payment_status as "paymentStatus",
+                r.supplier_status as "supplierStatus",
+                r.notes,
+                r.created_at as "createdAt",
+                c.name as "clientName",
+                c.lastname as "clientLastname",
+                c.email as "clientEmail",
+                c.phone as "clientPhone",
+                c.address as "clientAddress",
+                c.city as "clientCity",
+                c.country as "clientCountry",
+                c.notes as "clientNotes",
+                a.name as "apartmentName",
+                a.address as "apartmentAddress"
             FROM reservations r
             LEFT JOIN clients c ON r.client_id = c.id
             LEFT JOIN apartments a ON r.apartment_id = a.id
@@ -88,48 +107,19 @@ export class ReservationModel {
                 if (filters.fromDate) {
                     // Convertir fromDate de MM-DD-YYYY a fecha comparable
                     queryParams.push(filters.fromDate);
-                    conditions.push(`
-                        CASE 
-                            WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
-                                r.check_in_date >= to_char(to_date($${queryParams.length}, 'MM-DD-YYYY'), 'YYYY-MM-DD')
-                            ELSE 
-                                to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') >= to_date($${queryParams.length}, 'MM-DD-YYYY')
-                        END
-                    `);
+                    conditions.push(`r.check_in_date >= to_date($${queryParams.length}, 'MM-DD-YYYY')`);
                 } else {
-                    // Usar fecha actual para comparación, manejando ambos formatos
-                    conditions.push(`
-                        CASE 
-                            WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
-                                r.check_in_date >= to_char(CURRENT_DATE, 'YYYY-MM-DD')
-                            ELSE 
-                                to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') >= CURRENT_DATE
-                        END
-                    `);
+                    conditions.push(`r.check_in_date >= CURRENT_DATE`);
                 }
-                
+
                 // Si se especifica withinDays, agregar límite superior
                 if (filters.withinDays !== undefined) {
                     queryParams.push(filters.withinDays);
                     if (filters.fromDate) {
                         const fromDateParam = queryParams.findIndex(p => p === filters.fromDate) + 1;
-                        conditions.push(`
-                            CASE 
-                                WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
-                                    r.check_in_date < to_char(to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')
-                                ELSE 
-                                    to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') < to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval
-                            END
-                        `);
+                        conditions.push(`r.check_in_date < to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval`);
                     } else {
-                        conditions.push(`
-                            CASE 
-                                WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
-                                    r.check_in_date < to_char(CURRENT_DATE + ($${queryParams.length} || ' days')::interval, 'YYYY-MM-DD')
-                                ELSE 
-                                    to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY') < CURRENT_DATE + ($${queryParams.length} || ' days')::interval
-                            END
-                        `);
+                        conditions.push(`r.check_in_date < CURRENT_DATE + ($${queryParams.length} || ' days')::interval`);
                     }
                 }
             }
@@ -170,6 +160,7 @@ export class ReservationModel {
                     r.parking_fee as "parkingFee",
                     r.status,
                     r.payment_status as "paymentStatus",
+                    r.supplier_status as "supplierStatus",
                     r.notes,
                     r.created_at as "createdAt",
                     c.name as "clientName",
@@ -219,8 +210,28 @@ export class ReservationModel {
                     $1, $2, 
                     $3, $4, $5, $6, $7, $8, $9, $10, $11, 
                     $12, $13, $14, $15, $16, $17, $18
-                ) 
-                RETURNING *`, 
+                )
+                RETURNING
+                    id,
+                    apartment_id as "apartmentId",
+                    client_id as "clientId",
+                    check_in_date as "checkInDate",
+                    check_out_date as "checkOutDate",
+                    nights,
+                    price_per_night as "pricePerNight",
+                    cleaning_fee as "cleaningFee",
+                    cancellation_fee as "cancellationFee",
+                    other_expenses as "otherExpenses",
+                    taxes,
+                    total_amount as "totalAmount",
+                    amount_paid as "amountPaid",
+                    amount_due as "amountDue",
+                    parking_fee as "parkingFee",
+                    status,
+                    payment_status as "paymentStatus",
+                    supplier_status as "supplierStatus",
+                    notes,
+                    created_at as "createdAt"`,
                 [
                     reservationData.apartmentId,
                     reservationData.clientId,
@@ -279,10 +290,30 @@ export class ReservationModel {
             values.push(id);
 
             const { rows } = await db.query(
-                `UPDATE reservations 
-                SET ${setClause} 
-                WHERE id = $${values.length} 
-                RETURNING *`,
+                `UPDATE reservations
+                SET ${setClause}
+                WHERE id = $${values.length}
+                RETURNING
+                    id,
+                    apartment_id as "apartmentId",
+                    client_id as "clientId",
+                    check_in_date as "checkInDate",
+                    check_out_date as "checkOutDate",
+                    nights,
+                    price_per_night as "pricePerNight",
+                    cleaning_fee as "cleaningFee",
+                    cancellation_fee as "cancellationFee",
+                    other_expenses as "otherExpenses",
+                    taxes,
+                    total_amount as "totalAmount",
+                    amount_paid as "amountPaid",
+                    amount_due as "amountDue",
+                    parking_fee as "parkingFee",
+                    status,
+                    payment_status as "paymentStatus",
+                    supplier_status as "supplierStatus",
+                    notes,
+                    created_at as "createdAt"`,
                 values
             );
             return rows[0];
@@ -328,6 +359,7 @@ export class ReservationModel {
                 r.parking_fee as "parkingFee",
                 r.status,
                 r.payment_status as "paymentStatus",
+                r.supplier_status as "supplierStatus",
                 r.notes,
                 r.created_at as "createdAt",
                 c.name as "clientName",

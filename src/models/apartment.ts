@@ -18,11 +18,11 @@ export default class ApartmentModel {
 
             if (filters?.minPrice !== undefined) {
                 values.push(filters.minPrice)
-                conditions.push(`price >= $${values.length}`)
+                conditions.push(`price_per_night >= $${values.length}`)
             }
             if (filters?.maxPrice !== undefined) {
                 values.push(filters.maxPrice)
-                conditions.push(`price <= $${values.length}`)
+                conditions.push(`price_per_night <= $${values.length}`)
             }
             if (filters?.capacity !== undefined) {
                 values.push(filters.capacity)
@@ -70,7 +70,7 @@ export default class ApartmentModel {
             const safeDescription = description || null;
             
             const { rows } = await db.query(
-                'INSERT INTO apartments (name, description, address, capacity, bathrooms, rooms, price, unit_number, images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;',
+                'INSERT INTO apartments (name, description, address, capacity, bathrooms, rooms, price_per_night, unit_number, images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;',
                 [name, safeDescription, address, capacity, bathrooms, rooms, price, unitNumber, imagesJson]
             );
 
@@ -112,7 +112,7 @@ export default class ApartmentModel {
             updatedValues.push(rooms)
         }
         if (price !== undefined) {
-            updateFields.push(`price = $${paramCount++}`)
+            updateFields.push(`price_per_night = $${paramCount++}`)
             updatedValues.push(price)
         }
         if (unitNumber !== undefined) {
@@ -223,7 +223,7 @@ export default class ApartmentModel {
             capacity: dbApartment.capacity,
             bathrooms: dbApartment.bathrooms,
             rooms: dbApartment.rooms,
-            price: dbApartment.price,
+            price: dbApartment.price_per_night,
             unitNumber: dbApartment.unit_number,
             images: images
         };
