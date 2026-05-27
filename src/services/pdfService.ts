@@ -703,7 +703,7 @@ export default class PdfService {
             const pageHeight = doc.page.height;
             
             doc.save();
-            doc.fillOpacity(0.15);
+            doc.fillOpacity(0.22);
             doc.image(imageBuffer, 0, 0, {
                 width: pageWidth,
                 height: pageHeight
