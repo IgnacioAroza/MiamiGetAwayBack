@@ -38,6 +38,9 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Trust the first proxy (required for express-rate-limit behind Render/load balancers)
+app.set('trust proxy', 1)
+
 // Configuración de middlewares
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').filter(Boolean)
 const corsOptions = {
