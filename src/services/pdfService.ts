@@ -594,14 +594,28 @@ export default class PdfService {
         writeSectionTitle('9. ACCEPTANCE OF TERMS');
         writeParagraph('By completing payment or entering the property, the guest confirms having read, understood, and fully accepted these terms and conditions.');
 
-        // Signature line
-        checkPageBreak(70);
+        // Signature block
+        checkPageBreak(110);
         y += 30;
+        const sigLineWidth = 200;
+        const col2 = margin + 270;
         doc.strokeColor(COLOR).lineWidth(0.5);
-        doc.moveTo(margin, y).lineTo(margin + 220, y).stroke();
+
+        // Row 1: Signature | Full Name
+        doc.moveTo(margin, y).lineTo(margin + sigLineWidth, y).stroke();
+        doc.moveTo(col2, y).lineTo(col2 + sigLineWidth, y).stroke();
         y += 6;
         doc.font('Helvetica').fontSize(9).fillColor(COLOR)
-           .text('Guest Signature', margin, y);
+           .text('Guest Signature', margin, y)
+           .text('Full Name (Print)', col2, y);
+        y += 30;
+
+        // Row 2: Date
+        doc.strokeColor(COLOR).lineWidth(0.5);
+        doc.moveTo(margin, y).lineTo(margin + sigLineWidth, y).stroke();
+        y += 6;
+        doc.font('Helvetica').fontSize(9).fillColor(COLOR)
+           .text('Date', margin, y);
     }
 
     static async generateMonthlySummaryPdf(
@@ -785,41 +799,42 @@ export default class PdfService {
 
     public static addBackgroundImage(doc: PDFKit.PDFDocument): void {
         try {
-            // Intentar diferentes rutas para la imagen de fondo
             const possiblePaths = [
-                path.join(__dirname, '..', 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'src', 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'dist', 'assets', 'images', 'background.png')
+                path.join(__dirname, '..', 'assets', 'images', 'logo_sin_fondo.png'),
+                path.join(process.cwd(), 'src', 'assets', 'images', 'logo_sin_fondo.png'),
+                path.join(process.cwd(), 'assets', 'images', 'logo_sin_fondo.png'),
+                path.join(process.cwd(), 'dist', 'assets', 'images', 'logo_sin_fondo.png')
             ];
 
-            let backgroundImagePath = '';
+            let imagePath = '';
             for (const possiblePath of possiblePaths) {
                 if (fs.existsSync(possiblePath)) {
-                    backgroundImagePath = possiblePath;
+                    imagePath = possiblePath;
                     break;
                 }
             }
-            if (!backgroundImagePath) {
-                console.error('Background image not found');
+            if (!imagePath) {
+                console.error('Watermark image not found');
                 return;
             }
 
-            const imageBuffer = fs.readFileSync(backgroundImagePath);
+            const imageBuffer = fs.readFileSync(imagePath);
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
-            
+            const logoSize = 280;
+            const x = (pageWidth - logoSize) / 2;
+            const y = (pageHeight - logoSize) / 2;
+
             doc.save();
-            doc.fillOpacity(0.22);
-            doc.image(imageBuffer, 0, 0, {
-                width: pageWidth,
-                height: pageHeight
+            doc.fillOpacity(0.10);
+            doc.image(imageBuffer, x, y, {
+                width: logoSize,
+                height: logoSize
             });
             doc.fillOpacity(1);
             doc.restore();
         } catch (error) {
             console.error('Error adding background image');
-            // No lanzamos el error para no interrumpir la generación del PDF
         }
     }
 }
