@@ -14,7 +14,7 @@ function getPool(): pg.Pool {
             database: process.env.DATABASE,
             password: process.env.PASSWORD,
             port: process.env.PORT_DB ? parseInt(process.env.PORT_DB) : undefined,
-            ssl: process.env.NODE_ENV === 'production' ? {
+            ssl: process.env.DB_SSL === 'true' ? {
                 rejectUnauthorized: false
             } : false,
         });
