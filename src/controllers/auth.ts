@@ -48,6 +48,7 @@ class AuthController {
 
             res.json({ token, admin: { id: admin.id, username: admin.username } })
         } catch (error: any) {
+            console.error('Login error:', error)
             res.status(500).json({ message: 'An error occurred during login' })
         }
     }
