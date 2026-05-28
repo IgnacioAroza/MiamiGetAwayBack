@@ -126,7 +126,7 @@ export default class PdfService {
         PdfService.addBackgroundImage(doc); // Para la primera página
 
         // Logo centrado
-        const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo_sin_fondo.png');
+        const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo_negro.png');
         if (fs.existsSync(logoPath)) {
             doc.image(logoPath, 100, 30, {
                 fit: [400, 100],
@@ -142,13 +142,13 @@ export default class PdfService {
         const rightColumnStart = pageCenter + 70;
         const iconSize = 15;
 
-        doc.fillColor('#1B3A5C');
+        doc.fillColor('#000000');
 
         // Primera línea de información
         doc.fontSize(10);
         
         // Dirección (izquierda)
-        const locationIcon = path.join(__dirname, '..', 'assets', 'icons', 'location.png');
+        const locationIcon = path.join(__dirname, '..', 'assets', 'icons', 'location_dark.png');
         if (fs.existsSync(locationIcon)) {
             doc.image(locationIcon, leftMargin, startY, { width: iconSize, height: iconSize });
         }
@@ -158,7 +158,7 @@ export default class PdfService {
 
         // Teléfonos (derecha)
         const phoneText = '+1 (414) 339-3382\n+54 9 3564 503454';
-        const phoneIcon = path.join(__dirname, '..', 'assets', 'icons', 'phone.png');
+        const phoneIcon = path.join(__dirname, '..', 'assets', 'icons', 'phone_dark.png');
         if (fs.existsSync(phoneIcon)) {
             doc.image(phoneIcon, rightColumnStart, startY, { width: iconSize, height: iconSize });
         }
@@ -170,7 +170,7 @@ export default class PdfService {
         const startY2 = startY + 30;
 
         // Email (izquierda)
-        const emailIcon = path.join(__dirname, '..', 'assets', 'icons', 'email.png');
+        const emailIcon = path.join(__dirname, '..', 'assets', 'icons', 'email_dark.png');
         if (fs.existsSync(emailIcon)) {
             doc.image(emailIcon, leftMargin, startY2, { width: iconSize, height: iconSize });
         }
@@ -180,7 +180,7 @@ export default class PdfService {
 
         // Sitio web (derecha)
         const webText = 'www.miami-getaway.com';
-        const webIcon = path.join(__dirname, '..', 'assets', 'icons', 'web.png');
+        const webIcon = path.join(__dirname, '..', 'assets', 'icons', 'web_dark.png');
         if (fs.existsSync(webIcon)) {
             doc.image(webIcon, rightColumnStart, startY2, { width: iconSize, height: iconSize });
         }
@@ -189,17 +189,17 @@ export default class PdfService {
                 { width: rightMargin - rightColumnStart - 20 });
 
         // Línea separadora superior
-        doc.strokeColor('#1B3A5C');
+        doc.strokeColor('#000000');
         doc.moveTo(40, 230).lineTo(570, 230).stroke();
 
         // Títulos de sección
         doc.font('Helvetica-Bold')
            .fontSize(14)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Reservation Details', 40, 245)
            .text('RESERVATION', 350, 245);
 
-        doc.fillColor('#1B3A5C');
+        doc.fillColor('#000000');
         
         // Contenido de la columna izquierda
         doc.font('Helvetica')
@@ -240,7 +240,7 @@ export default class PdfService {
         // Información del cliente
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Reserved By', 40, yPos);
         yPos += 20;
 
@@ -249,14 +249,14 @@ export default class PdfService {
         const clientEmail = reservation.clientEmail || 'No specified';
 
         doc.font('Helvetica')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .fontSize(10)
            .text(`${clientName} ${clientLastname}`, 40, yPos)
            .text(clientEmail, 40, yPos + 15);
         yPos += 45;
 
         // Línea separadora después de los datos del cliente
-        doc.strokeColor('#1B3A5C');
+        doc.strokeColor('#000000');
         doc.moveTo(40, yPos).lineTo(570, yPos).stroke();
 
         // Definir las posiciones de las columnas
@@ -273,7 +273,7 @@ export default class PdfService {
         const startYHeader = yPos + 10;
 
         // Color de fondo para el encabezado
-        doc.rect(colX.description, startYHeader, colX.endX - colX.description, headerHeight).fill('#1B4B82');
+        doc.rect(colX.description, startYHeader, colX.endX - colX.description, headerHeight).fill('#000000');
         
         // Texto del encabezado en blanco
         doc.fillColor('white')
@@ -284,7 +284,7 @@ export default class PdfService {
            .text('Unit Price', colX.unitPrice, startYHeader + 5, { align: 'right', width: 100 })
            .text('Amount', colX.amount, startYHeader + 5, { align: 'right', width: 60 });
 
-        doc.fillColor('#1B3A5C');
+        doc.fillColor('#000000');
         
         // Iniciar posición Y para el contenido
         yPos = startYHeader + headerHeight;
@@ -292,7 +292,7 @@ export default class PdfService {
         
         // Función helper para dibujar línea horizontal
         const drawHorizontalLine = (atY: number) => {
-            doc.strokeColor('#1B3A5C').lineWidth(1);
+            doc.strokeColor('#000000').lineWidth(1);
             doc.moveTo(colX.description, atY).lineTo(colX.endX, atY).stroke();
         };
 
@@ -351,10 +351,10 @@ export default class PdfService {
                         Number(reservation.otherExpenses || 0);
         
         doc.font('Helvetica-Bold')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Subtotal', colX.unitPrice, currentY + 5);
         doc.font('Helvetica')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text(`$${subtotal.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 20;
 
@@ -362,10 +362,10 @@ export default class PdfService {
         if (reservation.taxes > 0) {
             const taxes = Number(reservation.taxes || 0);
             doc.font('Helvetica-Bold')
-               .fillColor('#1B3A5C')
+               .fillColor('#000000')
                .text('Taxes', colX.unitPrice, currentY + 5);
             doc.font('Helvetica')
-               .fillColor('#1B3A5C')
+               .fillColor('#000000')
                .text(`$${taxes.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
         }
@@ -376,9 +376,9 @@ export default class PdfService {
         const totalAmount = Number(reservation.totalAmount || 0);
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('TOTAL', colX.unitPrice, currentY + 5);
-        doc.fillColor('#1B3A5C')
+        doc.fillColor('#000000')
            .text(`$${totalAmount.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 30;
         // Pagos como filas adicionales en la misma tabla de ítems, con salto de página y encabezado si es necesario
@@ -387,7 +387,7 @@ export default class PdfService {
         const rowHeight = 20;
         const drawTableHeader = (y: number) => {
             // Fondo azul para encabezado
-            doc.rect(colX.description, y, colX.endX - colX.description, headerHeight).fill('#1B4B82');
+            doc.rect(colX.description, y, colX.endX - colX.description, headerHeight).fill('#000000');
             doc.fillColor('white')
                 .font('Helvetica-Bold').fontSize(12)
                 .text('Items', colX.description + 5, y + 5)
@@ -396,7 +396,7 @@ export default class PdfService {
                 .text('Amount', colX.amount, y + 5, { align: 'right', width: 60 });
         };
         if (payments && payments.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C');
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#000000');
             payments.forEach(payment => {
                 // Si la siguiente fila se pasa de página, agregar página y encabezado
                 if (currentY + rowHeight + bottomMargin > pageHeight) {
@@ -421,7 +421,7 @@ export default class PdfService {
             drawTableHeader(currentY);
             currentY += headerHeight;
         }
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C')
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#000000')
             .text('Amount Due', colX.unitPrice, currentY + 5)
             .text(`$${Number(reservation.amountDue || 0).toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 25;
@@ -442,30 +442,30 @@ export default class PdfService {
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('DETAILS', 40, yPos);
         yPos += 20;
 
         doc.font('Helvetica-Bold')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Apartment Address: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentAddress}`);
         yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Apartment Description: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentDescription}`);
         yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Rooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBedrooms}`);
         yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text('Bathrooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBathrooms}`);
@@ -488,11 +488,11 @@ export default class PdfService {
         }
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .text(notesTitle, 40, yPos);
         yPos += notesTitleHeight + 5;
         doc.font(notesFont)
-           .fillColor('#1B3A5C')
+           .fillColor('#000000')
            .fontSize(notesFontSize)
            .text(notesContent, 40, yPos, { width: 500, align: 'left' });
 
@@ -507,7 +507,7 @@ export default class PdfService {
         const contentWidth = doc.page.width - margin * 2;
         const pageHeight = doc.page.height;
         const bottomMargin = 50;
-        const COLOR = '#1B3A5C';
+        const COLOR = '#000000';
         let y = 40;
 
         const checkPageBreak = (neededHeight: number) => {
@@ -594,14 +594,30 @@ export default class PdfService {
         writeSectionTitle('9. ACCEPTANCE OF TERMS');
         writeParagraph('By completing payment or entering the property, the guest confirms having read, understood, and fully accepted these terms and conditions.');
 
-        // Signature line
-        checkPageBreak(70);
+        // Signature block
+        checkPageBreak(130);
         y += 30;
+        const sigLineWidth = 220;
         doc.strokeColor(COLOR).lineWidth(0.5);
-        doc.moveTo(margin, y).lineTo(margin + 220, y).stroke();
+
+        doc.moveTo(margin, y).lineTo(margin + sigLineWidth, y).stroke();
         y += 6;
         doc.font('Helvetica').fontSize(9).fillColor(COLOR)
            .text('Guest Signature', margin, y);
+        y += 30;
+
+        doc.strokeColor(COLOR).lineWidth(0.5);
+        doc.moveTo(margin, y).lineTo(margin + sigLineWidth, y).stroke();
+        y += 6;
+        doc.font('Helvetica').fontSize(9).fillColor(COLOR)
+           .text('Full Name', margin, y);
+        y += 30;
+
+        doc.strokeColor(COLOR).lineWidth(0.5);
+        doc.moveTo(margin, y).lineTo(margin + sigLineWidth, y).stroke();
+        y += 6;
+        doc.font('Helvetica').fontSize(9).fillColor(COLOR)
+           .text('Date', margin, y);
     }
 
     static async generateMonthlySummaryPdf(
@@ -785,41 +801,43 @@ export default class PdfService {
 
     public static addBackgroundImage(doc: PDFKit.PDFDocument): void {
         try {
-            // Intentar diferentes rutas para la imagen de fondo
             const possiblePaths = [
-                path.join(__dirname, '..', 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'src', 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'assets', 'images', 'background.png'),
-                path.join(process.cwd(), 'dist', 'assets', 'images', 'background.png')
+                path.join(__dirname, '..', 'assets', 'images', 'logo_texto_negro.png'),
+                path.join(process.cwd(), 'src', 'assets', 'images', 'logo_texto_negro.png'),
+                path.join(process.cwd(), 'assets', 'images', 'logo_texto_negro.png'),
+                path.join(process.cwd(), 'dist', 'assets', 'images', 'logo_texto_negro.png')
             ];
 
-            let backgroundImagePath = '';
+            let imagePath = '';
             for (const possiblePath of possiblePaths) {
                 if (fs.existsSync(possiblePath)) {
-                    backgroundImagePath = possiblePath;
+                    imagePath = possiblePath;
                     break;
                 }
             }
-            if (!backgroundImagePath) {
-                console.error('Background image not found');
+            if (!imagePath) {
+                console.error('Watermark image not found');
                 return;
             }
 
-            const imageBuffer = fs.readFileSync(backgroundImagePath);
+            const imageBuffer = fs.readFileSync(imagePath);
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
-            
+            const logoW = 440;
+            const logoH = 200;
+            const x = (pageWidth - logoW) / 2;
+            const y = (pageHeight - logoH) / 2;
+
             doc.save();
-            doc.fillOpacity(0.22);
-            doc.image(imageBuffer, 0, 0, {
-                width: pageWidth,
-                height: pageHeight
+            doc.fillOpacity(0.12);
+            doc.image(imageBuffer, x, y, {
+                width: logoW,
+                height: logoH
             });
             doc.fillOpacity(1);
             doc.restore();
         } catch (error) {
             console.error('Error adding background image');
-            // No lanzamos el error para no interrumpir la generación del PDF
         }
     }
 }
