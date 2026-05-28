@@ -57,12 +57,12 @@ export class ReservationModel {
             // Añadir filtros si existen
             if (filters.startDate) {
                 queryParams.push(filters.startDate);
-                conditions.push(`to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') >= to_date(LEFT($${queryParams.length}::text, 10), 'MM-DD-YYYY')`);
+                conditions.push(`r.check_in_date::date >= $${queryParams.length}::date`);
             }
 
             if (filters.endDate) {
                 queryParams.push(filters.endDate);
-                conditions.push(`to_date(LEFT(r.check_out_date, 10), 'MM-DD-YYYY') <= to_date(LEFT($${queryParams.length}::text, 10), 'MM-DD-YYYY')`);
+                conditions.push(`r.check_out_date::date <= $${queryParams.length}::date`);
             }
             
             if (filters.status) {
@@ -103,18 +103,18 @@ export class ReservationModel {
                 // Determinar la fecha base para comparación
                 if (filters.fromDate) {
                     queryParams.push(filters.fromDate);
-                    conditions.push(`to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') >= to_date($${queryParams.length}, 'MM-DD-YYYY')`);
+                    conditions.push(`r.check_in_date::date >= $${queryParams.length}::date`);
                 } else {
-                    conditions.push(`to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') >= CURRENT_DATE`);
+                    conditions.push(`r.check_in_date::date >= CURRENT_DATE`);
                 }
 
                 if (filters.withinDays !== undefined) {
                     queryParams.push(filters.withinDays);
                     if (filters.fromDate) {
                         const fromDateParam = queryParams.findIndex(p => p === filters.fromDate) + 1;
-                        conditions.push(`to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') < to_date($${fromDateParam}, 'MM-DD-YYYY') + ($${queryParams.length} || ' days')::interval`);
+                        conditions.push(`r.check_in_date::date < $${fromDateParam}::date + ($${queryParams.length} || ' days')::interval`);
                     } else {
-                        conditions.push(`to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') < CURRENT_DATE + ($${queryParams.length} || ' days')::interval`);
+                        conditions.push(`r.check_in_date::date < CURRENT_DATE + ($${queryParams.length} || ' days')::interval`);
                     }
                 }
             }
@@ -125,7 +125,7 @@ export class ReservationModel {
             }
             
             // Ordenar por fecha de check-in descendente (más recientes primero)
-            query += ` ORDER BY to_date(LEFT(r.check_in_date, 10), 'MM-DD-YYYY') DESC`;
+            query += ` ORDER BY r.check_in_date::date DESC`;
             
             const { rows } = await db.query(query, queryParams);
             return rows;

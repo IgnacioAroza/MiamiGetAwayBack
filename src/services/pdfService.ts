@@ -142,8 +142,7 @@ export default class PdfService {
         const rightColumnStart = pageCenter + 70;
         const iconSize = 15;
 
-        // Cambiar el color del texto a blanco
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
 
         // Primera línea de información
         doc.fontSize(10);
@@ -190,18 +189,17 @@ export default class PdfService {
                 { width: rightMargin - rightColumnStart - 20 });
 
         // Línea separadora superior
-        doc.strokeColor('white');
+        doc.strokeColor('#1B3A5C');
         doc.moveTo(40, 230).lineTo(570, 230).stroke();
 
         // Títulos de sección
         doc.font('Helvetica-Bold')
            .fontSize(14)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Reservation Details', 40, 245)
            .text('RESERVATION', 350, 245);
 
-        // Restaurar color para el contenido normal
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
         
         // Contenido de la columna izquierda
         doc.font('Helvetica')
@@ -242,7 +240,7 @@ export default class PdfService {
         // Información del cliente
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Reserved By', 40, yPos);
         yPos += 20;
 
@@ -251,14 +249,14 @@ export default class PdfService {
         const clientEmail = reservation.clientEmail || 'No specified';
 
         doc.font('Helvetica')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .fontSize(10)
            .text(`${clientName} ${clientLastname}`, 40, yPos)
            .text(clientEmail, 40, yPos + 15);
         yPos += 45;
 
         // Línea separadora después de los datos del cliente
-        doc.strokeColor('white');
+        doc.strokeColor('#1B3A5C');
         doc.moveTo(40, yPos).lineTo(570, yPos).stroke();
 
         // Definir las posiciones de las columnas
@@ -286,8 +284,7 @@ export default class PdfService {
            .text('Unit Price', colX.unitPrice, startYHeader + 5, { align: 'right', width: 100 })
            .text('Amount', colX.amount, startYHeader + 5, { align: 'right', width: 60 });
 
-        // Restaurar el color del texto a blanco para el contenido
-        doc.fillColor('white');
+        doc.fillColor('#1B3A5C');
         
         // Iniciar posición Y para el contenido
         yPos = startYHeader + headerHeight;
@@ -295,7 +292,7 @@ export default class PdfService {
         
         // Función helper para dibujar línea horizontal
         const drawHorizontalLine = (atY: number) => {
-            doc.strokeColor('white').lineWidth(1);
+            doc.strokeColor('#1B3A5C').lineWidth(1);
             doc.moveTo(colX.description, atY).lineTo(colX.endX, atY).stroke();
         };
 
@@ -354,10 +351,10 @@ export default class PdfService {
                         Number(reservation.otherExpenses || 0);
         
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Subtotal', colX.unitPrice, currentY + 5);
         doc.font('Helvetica')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text(`$${subtotal.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 20;
 
@@ -365,10 +362,10 @@ export default class PdfService {
         if (reservation.taxes > 0) {
             const taxes = Number(reservation.taxes || 0);
             doc.font('Helvetica-Bold')
-               .fillColor('white')
+               .fillColor('#1B3A5C')
                .text('Taxes', colX.unitPrice, currentY + 5);
             doc.font('Helvetica')
-               .fillColor('white')
+               .fillColor('#1B3A5C')
                .text(`$${taxes.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
             currentY += 20;
         }
@@ -379,9 +376,9 @@ export default class PdfService {
         const totalAmount = Number(reservation.totalAmount || 0);
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('TOTAL', colX.unitPrice, currentY + 5);
-        doc.fillColor('white')
+        doc.fillColor('#1B3A5C')
            .text(`$${totalAmount.toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 30;
         // Pagos como filas adicionales en la misma tabla de ítems, con salto de página y encabezado si es necesario
@@ -399,7 +396,7 @@ export default class PdfService {
                 .text('Amount', colX.amount, y + 5, { align: 'right', width: 60 });
         };
         if (payments && payments.length > 0) {
-            doc.font('Helvetica-Bold').fontSize(12).fillColor('white');
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C');
             payments.forEach(payment => {
                 // Si la siguiente fila se pasa de página, agregar página y encabezado
                 if (currentY + rowHeight + bottomMargin > pageHeight) {
@@ -424,7 +421,7 @@ export default class PdfService {
             drawTableHeader(currentY);
             currentY += headerHeight;
         }
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('white')
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#1B3A5C')
             .text('Amount Due', colX.unitPrice, currentY + 5)
             .text(`$${Number(reservation.amountDue || 0).toFixed(2)}`, colX.amount, currentY + 5, { align: 'right', width: 60 });
         currentY += 25;
@@ -445,34 +442,34 @@ export default class PdfService {
 
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('DETAILS', 40, yPos);
         yPos += 20;
 
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Apartment Address: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentAddress}`);
-        yPos += 15;
+        yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Apartment Description: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentDescription}`);
-        yPos += 15;
+        yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Rooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBedrooms}`);
-        yPos += 15;
+        yPos = doc.y + 5;
         doc.font('Helvetica-Bold')
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text('Bathrooms: ', 40, yPos, { continued: true })
            .font('Helvetica')
            .text(`${apartmentBathrooms}`);
-        yPos += 30;
+        yPos = doc.y + 20;
 
         // --- Cálculo de altura de las notas y salto de página si es necesario ---
         doc.font('Helvetica-Bold').fontSize(12);
@@ -491,13 +488,120 @@ export default class PdfService {
         }
         doc.font('Helvetica-Bold')
            .fontSize(12)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .text(notesTitle, 40, yPos);
         yPos += notesTitleHeight + 5;
         doc.font(notesFont)
-           .fillColor('white')
+           .fillColor('#1B3A5C')
            .fontSize(notesFontSize)
            .text(notesContent, 40, yPos, { width: 500, align: 'left' });
+
+        PdfService.addTermsPage(doc);
+    }
+
+    private static addTermsPage(doc: PDFKit.PDFDocument): void {
+        doc.addPage();
+        PdfService.addBackgroundImage(doc);
+
+        const margin = 40;
+        const contentWidth = doc.page.width - margin * 2;
+        const pageHeight = doc.page.height;
+        const bottomMargin = 50;
+        const COLOR = '#1B3A5C';
+        let y = 40;
+
+        const checkPageBreak = (neededHeight: number) => {
+            if (y + neededHeight > pageHeight - bottomMargin) {
+                doc.addPage();
+                PdfService.addBackgroundImage(doc);
+                y = 40;
+            }
+        };
+
+        const writeTitle = (text: string) => {
+            doc.font('Helvetica-Bold').fontSize(13).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 10);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 4;
+        };
+
+        const writeSubtitle = (text: string) => {
+            doc.font('Helvetica').fontSize(11).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 12);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 12;
+        };
+
+        const writeSectionTitle = (text: string) => {
+            doc.font('Helvetica-Bold').fontSize(10);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 60);
+            y += 8;
+            doc.fillColor(COLOR).text(text, margin, y, { width: contentWidth });
+            y += h + 5;
+        };
+
+        const writeParagraph = (text: string) => {
+            doc.font('Helvetica').fontSize(10).fillColor(COLOR);
+            const h = doc.heightOfString(text, { width: contentWidth });
+            checkPageBreak(h + 8);
+            doc.text(text, margin, y, { width: contentWidth });
+            y += h + 6;
+        };
+
+        writeTitle('RESERVATION TERMS AND CONDITIONS');
+        writeSubtitle('Temporary Property Rental');
+        writeParagraph('By making a reservation with our company, the guest automatically agrees to the following terms and conditions:');
+
+        writeSectionTitle('1. RESERVATIONS AND PAYMENTS');
+        writeParagraph('All reservations must be paid according to the conditions communicated at the time of booking.');
+        writeParagraph('The reservation will be confirmed only upon receipt of the corresponding payment and validation of the guest\'s information.');
+        writeParagraph('We reserve the right to cancel any reservation in the event of false information, suspicious activity, or non-compliance with these policies.');
+
+        writeSectionTitle('2. CANCELLATION POLICY');
+        writeParagraph('Our cancellation policy is strict and applies without exceptions, including changes in personal plans, travel issues, weather, cancelled flights, illness, or any situation beyond our control.');
+        writeParagraph('Cancellations made more than 30 days before check-in: 100% refund of the amount paid.\nCancellations made between 15 and 30 days before check-in: 50% refund of the amount paid.\nCancellations made within 15 days prior to check-in: No refund will be issued.');
+        writeParagraph('In the event of early departure or a reduction in stay once the rental has begun, no partial or full refunds will be made.');
+
+        writeSectionTitle('3. CHECK-IN AND CHECK-OUT');
+        writeParagraph('Check-in and check-out times will be communicated to each guest in advance.');
+        writeParagraph('Late check-out or early check-in are subject to availability and may incur additional charges.');
+
+        writeSectionTitle('4. CLEANLINESS AND PROPERTY CONDITION');
+        writeParagraph('The property will be delivered clean and in proper working condition.');
+        writeParagraph('The Cleaning Fee covers exclusively the standard general cleaning and sanitization service between guests. This charge does not exempt the guest from returning the property in a reasonable and orderly condition.');
+        writeParagraph('The guest agrees to:\n• Keep the property in good condition.\n• Remove trash and excessive waste.\n• Not leave damage, severe stains, extreme filth, or conditions beyond normal use.');
+        writeParagraph('In the event of excessive cleaning requirements, damage, smoke odor, additional trash, stains, damaged furniture, or any condition requiring extraordinary services, additional charges may apply.');
+
+        writeSectionTitle('5. DAMAGES AND LIABILITY');
+        writeParagraph('The guest will be fully responsible for any damage caused to the property, furniture, decor, appliances, or common areas during the stay.');
+        writeParagraph('We reserve the right to charge for repair, replacement, or additional cleaning costs necessary to restore the property to its original condition.');
+
+        writeSectionTitle('6. OCCUPANCY AND USE OF PROPERTY');
+        writeParagraph('Only the individuals listed in the reservation are permitted to stay at the property.');
+        writeParagraph('Parties, events, unauthorized gatherings, illegal activities, or behavior that causes disturbances to neighbors or the building are strictly prohibited.');
+        writeParagraph('Violation of this policy may result in the immediate termination of the stay with no right to a refund.');
+
+        writeSectionTitle('7. COMPANY LIABILITY');
+        writeParagraph('The company shall not be held liable for:\n• Accidents, injuries, or illnesses occurring during the stay.\n• Loss, theft, or forgetting of personal belongings.\n• Temporary failures of external services such as internet, electricity, water, air conditioning, or amenities beyond our control.\n• Situations arising from force majeure, weather, natural disasters, or external problems.');
+        writeParagraph('The guest uses the property at their own risk.');
+
+        writeSectionTitle('8. RIGHT OF ADMISSION AND CANCELLATION');
+        writeParagraph('We reserve the right to refuse or cancel reservations when violations of these policies, inappropriate behavior, or risks to the property are detected.');
+
+        writeSectionTitle('9. ACCEPTANCE OF TERMS');
+        writeParagraph('By completing payment or entering the property, the guest confirms having read, understood, and fully accepted these terms and conditions.');
+
+        // Signature line
+        checkPageBreak(70);
+        y += 30;
+        doc.strokeColor(COLOR).lineWidth(0.5);
+        doc.moveTo(margin, y).lineTo(margin + 220, y).stroke();
+        y += 6;
+        doc.font('Helvetica').fontSize(9).fillColor(COLOR)
+           .text('Guest Signature', margin, y);
     }
 
     static async generateMonthlySummaryPdf(
@@ -706,7 +810,7 @@ export default class PdfService {
             const pageHeight = doc.page.height;
             
             doc.save();
-            doc.fillOpacity(1);
+            doc.fillOpacity(0.22);
             doc.image(imageBuffer, 0, 0, {
                 width: pageWidth,
                 height: pageHeight
