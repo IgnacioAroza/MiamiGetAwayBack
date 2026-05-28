@@ -20,6 +20,7 @@ import supplierRoutes, { supplierPaymentsRouter } from './routes/suppliers.js'
 import cronRoutes from './routes/cron.js'
 import monthlySummaryRoutes from './routes/monthlySummary.js'
 import googleMyBusinessRoutes from './routes/googleMyBusiness.js'
+import investmentRoutes from './routes/investment.js'
 
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
@@ -82,6 +83,7 @@ app.use('/api/supplier-payments', supplierPaymentsRouter)
 app.use('/api/cron', cronRoutes)
 app.use('/api/summaries', monthlySummaryRoutes)
 app.use('/api/google-mybusiness', googleMyBusinessRoutes)
+app.use('/api/investments', investmentRoutes)
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
