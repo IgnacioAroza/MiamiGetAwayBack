@@ -12,6 +12,7 @@ export const partialSupplierSchema = supplierSchema.partial();
 export const assignSupplierSchema = z.object({
     supplier_id: z.number().int().positive(),
     payout_per_night: z.number().positive(),
+    cleaning_fee: z.number().min(0).optional().default(0),
     payment_terms: z.string().optional()
 });
 

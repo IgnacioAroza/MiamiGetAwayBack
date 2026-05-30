@@ -26,6 +26,7 @@ export interface ReservationSupplier {
     reservationId: number;
     supplierId: number;
     payoutPerNight: number;
+    cleaningFee: number;
     paymentTerms?: string | null;
     createdAt: Date;
     // Raw JOIN fields (internal use)
@@ -51,6 +52,7 @@ export interface ReservationSupplierResponse {
         phone?: string | null;
     };
     payout_per_night: number;
+    cleaning_fee: number;
     payment_terms?: string | null;
     calculated: {
         total: number;
@@ -63,6 +65,7 @@ export interface ReservationSupplierResponse {
 export interface AssignSupplierDTO {
     supplier_id: number;
     payout_per_night: number;
+    cleaning_fee?: number;
     payment_terms?: string;
 }
 
