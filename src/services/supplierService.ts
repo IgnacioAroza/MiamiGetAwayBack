@@ -19,6 +19,7 @@ function formatReservationSupplier(row: ReservationSupplier): ReservationSupplie
     const total = Number(row.totalPayout ?? 0);
     const paid = Number(row.totalPaid ?? 0);
     const revenue = Number(row.totalRevenue ?? 0);
+    const cleaningFee = Number(row.cleaningFee ?? 0);
     return {
         id: row.id,
         reservation_id: row.reservationId,
@@ -30,12 +31,13 @@ function formatReservationSupplier(row: ReservationSupplier): ReservationSupplie
             phone: row.supplierPhone ?? null
         },
         payout_per_night: Number(row.payoutPerNight),
+        cleaning_fee: cleaningFee,
         payment_terms: row.paymentTerms ?? null,
         calculated: {
             total,
             paid,
             balance: total - paid,
-            profit: revenue - paid
+            profit: revenue - total
         }
     };
 }

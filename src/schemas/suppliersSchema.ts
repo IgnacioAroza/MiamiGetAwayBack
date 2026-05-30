@@ -12,14 +12,15 @@ export const partialSupplierSchema = supplierSchema.partial();
 export const assignSupplierSchema = z.object({
     supplier_id: z.number().int().positive(),
     payout_per_night: z.number().positive(),
+    cleaning_fee: z.number().min(0).optional().default(0),
     payment_terms: z.string().optional()
 });
 
 const supplierPaymentMethodEnum = z.enum(['cash', 'wire', 'card', 'transfer']);
 
 export const supplierPaymentSchema = z.object({
-    reservationSupplierId: z.number().int().positive(),
-    amount: z.number().positive(),
+    reservationSupplierId: z.coerce.number().int().positive(),
+    amount: z.coerce.number().positive(),
     method: supplierPaymentMethodEnum,
     date: z.string().min(1),
     referenceNotes: z.string().optional(),

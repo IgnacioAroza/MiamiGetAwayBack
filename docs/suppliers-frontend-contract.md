@@ -90,20 +90,21 @@ Si no hay proveedor asignado devuelve `404` → mostrar botón "Asignar proveedo
     "phone": "+1 305 555 0142"
   },
   "payout_per_night": 100,
+  "cleaning_fee": 120,
   "payment_terms": "Within 48h after check-out",
   "calculated": {
-    "total": 700,
+    "total": 820,
     "paid": 350,
-    "balance": 350,
-    "profit": 700
+    "balance": 470,
+    "profit": 580
   }
 }
 ```
 
-> `total` = noches × payout_per_night
+> `total` = `noches × payout_per_night + cleaning_fee`
 > `paid` = suma de pagos registrados al proveedor
 > `balance` = total − paid
-> `profit` = suma de `reservation_payments` (cliente) − `paid` (proveedor)
+> `profit` = `reservation.total_amount − total` (margen del deal, no del flujo de caja)
 
 ### `POST /api/reservations/:id/supplier` ✅ auth
 Asigna un proveedor a la reserva. Si ya tiene uno asignado devuelve `409`.
@@ -112,10 +113,11 @@ Asigna un proveedor a la reserva. Si ya tiene uno asignado devuelve `409`.
 {
   "supplier_id": 1,
   "payout_per_night": 100,
+  "cleaning_fee": 120,
   "payment_terms": "Within 48h after check-out"
 }
 ```
-`payment_terms` es opcional. Response: mismo shape que el GET. Status `201`.
+`cleaning_fee` y `payment_terms` son opcionales. `cleaning_fee` default `0`. Response: mismo shape que el GET. Status `201`.
 
 ### `PUT /api/reservations/:id/supplier` ✅ auth
 Actualizar términos. Mismo body que POST, todos opcionales. Response: mismo shape que GET. Status `200`.

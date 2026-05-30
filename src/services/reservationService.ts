@@ -64,7 +64,7 @@ export default class ReservationService {
     }
     
     // Actualizar campos de pago
-    static async updatePaymentFields(id: number, amountPaid: number, amountDue: number, paymentStatus: 'pending' | 'partial' | 'complete'): Promise<Reservation> {
+    static async updatePaymentFields(id: number, amountPaid: number, amountDue: number, paymentStatus: 'pending' | 'partial' | 'completed'): Promise<Reservation> {
         // Verificar que la reserva existe
         const reservation = await ReservationModel.getReservationById(id);
         if (!reservation) {

@@ -9,6 +9,7 @@ export class ReservationSupplierModel {
                 rs.reservation_id as "reservationId",
                 rs.supplier_id as "supplierId",
                 rs.payout_per_night as "payoutPerNight",
+                rs.cleaning_fee as "cleaningFee",
                 rs.payment_terms as "paymentTerms",
                 rs.created_at as "createdAt",
                 s.id as "supplierIdRef",
@@ -16,17 +17,16 @@ export class ReservationSupplierModel {
                 s.company as "supplierCompany",
                 s.email as "supplierEmail",
                 s.phone as "supplierPhone",
-                r.nights * rs.payout_per_night as "totalPayout",
+                (r.nights * rs.payout_per_night) + rs.cleaning_fee as "totalPayout",
                 COALESCE(SUM(sp.amount), 0) as "totalPaid",
-                (r.nights * rs.payout_per_night) - COALESCE(SUM(sp.amount), 0) as "balance",
-                COALESCE(SUM(rp.amount), 0) as "totalRevenue"
+                ((r.nights * rs.payout_per_night) + rs.cleaning_fee) - COALESCE(SUM(sp.amount), 0) as "balance",
+                r.total_amount as "totalRevenue"
             FROM reservation_suppliers rs
             JOIN suppliers s ON rs.supplier_id = s.id
             JOIN reservations r ON rs.reservation_id = r.id
             LEFT JOIN supplier_payments sp ON sp.reservation_supplier_id = rs.id
-            LEFT JOIN reservation_payments rp ON rp.reservation_id = r.id
             WHERE rs.reservation_id = $1
-            GROUP BY rs.id, s.id, s.name, s.company, s.email, s.phone, r.nights
+            GROUP BY rs.id, s.id, s.name, s.company, s.email, s.phone, r.nights, r.total_amount
         `, [reservationId]);
         return rows[0] || null;
     }
@@ -54,16 +54,17 @@ export class ReservationSupplierModel {
     static async assign(reservationId: number, data: AssignSupplierDTO): Promise<ReservationSupplier> {
         const { rows } = await db.query(`
             INSERT INTO reservation_suppliers
-                (reservation_id, supplier_id, payout_per_night, payment_terms)
-            VALUES ($1, $2, $3, $4)
+                (reservation_id, supplier_id, payout_per_night, cleaning_fee, payment_terms)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING
                 id,
                 reservation_id as "reservationId",
                 supplier_id as "supplierId",
                 payout_per_night as "payoutPerNight",
+                cleaning_fee as "cleaningFee",
                 payment_terms as "paymentTerms",
                 created_at as "createdAt"
-        `, [reservationId, data.supplier_id, data.payout_per_night, data.payment_terms ?? null]);
+        `, [reservationId, data.supplier_id, data.payout_per_night, data.cleaning_fee ?? 0, data.payment_terms ?? null]);
         return rows[0];
     }
 
@@ -74,6 +75,7 @@ export class ReservationSupplierModel {
         const colMap: Record<string, string> = {
             supplier_id: 'supplier_id',
             payout_per_night: 'payout_per_night',
+            cleaning_fee: 'cleaning_fee',
             payment_terms: 'payment_terms'
         };
 
@@ -92,6 +94,7 @@ export class ReservationSupplierModel {
                 reservation_id as "reservationId",
                 supplier_id as "supplierId",
                 payout_per_night as "payoutPerNight",
+                cleaning_fee as "cleaningFee",
                 payment_terms as "paymentTerms",
                 created_at as "createdAt"
         `, values);

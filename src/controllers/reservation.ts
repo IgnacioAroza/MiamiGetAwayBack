@@ -335,7 +335,7 @@ export class ReservationController {
                     
                     // Determinar el estado de pago basado en los montos
                     if (amountDue <= 0) {
-                        updateData.paymentStatus = 'complete';
+                        updateData.paymentStatus = 'completed';
                     } else if (newAmountPaid > 0) {
                         updateData.paymentStatus = 'partial';
                     } else {
@@ -639,7 +639,7 @@ export class ReservationController {
         }
         
         // Validar payment_status
-        const validPaymentStatuses = ['PAID', 'PARTIAL', 'PENDING', 'paid', 'partial', 'pending', 'complete'];
+        const validPaymentStatuses = ['PAID', 'PARTIAL', 'PENDING', 'paid', 'partial', 'pending', 'completed'];
         
         // Si no se proporciona un estado de pago, determinar basado en los montos
         if (!payment_status) {
@@ -659,7 +659,7 @@ export class ReservationController {
         
         // Normalizar el estado de pago (convertir a minúsculas para la base de datos)
         let normalizedStatus = payment_status.toLowerCase();
-        if (normalizedStatus === 'paid') normalizedStatus = 'complete';
+        if (normalizedStatus === 'paid') normalizedStatus = 'completed';
         if (normalizedStatus === 'pending') normalizedStatus = 'pending';
         if (normalizedStatus === 'partial') normalizedStatus = 'partial';
 
