@@ -19,8 +19,8 @@ export const assignSupplierSchema = z.object({
 const supplierPaymentMethodEnum = z.enum(['cash', 'wire', 'card', 'transfer']);
 
 export const supplierPaymentSchema = z.object({
-    reservationSupplierId: z.number().int().positive(),
-    amount: z.number().positive(),
+    reservationSupplierId: z.coerce.number().int().positive(),
+    amount: z.coerce.number().positive(),
     method: supplierPaymentMethodEnum,
     date: z.string().min(1),
     referenceNotes: z.string().optional(),

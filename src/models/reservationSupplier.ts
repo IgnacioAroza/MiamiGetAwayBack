@@ -20,14 +20,13 @@ export class ReservationSupplierModel {
                 (r.nights * rs.payout_per_night) + rs.cleaning_fee as "totalPayout",
                 COALESCE(SUM(sp.amount), 0) as "totalPaid",
                 ((r.nights * rs.payout_per_night) + rs.cleaning_fee) - COALESCE(SUM(sp.amount), 0) as "balance",
-                COALESCE(SUM(rp.amount), 0) as "totalRevenue"
+                r.total_amount as "totalRevenue"
             FROM reservation_suppliers rs
             JOIN suppliers s ON rs.supplier_id = s.id
             JOIN reservations r ON rs.reservation_id = r.id
             LEFT JOIN supplier_payments sp ON sp.reservation_supplier_id = rs.id
-            LEFT JOIN reservation_payments rp ON rp.reservation_id = r.id
             WHERE rs.reservation_id = $1
-            GROUP BY rs.id, s.id, s.name, s.company, s.email, s.phone, r.nights
+            GROUP BY rs.id, s.id, s.name, s.company, s.email, s.phone, r.nights, r.total_amount
         `, [reservationId]);
         return rows[0] || null;
     }

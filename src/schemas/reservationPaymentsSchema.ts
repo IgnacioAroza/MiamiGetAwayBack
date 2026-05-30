@@ -8,8 +8,8 @@ const dateSchema = z.union([
 ]);
 
 export const reservationPaymentSchema = z.object({
-    reservationId: z.number().positive("Reservation ID must be a positive number"),
-    amount: z.number().min(0, "Amount must be a positive number"),
+    reservationId: z.coerce.number().positive("Reservation ID must be a positive number"),
+    amount: z.coerce.number().min(0, "Amount must be a positive number"),
     paymentDate: dateSchema,
     paymentMethod: z.enum(["card", "cash", "transfer", "paypal", "zelle", "stripe", "other"]),
     paymentReference: z.string().nullable().optional(),

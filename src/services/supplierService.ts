@@ -37,7 +37,7 @@ function formatReservationSupplier(row: ReservationSupplier): ReservationSupplie
             total,
             paid,
             balance: total - paid,
-            profit: revenue - paid - cleaningFee
+            profit: revenue - total
         }
     };
 }
