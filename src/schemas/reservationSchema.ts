@@ -32,7 +32,10 @@ export const reservationSchema = z.object({
     parkingFee: z.number().min(0, "Parking fee must be a non-negative number"),
     cancellationFee: z.number().min(0, "Cancellation fee must be a non-negative number").optional().default(0),
     status: z.enum(["pending", "confirmed", "checked_in", "checked_out", "cancelled"]),
-    paymentStatus: z.enum(["pending", "partial", "complete"]),
+    paymentStatus: z.preprocess(
+        (val) => val === 'complete' ? 'completed' : val,
+        z.enum(["pending", "partial", "completed"])
+    ),
     notes: z.string().optional(),
     initialPayment: initialPaymentSchema,
     createdAt: dateSchema.optional().default(() => {

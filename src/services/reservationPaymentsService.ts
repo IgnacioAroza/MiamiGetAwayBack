@@ -16,8 +16,8 @@ export default class ReservationPaymentsService {
             if (!reservation) return;
 
             const amountDue = reservation.totalAmount - totalPaid;
-            let paymentStatus: 'pending' | 'partial' | 'complete' = 'pending';
-            if (amountDue <= 0 && totalPaid > 0) paymentStatus = 'complete';
+            let paymentStatus: 'pending' | 'partial' | 'completed' = 'pending';
+            if (amountDue <= 0 && totalPaid > 0) paymentStatus = 'completed';
             else if (totalPaid > 0 && amountDue > 0) paymentStatus = 'partial';
 
             await ReservationModel.updateReservation(reservationId, {
