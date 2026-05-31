@@ -12,6 +12,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default class PdfService {
+    private static readonly _imgCache = new Map<string, Buffer>();
+
+    private static getImageBuffer(imagePath: string): Buffer | null {
+        if (this._imgCache.has(imagePath)) return this._imgCache.get(imagePath)!;
+        if (!fs.existsSync(imagePath)) return null;
+        const buf = fs.readFileSync(imagePath);
+        this._imgCache.set(imagePath, buf);
+        return buf;
+    }
+
     static async generateInvoicePdf(reservation: ReservationWithClient, payments: ReservationPayment[] = []): Promise<string> {
         // Comentamos la parte de logs
         /*const logFile = path.join(process.cwd(), 'pdf-debug.log');
@@ -85,8 +95,8 @@ export default class PdfService {
                 const buffers: Buffer[] = [];
                 
                 // Recoger los chunks en un array
-                doc.on('data', (chunk) => {
-                    buffers.push(Buffer.from(chunk));
+                doc.on('data', (chunk: Buffer) => {
+                    buffers.push(chunk);
                 });
                 
                 // Manejar errores del documento
@@ -127,8 +137,9 @@ export default class PdfService {
 
         // Logo centrado
         const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo_negro.png');
-        if (fs.existsSync(logoPath)) {
-            doc.image(logoPath, 100, 30, {
+        const logoBuf = PdfService.getImageBuffer(logoPath);
+        if (logoBuf) {
+            doc.image(logoBuf, 100, 30, {
                 fit: [400, 100],
                 align: 'center'
             });
@@ -630,7 +641,7 @@ export default class PdfService {
                 const doc = new PDFDocument();
                 const buffers: Buffer[] = [];
                 
-                doc.on('data', (chunk) => buffers.push(Buffer.from(chunk)));
+                doc.on('data', (chunk: Buffer) => buffers.push(chunk));
                 doc.on('error', (error) => {
                     console.error('Error generating the PDF:', error);
                     reject(error);
@@ -664,8 +675,9 @@ export default class PdfService {
         try {
             // Logo y encabezado
             const logoPath = path.join(process.cwd(), 'src', 'assets', 'images', 'logo_texto_negro.png');
-            if (fs.existsSync(logoPath)) {
-                doc.image(logoPath, 100, 30, {
+            const summaryLogoBuf = PdfService.getImageBuffer(logoPath);
+            if (summaryLogoBuf) {
+                doc.image(summaryLogoBuf, 100, 30, {
                     fit: [400, 100],
                     align: 'center'
                 });
@@ -820,7 +832,7 @@ export default class PdfService {
                 return;
             }
 
-            const imageBuffer = fs.readFileSync(imagePath);
+            const imageBuffer = PdfService.getImageBuffer(imagePath)!;
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
             const logoW = 440;
