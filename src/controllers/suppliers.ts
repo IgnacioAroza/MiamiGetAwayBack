@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import SupplierService from '../services/supplierService.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 import {
     validateSupplier,
     validatePartialSupplier,
@@ -13,8 +14,13 @@ import {
 export class SupplierController {
     static async getAll(req: Request, res: Response): Promise<void> {
         try {
-            const suppliers = await SupplierService.getAllSuppliers();
-            res.status(200).json(suppliers);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await SupplierService.getAllSuppliers(pagination ?? undefined);
+            if (pagination) {
+                res.status(200).json(paginatedResponse(rows, total, pagination));
+            } else {
+                res.status(200).json(rows);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

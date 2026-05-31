@@ -1,4 +1,5 @@
 import express from 'express'
+import multer from 'multer'
 import cors from 'cors'
 import helmet from 'helmet'
 import { rateLimit } from 'express-rate-limit'
@@ -51,6 +52,22 @@ const corsOptions = {
     maxAge: 86400
 }
 
+const globalRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 200,
+    message: { error: 'Too many requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
+const uploadRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    message: { error: 'Too many upload requests, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
 const loginRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     limit: 10,
@@ -61,6 +78,7 @@ const loginRateLimit = rateLimit({
 
 app.use(helmet())
 app.use(cors(corsOptions))
+app.use(globalRateLimit)
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -70,10 +88,10 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
 }
 
 // Configuración de rutas
-app.use('/api/apartments', apartmentRoutes)
-app.use('/api/cars', carRoutes)
-app.use('/api/villas', villaRoutes)
-app.use('/api/yachts', yachtRoutes)
+app.use('/api/apartments', uploadRateLimit, apartmentRoutes)
+app.use('/api/cars', uploadRateLimit, carRoutes)
+app.use('/api/villas', uploadRateLimit, villaRoutes)
+app.use('/api/yachts', uploadRateLimit, yachtRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/auth', loginRateLimit, authRoutes)
@@ -93,6 +111,13 @@ app.use('*', (req, res) => {
 
 // Manejo de errores global
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof multer.MulterError) {
+        const message = err.code === 'LIMIT_FILE_SIZE'
+            ? 'File too large. Maximum size is 10MB'
+            : err.message
+        res.status(400).json({ error: message })
+        return
+    }
     res.status(500).json({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined

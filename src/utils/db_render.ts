@@ -17,6 +17,9 @@ function getPool(): pg.Pool {
             ssl: process.env.DB_SSL === 'true' ? {
                 rejectUnauthorized: false
             } : false,
+            max: 5,                       // Render hobby DB tiene límite bajo de conexiones
+            idleTimeoutMillis: 30000,     // libera conexiones idle después de 30s
+            connectionTimeoutMillis: 5000, // falla rápido en lugar de colgar indefinidamente
         });
 
         pool.on('connect', (client) => {

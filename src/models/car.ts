@@ -1,6 +1,7 @@
 import db from '../utils/db_render.js';
 import { Cars, CarFilters } from '../types/index.js';
 import { validateCar } from '../schemas/carSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export default class CarModel {
     /**
@@ -30,72 +31,66 @@ export default class CarModel {
             .filter((url: string | null): url is string => url !== null && url.trim() !== '');
     }
 
-    static async getAll(): Promise<Cars[]> {
+    private static processCarImages(rows: any[]): Cars[] {
+        return rows.map(car => {
+            if (typeof car.images === 'string') {
+                try { car.images = this.normalizeImageArray(JSON.parse(car.images)); }
+                catch { car.images = []; }
+            } else if (Array.isArray(car.images)) {
+                car.images = this.normalizeImageArray(car.images);
+            } else {
+                car.images = [];
+            }
+            return car;
+        });
+    }
+
+    static async getAll(pagination?: PaginationParams): Promise<{ rows: Cars[], total: number }> {
         try {
-            const { rows } = await db.query('SELECT * FROM cars');
-            return rows.map(car => {
-                if (typeof car.images === 'string') {
-                    try {
-                        car.images = this.normalizeImageArray(JSON.parse(car.images));
-                    } catch (error) {
-                        console.error('Error parsing car images:', error);
-                        car.images = [];
-                    }
-                } else if (Array.isArray(car.images)) {
-                    car.images = this.normalizeImageArray(car.images);
-                } else {
-                    car.images = [];
-                }
-                return car;
-            })
+            const base = 'SELECT * FROM cars ORDER BY id ASC';
+            if (pagination) {
+                const [data, count] = await Promise.all([
+                    db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),
+                    db.query('SELECT COUNT(*) FROM cars'),
+                ]);
+                return { rows: this.processCarImages(data.rows), total: parseInt(count.rows[0].count) };
+            }
+            const { rows } = await db.query(base);
+            return { rows: this.processCarImages(rows), total: rows.length };
         } catch (error) {
-            throw error
+            throw error;
         }
     }
 
-    static async getCarsWithFilters(filters: CarFilters): Promise<Cars[]> {
+    static async getCarsWithFilters(filters: CarFilters, pagination?: PaginationParams): Promise<{ rows: Cars[], total: number }> {
         try {
-            let query = 'SELECT * FROM cars WHERE 1=1';
+            const conditions: string[] = [];
             const queryParams: any[] = [];
-            let paramCount = 1;
 
-            // Filtro por precio mínimo
             if (filters.minPrice !== undefined) {
-                query += ` AND price >= $${paramCount++}`;
                 queryParams.push(filters.minPrice);
+                conditions.push(`price >= $${queryParams.length}`);
             }
-
-            // Filtro por precio máximo
             if (filters.maxPrice !== undefined) {
-                query += ` AND price <= $${paramCount++}`;
                 queryParams.push(filters.maxPrice);
+                conditions.push(`price <= $${queryParams.length}`);
             }
-
-            // Filtro por cantidad de pasajeros
             if (filters.passengers !== undefined) {
-                query += ` AND passengers >= $${paramCount++}`;
                 queryParams.push(filters.passengers);
+                conditions.push(`passengers >= $${queryParams.length}`);
             }
 
-            query += ' ORDER BY id ASC';
+            const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
-            const { rows } = await db.query(query, queryParams);
-            
-            return rows.map(car => {
-                if (typeof car.images === 'string') {
-                    try {
-                        car.images = this.normalizeImageArray(JSON.parse(car.images));
-                    } catch (error) {
-                        console.error('Error parsing car images:', error);
-                        car.images = [];
-                    }
-                } else if (Array.isArray(car.images)) {
-                    car.images = this.normalizeImageArray(car.images);
-                } else {
-                    car.images = [];
-                }
-                return car;
-            });
+            if (pagination) {
+                const [data, count] = await Promise.all([
+                    db.query(`SELECT * FROM cars${whereClause} ORDER BY id ASC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`, [...queryParams, pagination.limit, pagination.offset]),
+                    db.query(`SELECT COUNT(*) FROM cars${whereClause}`, queryParams),
+                ]);
+                return { rows: this.processCarImages(data.rows), total: parseInt(count.rows[0].count) };
+            }
+            const { rows } = await db.query(`SELECT * FROM cars${whereClause} ORDER BY id ASC`, queryParams);
+            return { rows: this.processCarImages(rows), total: rows.length };
         } catch (error) {
             throw error;
         }

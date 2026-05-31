@@ -7,6 +7,7 @@ import EmailService from '../services/emailService.js';
 import db from '../utils/db_render.js';
 import PdfService from '../services/pdfService.js';
 import ImageService from '../services/imageService.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -111,8 +112,13 @@ export class ReservationController {
                 filters.withinDays = withinDays;
             }
             
-            const reservations = await ReservationService.getAllReservations(filters);
-            res.status(200).json(reservations);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ReservationService.getAllReservations(filters, pagination ?? undefined);
+            if (pagination) {
+                res.status(200).json(paginatedResponse(rows, total, pagination));
+            } else {
+                res.status(200).json(rows);
+            }
         } catch (error) {
             res.status(500).json({ error: 'Error fetching reservations' });
         }
@@ -176,7 +182,7 @@ export class ReservationController {
 
                 try {
                     // Registrar el pago en la tabla reservation_payments
-                    const createdPayment = await ReservationPaymentsService.createPayment({
+                    await ReservationPaymentsService.createPayment({
                         reservationId: Number(newReservation.id),
                         amount: Number(amount),
                         paymentMethod,
@@ -190,11 +196,13 @@ export class ReservationController {
                     res.status(201).json(updatedReservation);
                     return;
                 } catch (err: any) {
+                    // Payment failed — delete the reservation to avoid orphan rows.
+                    // ON DELETE CASCADE on reservation_payments ensures any partial payment rows are also removed.
+                    await ReservationModel.deleteReservation(Number(newReservation.id)).catch(() => {});
                     res.status(400).json({
                         error: 'payment_error',
                         message: 'Error al registrar el pago',
-                        details: err?.message || 'Unknown payment error',
-                        reservationId: newReservation?.id
+                        details: err?.message || 'Unknown payment error'
                     });
                     return;
                 }

@@ -78,9 +78,8 @@ export default class ReservationPaymentsService {
         q?: string,
         clientLastname?: string,
         reservationId?: number
-        // status?: string - comentado temporalmente porque la columna no existe
-    } = {}): Promise<ReservationPayment[]> {
-        return ReservationPaymentModel.getAllReservationPayments(filters);
+    } = {}, pagination?: import('../utils/pagination.js').PaginationParams): Promise<{ rows: ReservationPayment[], total: number }> {
+        return ReservationPaymentModel.getAllReservationPayments(filters, pagination);
     }
 
     static async getPaymentById(paymentId: number): Promise<ReservationPayment | null> {

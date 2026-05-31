@@ -758,7 +758,7 @@ export default class PdfService {
             // Si es un string y tiene el formato MM-DD-YYYY HH:mm
             if (typeof date === 'string') {
                 // Verificar si es el nuevo formato MM-DD-YYYY HH:mm
-                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[3]):([0-5][0-9])$/;
+                const dateTimeRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4} (0[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$/;
                 if (dateTimeRegex.test(date)) {
                     return date; // Ya está en el formato deseado, lo devolvemos tal cual
                 }
@@ -790,14 +790,18 @@ export default class PdfService {
 
     private static getStatusInEnglish(status: string | undefined): string | undefined {
         switch (status) {
-            case 'Confirmed':
+            case 'confirmed':
                 return 'Confirmed';
-            case 'Cancelled':
+            case 'cancelled':
                 return 'Cancelled';
-            case 'Pending':
+            case 'pending':
                 return 'Pending';
-            case 'Completed':
+            case 'completed':
                 return 'Completed';
+            case 'checked_in':
+                return 'Checked In';
+            case 'checked_out':
+                return 'Checked Out';
             default:
                 return undefined;
         }

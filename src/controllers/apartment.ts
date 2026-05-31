@@ -3,6 +3,7 @@ import ApartmentModel, { ApartmentFilters } from '../models/apartment.js'
 import { validateApartment, validatePartialApartment, validateApartmentFilters } from '../schemas/apartmentSchema.js'
 import ImageService from '../services/imageService.js'
 import { Apartment, CreateApartmentDTO, UpdateApartmentDTO } from '../types/index.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 class ApartmentController {
     static async getAllApartments(req: Request, res: Response): Promise<void> {
@@ -37,21 +38,19 @@ class ApartmentController {
                 }
             }
 
-            const apartments = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined)
-            
-            // Optimizar imágenes para listado (contexto 'list')
-            const optimizedApartments = apartments.map(apartment => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined, pagination ?? undefined);
+            const optimizedApartments = rows.map(apartment => {
                 if (apartment.images && Array.isArray(apartment.images)) {
-                    const optimizedImages = ImageService.optimizeForContext(apartment.images, 'list');
-                    return {
-                        ...apartment,
-                        images: optimizedImages.images // URLs optimizadas para listado
-                    };
+                    return { ...apartment, images: ImageService.optimizeForContext(apartment.images, 'list').images };
                 }
                 return apartment;
             });
-
-            res.status(200).json(optimizedApartments)
+            if (pagination) {
+                res.status(200).json(paginatedResponse(optimizedApartments, total, pagination));
+            } else {
+                res.status(200).json(optimizedApartments);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }

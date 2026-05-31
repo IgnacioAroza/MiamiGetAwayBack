@@ -1,6 +1,7 @@
 import db from '../utils/db_render.js';
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js';
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export default class YachtModel {
     /**
@@ -30,29 +31,36 @@ export default class YachtModel {
             .filter((url: string | null): url is string => url !== null && url.trim() !== '');
     }
 
-    static async getAll(): Promise<Yacht[]> {
+    private static processYachtImages(rows: any[]): Yacht[] {
+        return rows.map(yacht => {
+            if (typeof yacht.images === 'string') {
+                try { yacht.images = this.normalizeImageArray(JSON.parse(yacht.images)); }
+                catch { yacht.images = []; }
+            } else if (Array.isArray(yacht.images)) {
+                yacht.images = this.normalizeImageArray(yacht.images);
+            } else {
+                yacht.images = [];
+            }
+            return yacht;
+        });
+    }
+
+    static async getAll(pagination?: PaginationParams): Promise<{ rows: Yacht[], total: number }> {
         try {
-            const { rows } = await db.query('SELECT * FROM yachts');
-            return rows.map(yacht => {
-                if (typeof yacht.images === 'string') {
-                    try {
-                        yacht.images = this.normalizeImageArray(JSON.parse(yacht.images));
-                    } catch (error) {
-                        console.error('Error parsing yacht images:', error);
-                        yacht.images = [];
-                    }
-                } else if (Array.isArray(yacht.images)) {
-                    yacht.images = this.normalizeImageArray(yacht.images);
-                } else {
-                    yacht.images = [];
-                }
-                return yacht;
-            });
+            const base = 'SELECT * FROM yachts ORDER BY id ASC';
+            if (pagination) {
+                const [data, count] = await Promise.all([
+                    db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),
+                    db.query('SELECT COUNT(*) FROM yachts'),
+                ]);
+                return { rows: this.processYachtImages(data.rows), total: parseInt(count.rows[0].count) };
+            }
+            const { rows } = await db.query(base);
+            return { rows: this.processYachtImages(rows), total: rows.length };
         } catch (error) {
-            console.error('Error getting all yachts:', error);
             throw new Error('Database error');
         }
-    }   
+    }
 
     static async getYachtById(id: number): Promise<Yacht | null> {
         try {
