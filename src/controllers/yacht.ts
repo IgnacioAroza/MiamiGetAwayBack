@@ -119,18 +119,12 @@ class YachtController {
                 return;
             }
 
-            const yachtData = req.body;
-
-            // Validación de números
-            if (yachtData.capacity !== undefined && isNaN(Number(yachtData.capacity))) {
-                res.status(400).json({ message: 'Invalid capacity value' });
+            const validationResult = validatePartialYacht(req.body);
+            if (!validationResult.success) {
+                res.status(400).json({ error: 'Validation failed', details: validationResult.error.format() });
                 return;
             }
-
-            if (yachtData.price !== undefined && isNaN(Number(yachtData.price))) {
-                res.status(400).json({ message: 'Invalid price value' });
-                return;
-            }
+            const yachtData: any = { ...validationResult.data };
 
             // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {

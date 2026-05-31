@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import VillaModel from '../models/villa.js'
-import { validateVilla } from '../schemas/villaSchema.js'
+import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js'
 import ImageService from '../services/imageService.js'
 import { CreateVillaDTO } from '../types/index.js'
 
@@ -128,22 +128,12 @@ class VillaController {
                 return;
             }
 
-            const villaData = req.body;
-
-            // Validación de numeros
-            if (
-                (villaData.capacity !== undefined && isNaN(Number(villaData.capacity))) ||
-                (villaData.bathrooms !== undefined && isNaN(Number(villaData.bathrooms))) ||
-                (villaData.rooms !== undefined && isNaN(Number(villaData.rooms)))
-            ) {
-                res.status(400).json({ message: 'Invalid capacity value' });
+            const validationResult = validatePartialVilla(req.body);
+            if (!validationResult.success) {
+                res.status(400).json({ error: 'Validation failed', details: validationResult.error.format() });
                 return;
             }
-
-            if (villaData.price !== undefined && isNaN(Number(villaData.price))) {
-                res.status(400).json({ message: 'Invalid price value' });
-                return;
-            }
+            const villaData: any = { ...validationResult.data };
 
             // Procesar imágenes usando el servicio centralizado
             if (req.files) {
