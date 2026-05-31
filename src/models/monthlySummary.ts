@@ -240,8 +240,8 @@ export class MonthlySummaryModel {
                 FROM reservation_payments rp
                 JOIN reservations r ON rp.reservation_id = r.id
                 JOIN clients c ON r.client_id = c.id
-                WHERE EXTRACT(MONTH FROM rp.payment_date) = $1 
-                AND EXTRACT(YEAR FROM rp.payment_date) = $2
+                WHERE rp.payment_date >= make_date($2, $1, 1)
+                  AND rp.payment_date <  make_date($2, $1, 1) + INTERVAL '1 month'
                 ORDER BY rp.id ASC;
             `;
             
