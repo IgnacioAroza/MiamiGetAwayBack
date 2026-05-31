@@ -3,6 +3,7 @@ import CarModel from '../models/car.js'
 import { validateCar, validatePartialCar, validateCarFilters } from '../schemas/carSchema.js'
 import ImageService from '../services/imageService.js'
 import { Cars, CreateCarsDTO, UpdateCarsDTO, CarFilters } from '../types/index.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 class CarController {
     static async getAllCars(req: Request, res: Response): Promise<void> {
@@ -38,25 +39,23 @@ class CarController {
                 }
             }
 
-            // Obtener cars con o sin filtros
-            const cars = Object.keys(cleanFilters).length > 0 
-                ? await CarModel.getCarsWithFilters(cleanFilters)
-                : await CarModel.getAll();
+            const pagination = parsePagination(req.query);
+            const { rows, total } = Object.keys(cleanFilters).length > 0
+                ? await CarModel.getCarsWithFilters(cleanFilters, pagination ?? undefined)
+                : await CarModel.getAll(pagination ?? undefined);
 
-            // Optimizar imágenes para listado (contexto 'list')
-            const optimizedCars = cars.map(car => {
+            const optimizedCars = rows.map(car => {
                 if (car.images && Array.isArray(car.images)) {
-                    const optimizedImages = ImageService.optimizeForContext(car.images, 'list');
-                    
-                    return {
-                        ...car,
-                        images: optimizedImages.images // URLs optimizadas para listado
-                    };
+                    return { ...car, images: ImageService.optimizeForContext(car.images, 'list').images };
                 }
                 return car;
             });
-                
-            res.status(200).json(optimizedCars);
+
+            if (pagination) {
+                res.status(200).json(paginatedResponse(optimizedCars, total, pagination));
+            } else {
+                res.status(200).json(optimizedCars);
+            }
         } catch (error: any) {
             console.error('Error in getAllCars:', error);
             res.status(500).json({ error: 'An error occurred while fetching cars' });

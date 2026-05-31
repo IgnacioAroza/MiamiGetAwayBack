@@ -3,25 +3,24 @@ import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
 import ImageService from '../services/imageService.js'
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
-            const yachts = await YachtModel.getAll()
-            
-            // Optimizar imágenes para listado (contexto 'list')
-            const optimizedYachts = yachts.map(yacht => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await YachtModel.getAll(pagination ?? undefined);
+            const optimized = rows.map(yacht => {
                 if (yacht.images && Array.isArray(yacht.images)) {
-                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'list');
-                    return {
-                        ...yacht,
-                        images: optimizedImages.images // URLs optimizadas para listado
-                    };
+                    return { ...yacht, images: ImageService.optimizeForContext(yacht.images, 'list').images };
                 }
                 return yacht;
             });
-
-            res.status(200).json(optimizedYachts)
+            if (pagination) {
+                res.status(200).json(paginatedResponse(optimized, total, pagination));
+            } else {
+                res.status(200).json(optimized);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }

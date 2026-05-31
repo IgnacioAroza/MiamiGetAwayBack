@@ -1,6 +1,7 @@
 import db from '../utils/db_render.js';
 import { Villa, CreateVillaDTO, UpdateVillaDTO } from '../types/index.js';
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export default class VillaModel {
     /**
@@ -30,26 +31,33 @@ export default class VillaModel {
             .filter((url: string | null): url is string => url !== null && url.trim() !== '');
     }
 
-    static async getAll(): Promise<Villa[]> {
+    private static processVillaImages(rows: any[]): Villa[] {
+        return rows.map(villa => {
+            if (typeof villa.images === 'string') {
+                try { villa.images = this.normalizeImageArray(JSON.parse(villa.images)); }
+                catch { villa.images = []; }
+            } else if (Array.isArray(villa.images)) {
+                villa.images = this.normalizeImageArray(villa.images);
+            } else {
+                villa.images = [];
+            }
+            return villa;
+        });
+    }
+
+    static async getAll(pagination?: PaginationParams): Promise<{ rows: Villa[], total: number }> {
         try {
-            const { rows } = await db.query('SELECT * FROM villas');
-            return rows.map(villa => {
-                if (typeof villa.images === 'string') {
-                    try {
-                        villa.images = this.normalizeImageArray(JSON.parse(villa.images));
-                    } catch (error) {
-                        console.error('Error parsing villa images:', error);
-                        villa.images = [];
-                    }
-                } else if (Array.isArray(villa.images)) {
-                    villa.images = this.normalizeImageArray(villa.images);
-                } else {
-                    villa.images = [];
-                }
-                return villa;
-            });
+            const base = 'SELECT * FROM villas ORDER BY id ASC';
+            if (pagination) {
+                const [data, count] = await Promise.all([
+                    db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),
+                    db.query('SELECT COUNT(*) FROM villas'),
+                ]);
+                return { rows: this.processVillaImages(data.rows), total: parseInt(count.rows[0].count) };
+            }
+            const { rows } = await db.query(base);
+            return { rows: this.processVillaImages(rows), total: rows.length };
         } catch (error) {
-            console.error('Error getting all villas:', error);
             throw new Error('Database error');
         }
     }

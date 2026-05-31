@@ -2,9 +2,10 @@ import db from '../utils/db_render.js';
 import { Client } from '../types/index.js';
 import { validateUser } from '../schemas/userSchema.js';
 import type { UserFilters } from '../schemas/userSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export default class UserModel {
-    static async getAll(filters?: UserFilters): Promise<Client[]> {
+    static async getAll(filters?: UserFilters, pagination?: PaginationParams): Promise<{ rows: Client[], total: number }> {
         try {
             const conditions: string[] = [];
             const values: any[] = [];
@@ -26,16 +27,20 @@ export default class UserModel {
                 conditions.push(`phone ILIKE $${values.length}`);
             }
 
-            const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-            const baseQuery = 'SELECT * FROM clients';
-            const query = whereClause ? `${baseQuery} ${whereClause}` : baseQuery;
+            const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
-            const { rows } = await db.query(query, values);
-            return rows;
+            if (pagination) {
+                const [data, count] = await Promise.all([
+                    db.query(`SELECT * FROM clients${whereClause} ORDER BY id ASC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pagination.limit, pagination.offset]),
+                    db.query(`SELECT COUNT(*) FROM clients${whereClause}`, values),
+                ]);
+                return { rows: data.rows, total: parseInt(count.rows[0].count) };
+            }
+            const { rows } = await db.query(`SELECT * FROM clients${whereClause} ORDER BY id ASC`, values);
+            return { rows, total: rows.length };
         } catch (error) {
             console.error('Error en getAll:', error);
-            // En lugar de propagar el error, devolvemos un array vacío
-            return [];
+            return { rows: [], total: 0 };
         }
     }
 

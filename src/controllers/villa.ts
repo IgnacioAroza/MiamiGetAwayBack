@@ -3,25 +3,24 @@ import VillaModel from '../models/villa.js'
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js'
 import ImageService from '../services/imageService.js'
 import { CreateVillaDTO } from '../types/index.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 class VillaController {
     static async getAllVillas(req: Request, res: Response): Promise<void> {
         try {
-            const villas = await VillaModel.getAll()
-            
-            // Optimizar imágenes para listado (contexto 'list')
-            const optimizedVillas = villas.map(villa => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await VillaModel.getAll(pagination ?? undefined);
+            const optimized = rows.map(villa => {
                 if (villa.images && Array.isArray(villa.images)) {
-                    const optimizedImages = ImageService.optimizeForContext(villa.images, 'list');
-                    return {
-                        ...villa,
-                        images: optimizedImages.images // URLs optimizadas para listado
-                    };
+                    return { ...villa, images: ImageService.optimizeForContext(villa.images, 'list').images };
                 }
                 return villa;
             });
-
-            res.status(200).json(optimizedVillas)
+            if (pagination) {
+                res.status(200).json(paginatedResponse(optimized, total, pagination));
+            } else {
+                res.status(200).json(optimized);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }

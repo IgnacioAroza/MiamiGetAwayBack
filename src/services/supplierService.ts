@@ -45,8 +45,8 @@ function formatReservationSupplier(row: ReservationSupplier): ReservationSupplie
 export default class SupplierService {
     // --- Suppliers CRUD ---
 
-    static async getAllSuppliers(): Promise<Supplier[]> {
-        return SupplierModel.getAll();
+    static async getAllSuppliers(pagination?: import('../utils/pagination.js').PaginationParams): Promise<{ rows: Supplier[], total: number }> {
+        return SupplierModel.getAll(pagination);
     }
 
     static async getSupplierById(id: number): Promise<Supplier> {

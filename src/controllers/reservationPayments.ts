@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { validateReservationPayment, validatePartialReservationPayment } from '../schemas/reservationPaymentsSchema.js';
 import ReservationPaymentsService from '../services/reservationPaymentsService.js';
 import ImageService from '../services/imageService.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export class ReservationPaymentController {
     static async getAllReservationPayments(req: Request, res: Response): Promise<void> {
@@ -67,8 +68,13 @@ export class ReservationPaymentController {
             //     filters.status = req.query.status as string;
             // }
             
-            const reservationPayments = await ReservationPaymentsService.getAllPayments(filters);
-            res.status(200).json(reservationPayments);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ReservationPaymentsService.getAllPayments(filters, pagination ?? undefined);
+            if (pagination) {
+                res.status(200).json(paginatedResponse(rows, total, pagination));
+            } else {
+                res.status(200).json(rows);
+            }
         } catch (error) {
             res.status(500).json({ error: 'Error fetching reservation payments' });
         }

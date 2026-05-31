@@ -1,11 +1,12 @@
 import db from '../utils/db_render.js';
 import { Reservation } from '../types/reservations.js';
 import { validateReservation, validatePartialReservation, parseReservationDate } from '../schemas/reservationSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export class ReservationModel {
     static async getAllReservations(filters: {
-        startDate?: string, // Cambiado de Date a string
-        endDate?: string,   // Cambiado de Date a string
+        startDate?: string,
+        endDate?: string,
         status?: string,
         clientName?: string,
         clientEmail?: string,
@@ -14,7 +15,7 @@ export class ReservationModel {
         upcoming?: boolean,
         fromDate?: string,
         withinDays?: number
-    } = {}): Promise<Reservation[]> {
+    } = {}, pagination?: PaginationParams): Promise<{ rows: Reservation[], total: number }> {
         let query = `
             SELECT r.id,
                 r.apartment_id as "apartmentId",
@@ -119,16 +120,22 @@ export class ReservationModel {
                 }
             }
             
-            // Añadir condiciones a la consulta
-            if (conditions.length > 0) {
-                query += ' WHERE ' + conditions.join(' AND ');
-            }
-            
-            // Ordenar por fecha de check-in descendente (más recientes primero)
+            const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
+            query += whereClause;
             query += ` ORDER BY mga_parse_date(r.check_in_date) DESC`;
-            
+
+            if (pagination) {
+                const countQuery = `SELECT COUNT(*) FROM reservations r LEFT JOIN clients c ON r.client_id = c.id LEFT JOIN apartments a ON r.apartment_id = a.id${whereClause}`;
+                queryParams.push(pagination.limit, pagination.offset);
+                query += ` LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}`;
+                const [data, count] = await Promise.all([
+                    db.query(query, queryParams),
+                    db.query(countQuery, queryParams.slice(0, -2)),
+                ]);
+                return { rows: data.rows, total: parseInt(count.rows[0].count) };
+            }
             const { rows } = await db.query(query, queryParams);
-            return rows;
+            return { rows, total: rows.length };
         } catch (error) {
             console.error('Error in getAllReservations:', error);
             throw error;
