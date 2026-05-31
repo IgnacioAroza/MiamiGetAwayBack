@@ -64,12 +64,9 @@ export default class PdfService {
             try {
                 doc.pipe(stream);
                 
-                // Agregar imagen de fondo
-                this.addBackgroundImage(doc);
-                
                 // Agregar contenido al PDF
                 this.addPdfContent(doc, reservation, payments);
-                
+
                 doc.end();
                 //writeLog('Document ended successfully');
             } catch (error: unknown) {
@@ -114,12 +111,9 @@ export default class PdfService {
                     }
                 });
 
-                // Agregar imagen de fondo
-                this.addBackgroundImage(doc);
-                
                 // Agregar contenido al PDF
                 this.addPdfContent(doc, reservation, payments);
-                
+
                 // Finalizar el PDF
                 doc.end();
             } catch (error) {
@@ -512,7 +506,6 @@ export default class PdfService {
 
     private static addTermsPage(doc: PDFKit.PDFDocument): void {
         doc.addPage();
-        PdfService.addBackgroundImage(doc);
 
         const margin = 40;
         const contentWidth = doc.page.width - margin * 2;
@@ -524,7 +517,6 @@ export default class PdfService {
         const checkPageBreak = (neededHeight: number) => {
             if (y + neededHeight > pageHeight - bottomMargin) {
                 doc.addPage();
-                PdfService.addBackgroundImage(doc);
                 y = 40;
             }
         };
