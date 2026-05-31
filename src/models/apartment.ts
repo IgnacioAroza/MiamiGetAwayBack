@@ -129,29 +129,27 @@ export default class ApartmentModel {
 
         try {
             updatedValues.push(id)
-            const query = `UPDATE apartments SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
-            await db.query(query, updatedValues)
-            
-            const { rows } = await db.query('SELECT * FROM apartments WHERE id = $1', [id])
+            const query = `UPDATE apartments SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *;`
+            const { rows } = await db.query(query, updatedValues)
 
-            if (rows.length > 0) {
-                const updatedApartment = rows[0]
-                if (updatedApartment.images) {
-                    if (typeof updatedApartment.images === 'string') {
-                        try {
-                            updatedApartment.images = JSON.parse(updatedApartment.images)
-                        } catch (error) {
-                            console.error('Error parsing images:', error)
-                            updatedApartment.images = []
-                        }
-                    } else if (!Array.isArray(updatedApartment.images)) {
-                        updatedApartment.images = []
-                    }
-                }
-                return this.mapDatabaseToApartment(updatedApartment);
-            } else {
+            if (rows.length === 0) {
                 throw new Error('Apartment not found')
             }
+
+            const updatedApartment = rows[0]
+            if (updatedApartment.images) {
+                if (typeof updatedApartment.images === 'string') {
+                    try {
+                        updatedApartment.images = JSON.parse(updatedApartment.images)
+                    } catch (error) {
+                        console.error('Error parsing images:', error)
+                        updatedApartment.images = []
+                    }
+                } else if (!Array.isArray(updatedApartment.images)) {
+                    updatedApartment.images = []
+                }
+            }
+            return this.mapDatabaseToApartment(updatedApartment);
         } catch (error) {
             throw new Error('Error updating apartment')
         }

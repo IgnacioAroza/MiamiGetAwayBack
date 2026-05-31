@@ -90,17 +90,13 @@ export default class ReviewModel {
 
         try {
             updatedValues.push(id);
-            const query = `UPDATE reviews SET ${updateFields.join(', ')} WHERE id = $${paramCount};`
-            await db.query(query, updatedValues);
+            const query = `UPDATE reviews SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *;`
+            const { rows } = await db.query(query, updatedValues);
 
-            const { rows } = await db.query('SELECT * FROM reviews WHERE id = $1', [id]);
-
-            if (rows.length > 0) {
-                const updatedReview = rows[0];
-                return updatedReview;
-            } else {
+            if (rows.length === 0) {
                 throw new Error('Review not found');
             }
+            return rows[0];
         } catch (error) {
             throw error;
         }
