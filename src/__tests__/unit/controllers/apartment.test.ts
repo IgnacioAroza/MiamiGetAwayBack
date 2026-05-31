@@ -5,6 +5,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Request, Response } from 'express';
 
 // Mocks
+vi.mock('../../../services/imageService.js', () => ({
+  default: {
+    uploadImages: vi.fn().mockResolvedValue({ success: true, urls: ['https://test-url.com/image.jpg'], errors: [] }),
+    deleteImages: vi.fn().mockResolvedValue({ success: true, errors: [] }),
+    optimizeForContext: vi.fn().mockImplementation((images: string[]) => ({ images, responsiveImages: [] }))
+  }
+}));
+
 vi.mock('../../../models/apartment.js', () => ({
   default: {
     getAll: vi.fn().mockResolvedValue([]),
@@ -62,7 +70,8 @@ describe('ApartmentController', () => {
     req = {
       params: {},
       body: {},
-      files: []
+      files: [],
+      query: {}
     };
 
     res = {
@@ -79,7 +88,7 @@ describe('ApartmentController', () => {
         { id: 1, name: 'Apartment 1', address: '123 Main St', capacity: 4, bathrooms: 2, rooms: 2, price: 1000, description: 'Nice apartment', images: [], unitNumber: '1A' },
         { id: 2, name: 'Apartment 2', address: '456 Second St', capacity: 2, bathrooms: 1, rooms: 1, price: 800, description: 'Cozy apartment', images: [], unitNumber: '2B' }
       ];
-      vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce(mockApartments);
+      vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce({ rows: mockApartments, total: mockApartments.length } as any);
 
       // Ejecución del método
       await ApartmentController.getAllApartments(req as Request, res as Response);
@@ -129,7 +138,7 @@ describe('ApartmentController', () => {
       // Verificaciones
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(1);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockApartment);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining(mockApartment));
     });
 
     it('debería devolver 404 si el apartamento no existe', async () => {

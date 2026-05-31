@@ -171,25 +171,13 @@ class MockFile {
 
 // Configurar mocks globales
 vi.mock('../schemas/villaSchema.js', () => ({
-  validateVilla: vi.fn().mockReturnValue({ 
-    success: true,
-    data: {} 
-  }),
-  validatePartialVilla: vi.fn().mockReturnValue({ 
-    success: true,
-    data: {} 
-  })
+  validateVilla: vi.fn().mockReturnValue({ success: true, data: {} }),
+  validatePartialVilla: vi.fn().mockImplementation((data: any) => ({ success: true, data }))
 }));
 
 vi.mock('../schemas/yachtSchema.js', () => ({
-  validateYacht: vi.fn().mockReturnValue({ 
-    success: true,
-    data: {} 
-  }),
-  validatePartialYacht: vi.fn().mockReturnValue({ 
-    success: true,
-    data: {} 
-  })
+  validateYacht: vi.fn().mockReturnValue({ success: true, data: {} }),
+  validatePartialYacht: vi.fn().mockImplementation((data: any) => ({ success: true, data }))
 }));
 
 // Mock para cloudinary

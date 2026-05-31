@@ -58,7 +58,7 @@ describe('VillaController', () => {
             status: responseStatus,
             json: responseJson
         };
-        mockRequest = {};
+        mockRequest = { query: {} };
         vi.clearAllMocks();
     });
 
@@ -68,7 +68,7 @@ describe('VillaController', () => {
                 { id: 1, name: 'Villa 1' },
                 { id: 2, name: 'Villa 2' }
             ];
-            (VillaModel.getAll as any).mockResolvedValueOnce(mockVillas);
+            (VillaModel.getAll as any).mockResolvedValueOnce({ rows: mockVillas, total: mockVillas.length });
 
             await VillaController.getAllVillas(mockRequest as Request, mockResponse as Response);
 
@@ -220,30 +220,34 @@ describe('VillaController', () => {
             expect(responseJson).toHaveBeenCalledWith(mockUpdatedVilla);
         });
 
-        it('debería manejar errores de validación y devolver status 400', async () => {
+        it('debería devolver 400 cuando la validación Zod falla', async () => {
             mockRequest.params = { id: '1' };
             mockRequest.body = { price: 'invalid' };
 
-            // Mock para verificar que la villa existe
             (VillaModel.getVillaById as any).mockResolvedValueOnce(mockVilla);
-            
+            (validatePartialVilla as any).mockReturnValueOnce({
+                success: false,
+                error: { format: () => ({ price: { _errors: ['Price must be a positive number'] } }) }
+            });
+
             await VillaController.updateVilla(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Invalid price value' });
+            expect(responseJson).toHaveBeenCalledWith(expect.objectContaining({ error: 'Validation failed' }));
         });
 
-        it('debería manejar valores numéricos inválidos y devolver status 400', async () => {
+        it('debería devolver 400 cuando no hay campos válidos para actualizar', async () => {
             mockRequest.params = { id: '1' };
-            mockRequest.body = { capacity: 'invalid' };
+            mockRequest.body = {};
 
-            // Mock para verificar que la villa existe
             (VillaModel.getVillaById as any).mockResolvedValueOnce(mockVilla);
-            
+            (validatePartialVilla as any).mockReturnValueOnce({ success: true, data: {} });
+            (VillaModel.updateVilla as any).mockRejectedValueOnce(new Error('No valid fields to update'));
+
             await VillaController.updateVilla(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Invalid capacity value' });
+            expect(responseJson).toHaveBeenCalledWith({ message: 'No valid fields to update' });
         });
 
         it('debería manejar errores durante la actualización y devolver status 500', async () => {
@@ -274,6 +278,7 @@ describe('VillaController', () => {
 
             expect(mockRes.status).toHaveBeenCalledWith(500);
             expect(mockRes.json).toHaveBeenCalledWith({ error: 'Database error' });
+            // Note: controller returns 500 for unknown errors via res.status(500).json({ error: 'Database error' })
         });
     });
 
@@ -317,17 +322,7 @@ describe('VillaController', () => {
     });
 
     describe('getPublicIdFromUrl', () => {
-        it('debería extraer el public_id correctamente de una URL válida', () => {
-            const url = 'https://res.cloudinary.com/xyz/image/upload/v1234/villas/image.jpg';
-            const result = VillaController.getPublicIdFromUrl(url);
-            expect(result).toBe('villas/image');
-        });
-
-        it('debería manejar URLs inválidas y devolver null', () => {
-            const url = 'invalid-url';
-            VillaController.getPublicIdFromUrl = vi.fn().mockReturnValueOnce(null);
-            const result = VillaController.getPublicIdFromUrl(url);
-            expect(result).toBeNull();
-        });
+        it.todo('debería extraer el public_id correctamente de una URL válida (método movido a ImageService)');
+        it.todo('debería manejar URLs inválidas y devolver null (método movido a ImageService)');
     });
 }); 

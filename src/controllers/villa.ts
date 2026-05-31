@@ -163,7 +163,7 @@ class VillaController {
             res.status(200).json(updatedVilla);
         } catch (error) {
             console.error('Error updating villa:', error);
-            
+
             if (error instanceof Error) {
                 if (error.message === 'Villa not found') {
                     res.status(404).json({ message: 'Villa not found' });
@@ -171,10 +171,12 @@ class VillaController {
                     res.status(400).json({ message: 'No valid fields to update' });
                 } else if (error.message.includes('validation')) {
                     res.status(400).json({ message: 'Validation error in villa data' });
+                } else {
+                    res.status(500).json({ error: error.message });
                 }
                 return;
             }
-            
+
             res.status(500).json({ error: 'Database error' });
         }
     }

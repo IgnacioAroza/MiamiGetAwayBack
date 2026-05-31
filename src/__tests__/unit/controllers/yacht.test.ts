@@ -43,7 +43,8 @@ describe('YachtController', () => {
         mockRequest = {
             params: {},
             body: {},
-            files: []
+            files: [],
+            query: {}
         };
         mockResponse = {
             json: responseJson,
@@ -61,7 +62,7 @@ describe('YachtController', () => {
                 price: 1000,
                 images: []
             }];
-            vi.mocked(YachtModel.getAll).mockResolvedValueOnce(mockYachts);
+            vi.mocked(YachtModel.getAll).mockResolvedValueOnce({ rows: mockYachts, total: mockYachts.length } as any);
 
             await YachtController.getAllYachts(mockRequest as Request, mockResponse as Response);
 
@@ -95,7 +96,7 @@ describe('YachtController', () => {
             await YachtController.getYachtById(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(200);
-            expect(responseJson).toHaveBeenCalledWith(mockYacht);
+            expect(responseJson).toHaveBeenCalledWith(expect.objectContaining({ id: 1, name: 'Test Yacht' }));
         });
 
         it('debería devolver 404 cuando el yate no existe', async () => {
@@ -220,44 +221,38 @@ describe('YachtController', () => {
             expect(responseJson).toHaveBeenCalledWith(mockUpdatedYacht);
         });
 
-        it('debería manejar errores de validación y devolver status 400', async () => {
-            const mockUpdateData = { price: 'invalid' };
+        it('debería devolver 400 cuando la validación Zod falla', async () => {
             mockRequest.params = { id: '1' };
-            mockRequest.body = mockUpdateData;
+            mockRequest.body = { price: 'invalid' };
 
             vi.mocked(YachtModel.getYachtById).mockResolvedValueOnce({
-                id: 1,
-                name: 'Yacht Test',
-                capacity: 10,
-                price: 1000.50,
-                description: 'Test yacht',
-                images: []
+                id: 1, name: 'Yacht Test', capacity: 10, price: 1000.50, images: []
             });
+            vi.mocked(validatePartialYacht).mockReturnValueOnce({
+                success: false,
+                error: { format: () => ({ price: { _errors: ['Price must be a positive number'] } }) }
+            } as any);
 
             await YachtController.updateYacht(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Invalid price value' });
+            expect(responseJson).toHaveBeenCalledWith(expect.objectContaining({ error: 'Validation failed' }));
         });
 
-        it('debería manejar valores numéricos inválidos y devolver status 400', async () => {
-            const mockUpdateData = { capacity: 'invalid' };
+        it('debería devolver 400 cuando no hay campos válidos para actualizar', async () => {
             mockRequest.params = { id: '1' };
-            mockRequest.body = mockUpdateData;
+            mockRequest.body = {};
 
             vi.mocked(YachtModel.getYachtById).mockResolvedValueOnce({
-                id: 1,
-                name: 'Yacht Test',
-                capacity: 10,
-                price: 1000.50,
-                description: 'Test yacht',
-                images: []
+                id: 1, name: 'Yacht Test', capacity: 10, price: 1000.50, images: []
             });
+            vi.mocked(validatePartialYacht).mockReturnValueOnce({ success: true, data: {} } as any);
+            vi.mocked(YachtModel.updateYacht).mockRejectedValueOnce(new Error('No valid fields to update'));
 
             await YachtController.updateYacht(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Invalid capacity value' });
+            expect(responseJson).toHaveBeenCalledWith({ message: 'No valid fields to update' });
         });
 
         it('debería manejar errores durante la actualización y devolver status 500', async () => {
@@ -341,15 +336,6 @@ describe('YachtController', () => {
     });
 
     describe('getPublicIdFromUrl', () => {
-        it('debería extraer el public_id correctamente de una URL válida', () => {
-            const result = YachtController.getPublicIdFromUrl('https://res.cloudinary.com/xyz/image/upload/v1234/yachts/image1.jpg');
-            expect(result).toBe('yachts/image1');
-        });
-
-        it('debería manejar URLs inválidas y devolver null', () => {
-            YachtController.getPublicIdFromUrl = vi.fn().mockReturnValueOnce(null);
-            const result = YachtController.getPublicIdFromUrl('invalid-url');
-            expect(result).toBeNull();
-        });
+        it.todo('debería extraer el public_id correctamente de una URL válida (método movido a ImageService)');
     });
 }); 

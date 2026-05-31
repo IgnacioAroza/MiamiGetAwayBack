@@ -43,7 +43,7 @@ describe('Supplier controllers', () => {
 
     describe('SupplierController.getAll', () => {
         it('returns 200 with list of suppliers', async () => {
-            vi.mocked(SupplierService.getAllSuppliers).mockResolvedValue([MOCK_SUPPLIER]);
+            vi.mocked(SupplierService.getAllSuppliers).mockResolvedValue({ rows: [MOCK_SUPPLIER], total: 1 } as any);
 
             await SupplierController.getAll(req as Request, res as Response);
 

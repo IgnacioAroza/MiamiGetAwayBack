@@ -4,6 +4,7 @@ import app from '../../app.js';
 import db from '../../utils/db_render.js';
 import cloudinary from '../../utils/cloudinaryConfig.js';
 import jwt from 'jsonwebtoken';
+import { validatePartialVilla } from '../../schemas/villaSchema.js';
 
 vi.mock('../../utils/cloudinaryConfig.js', () => ({
     default: {
@@ -199,18 +200,19 @@ describe('Villa Integration Tests', () => {
             expect(response.body.location).toBe(villaData.location);
         });
 
-        it('debería validar los datos de actualización', async () => {
-            const invalidData = {
-                price: 'invalid'
-            };
+        it('debería devolver 400 cuando la validación Zod falla', async () => {
+            vi.mocked(validatePartialVilla).mockReturnValueOnce({
+                success: false,
+                error: { format: () => ({ price: { _errors: ['Price must be a positive number'] } }) }
+            } as any);
 
             const response = await request(app)
-                .put(`/api/villas/${testVillaId}`)
+                .put(`/api/villas/1`)
                 .set('Authorization', `Bearer ${authToken}`)
-                .send(invalidData)
+                .send({ price: 'invalid' })
                 .expect(400);
 
-            expect(response.body).toHaveProperty('message', 'Invalid price value');
+            expect(response.body).toHaveProperty('error', 'Validation failed');
         });
     });
 
