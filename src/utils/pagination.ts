@@ -17,7 +17,7 @@ export interface PaginatedResponse<T> {
 export function parsePagination(query: Record<string, any>): PaginationParams | null {
     if (!query.page && !query.limit) return null;
     const page = Math.max(1, parseInt(query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(query.limit as string) || 20));
+    const limit = Math.min(20, Math.max(1, parseInt(query.limit as string) || 20));
     return { page, limit, offset: (page - 1) * limit };
 }
 
