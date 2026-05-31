@@ -176,7 +176,7 @@ export class ReservationController {
 
                 try {
                     // Registrar el pago en la tabla reservation_payments
-                    const createdPayment = await ReservationPaymentsService.createPayment({
+                    await ReservationPaymentsService.createPayment({
                         reservationId: Number(newReservation.id),
                         amount: Number(amount),
                         paymentMethod,
@@ -190,11 +190,13 @@ export class ReservationController {
                     res.status(201).json(updatedReservation);
                     return;
                 } catch (err: any) {
+                    // Payment failed — delete the reservation to avoid orphan rows.
+                    // ON DELETE CASCADE on reservation_payments ensures any partial payment rows are also removed.
+                    await ReservationModel.deleteReservation(Number(newReservation.id)).catch(() => {});
                     res.status(400).json({
                         error: 'payment_error',
                         message: 'Error al registrar el pago',
-                        details: err?.message || 'Unknown payment error',
-                        reservationId: newReservation?.id
+                        details: err?.message || 'Unknown payment error'
                     });
                     return;
                 }
