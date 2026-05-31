@@ -205,8 +205,8 @@ export class MonthlySummaryModel {
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
-                WHERE r.check_in_date::date >= make_date($2::int, $1::int, 1)
-                  AND r.check_in_date::date <  make_date($2::int, $1::int, 1) + INTERVAL '1 month'
+                WHERE mga_parse_date(r.check_in_date) >= make_date($2::int, $1::int, 1)
+                  AND mga_parse_date(r.check_in_date) <  make_date($2::int, $1::int, 1) + INTERVAL '1 month'
                 ORDER BY r.id ASC;
             `;
             
