@@ -1,4 +1,5 @@
 import express from 'express'
+import multer from 'multer'
 import cors from 'cors'
 import helmet from 'helmet'
 import { rateLimit } from 'express-rate-limit'
@@ -110,6 +111,13 @@ app.use('*', (req, res) => {
 
 // Manejo de errores global
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof multer.MulterError) {
+        const message = err.code === 'LIMIT_FILE_SIZE'
+            ? 'File too large. Maximum size is 10MB'
+            : err.message
+        res.status(400).json({ error: message })
+        return
+    }
     res.status(500).json({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
