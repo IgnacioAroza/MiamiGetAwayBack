@@ -3,25 +3,24 @@ import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
 import ImageService from '../services/imageService.js'
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
-            const yachts = await YachtModel.getAll()
-            
-            // Optimizar imágenes para listado (contexto 'list')
-            const optimizedYachts = yachts.map(yacht => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await YachtModel.getAll(pagination ?? undefined);
+            const optimized = rows.map(yacht => {
                 if (yacht.images && Array.isArray(yacht.images)) {
-                    const optimizedImages = ImageService.optimizeForContext(yacht.images, 'list');
-                    return {
-                        ...yacht,
-                        images: optimizedImages.images // URLs optimizadas para listado
-                    };
+                    return { ...yacht, images: ImageService.optimizeForContext(yacht.images, 'list').images };
                 }
                 return yacht;
             });
-
-            res.status(200).json(optimizedYachts)
+            if (pagination) {
+                res.status(200).json(paginatedResponse(optimized, total, pagination));
+            } else {
+                res.status(200).json(optimized);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }
@@ -119,18 +118,12 @@ class YachtController {
                 return;
             }
 
-            const yachtData = req.body;
-
-            // Validación de números
-            if (yachtData.capacity !== undefined && isNaN(Number(yachtData.capacity))) {
-                res.status(400).json({ message: 'Invalid capacity value' });
+            const validationResult = validatePartialYacht(req.body);
+            if (!validationResult.success) {
+                res.status(400).json({ error: 'Validation failed', details: validationResult.error.format() });
                 return;
             }
-
-            if (yachtData.price !== undefined && isNaN(Number(yachtData.price))) {
-                res.status(400).json({ message: 'Invalid price value' });
-                return;
-            }
+            const yachtData: any = { ...validationResult.data };
 
             // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
@@ -158,7 +151,7 @@ class YachtController {
             res.status(200).json(updatedYacht);
         } catch (error) {
             console.error('Error updating yacht:', error);
-            
+
             if (error instanceof Error) {
                 if (error.message === 'Yacht not found') {
                     res.status(404).json({ message: 'Yacht not found' });
@@ -166,10 +159,12 @@ class YachtController {
                     res.status(400).json({ message: 'No valid fields to update' });
                 } else if (error.message.includes('validation')) {
                     res.status(400).json({ message: 'Validation error in yacht data' });
+                } else {
+                    res.status(500).json({ error: error.message });
                 }
                 return;
             }
-            
+
             res.status(500).json({ error: 'Database error' });
         }
     }

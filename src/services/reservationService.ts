@@ -163,8 +163,8 @@ export default class ReservationService {
 
     // Otros métodos CRUD simplificados (sin lógica de email)
     static async getAllReservations(filters: {
-        startDate?: string, // Cambiado de Date a string
-        endDate?: string,   // Cambiado de Date a string
+        startDate?: string,
+        endDate?: string,
         status?: string,
         clientName?: string,
         clientEmail?: string,
@@ -173,8 +173,8 @@ export default class ReservationService {
         upcoming?: boolean,
         fromDate?: string,
         withinDays?: number
-    } = {}): Promise<Reservation[]> {
-        return ReservationModel.getAllReservations(filters);
+    } = {}, pagination?: import('../utils/pagination.js').PaginationParams): Promise<{ rows: Reservation[], total: number }> {
+        return ReservationModel.getAllReservations(filters, pagination);
     }
     
     static async getReservationById(id: number): Promise<Reservation | null> {

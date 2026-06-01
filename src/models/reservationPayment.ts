@@ -1,6 +1,7 @@
 import db from '../utils/db_render.js';
 import { ReservationPayment } from '../types/reservationPayments.js';
 import { validateReservationPayment, validatePartialReservationPayment } from '../schemas/reservationPaymentsSchema.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export class ReservationPaymentModel {
     static async getAllReservationPayments(filters: {
@@ -13,7 +14,7 @@ export class ReservationPaymentModel {
         clientLastname?: string,
         reservationId?: number,
         status?: string
-    } = {}): Promise<ReservationPayment[]> {
+    } = {}, pagination?: PaginationParams): Promise<{ rows: ReservationPayment[], total: number }> {
         let query = `
             SELECT
                 rp.id,
@@ -92,17 +93,22 @@ export class ReservationPaymentModel {
                 conditions.push(`c.lastname ILIKE $${queryParams.length}`);
             }
             
-            // Añadir condiciones a la consulta
-            if (conditions.length > 0) {
-                query += ' WHERE ' + conditions.join(' AND ');
-            }
-            
-            // Ordenar por fecha de pago descendente
+            const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
+            query += whereClause;
             query += ' ORDER BY rp.payment_date DESC';
-            
+
+            if (pagination) {
+                const countQuery = `SELECT COUNT(*) FROM reservation_payments rp LEFT JOIN reservations r ON rp.reservation_id = r.id LEFT JOIN clients c ON r.client_id = c.id${whereClause}`;
+                queryParams.push(pagination.limit, pagination.offset);
+                query += ` LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}`;
+                const [data, count] = await Promise.all([
+                    db.query(query, queryParams),
+                    db.query(countQuery, queryParams.slice(0, -2)),
+                ]);
+                return { rows: data.rows, total: parseInt(count.rows[0].count) };
+            }
             const { rows } = await db.query(query, queryParams);
-            
-            return rows;
+            return { rows, total: rows.length };
         } catch (error) {
             console.error('Error in getAllReservationPayments:', error);
             throw error;

@@ -205,16 +205,8 @@ export class MonthlySummaryModel {
                 FROM reservations r
                 LEFT JOIN clients c ON r.client_id = c.id
                 LEFT JOIN apartments a ON r.apartment_id = a.id
-                WHERE (
-                    CASE 
-                        WHEN r.check_in_date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN 
-                            EXTRACT(MONTH FROM r.check_in_date::date) = $1 
-                            AND EXTRACT(YEAR FROM r.check_in_date::date) = $2
-                        ELSE 
-                            EXTRACT(MONTH FROM to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY')) = $1
-                            AND EXTRACT(YEAR FROM to_date(substr(r.check_in_date, 1, 10), 'MM-DD-YYYY')) = $2
-                    END
-                )
+                WHERE mga_parse_date(r.check_in_date) >= make_date($2::int, $1::int, 1)
+                  AND mga_parse_date(r.check_in_date) <  make_date($2::int, $1::int, 1) + INTERVAL '1 month'
                 ORDER BY r.id ASC;
             `;
             
@@ -240,8 +232,8 @@ export class MonthlySummaryModel {
                 FROM reservation_payments rp
                 JOIN reservations r ON rp.reservation_id = r.id
                 JOIN clients c ON r.client_id = c.id
-                WHERE EXTRACT(MONTH FROM rp.payment_date) = $1 
-                AND EXTRACT(YEAR FROM rp.payment_date) = $2
+                WHERE rp.payment_date >= make_date($2, $1, 1)
+                  AND rp.payment_date <  make_date($2, $1, 1) + INTERVAL '1 month'
                 ORDER BY rp.id ASC;
             `;
             

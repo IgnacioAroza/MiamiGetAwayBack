@@ -12,9 +12,9 @@ const router = Router();
 router.get('/auth-status', GoogleMyBusinessController.getAuthStatus);
 
 // Iniciar proceso de autenticación OAuth
-router.get('/auth/start', GoogleMyBusinessController.startAuth);
+router.get('/auth/start', authMiddleware, GoogleMyBusinessController.startAuth);
 
-// Callback de OAuth
+// Callback de OAuth — debe ser público, Google lo invoca directamente
 router.get('/callback', GoogleMyBusinessController.handleCallback);
 
 // ===========================================
@@ -22,10 +22,10 @@ router.get('/callback', GoogleMyBusinessController.handleCallback);
 // ===========================================
 
 // Obtener reviews desde Google API (sin guardar)
-router.get('/reviews/fetch', GoogleMyBusinessController.fetchReviews);
+router.get('/reviews/fetch', authMiddleware, GoogleMyBusinessController.fetchReviews);
 
 // Sincronizar reviews (fetch + save)
-router.post('/reviews/sync', GoogleMyBusinessController.syncReviews);
+router.post('/reviews/sync', authMiddleware, GoogleMyBusinessController.syncReviews);
 
 // Obtener reviews desde base de datos local
 router.get('/reviews', GoogleMyBusinessController.getLocalReviews);

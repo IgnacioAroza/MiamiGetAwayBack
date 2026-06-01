@@ -8,22 +8,18 @@ export default class MonthlySummaryService {
    static async generateMonthlySummary(month: number, year: number): Promise<MonthlySummary>
     {
         try {
-            // Obtener datos del mes
-            const reservations = await MonthlySummaryModel.getReservationsByMonth(month, year);
-            const payments = await MonthlySummaryModel.getPaymentsByMonth(month, year);
+            const [reservations, payments, existingSummary] = await Promise.all([
+                MonthlySummaryModel.getReservationsByMonth(month, year),
+                MonthlySummaryModel.getPaymentsByMonth(month, year),
+                MonthlySummaryModel.getSummaryByMonthAndYear(month, year),
+            ]);
 
-            // Calcular totales
             const totalReservations = reservations.length;
             const totalPayments = payments.length;
-
-            // Asegurarnos de que los montos sean números y sumarlos correctamente
             const totalRevenue = payments.reduce((sum, payment) => {
                 const amount = Number(payment.amount) || 0;
                 return sum + amount;
             }, 0);
-
-            // Verificar si el resumen ya existe
-            const existingSummary = await MonthlySummaryModel.getSummaryByMonthAndYear(month, year);
 
             if (existingSummary) {
                 // Actualizar resumen existente
@@ -81,11 +77,12 @@ export default class MonthlySummaryService {
     
     static async generateSummaryPdf(month: number, year: number): Promise<Buffer> {
         try {
-            // Obtener datos detallados
-            const reservations = await MonthlySummaryModel.getReservationsByMonth(month, year);
-            const payments = await MonthlySummaryModel.getPaymentsByMonth(month, year);
+            const [reservations, payments, existingSummary] = await Promise.all([
+                MonthlySummaryModel.getReservationsByMonth(month, year),
+                MonthlySummaryModel.getPaymentsByMonth(month, year),
+                MonthlySummaryModel.getSummaryByMonthAndYear(month, year),
+            ]);
 
-            // Calcular totales
             const totalReservations = reservations.length;
             const totalPayments = payments.length;
             const totalRevenue = payments.reduce((sum, payment) => {
@@ -93,11 +90,9 @@ export default class MonthlySummaryService {
                 return sum + amount;
             }, 0);
 
-            // Crear o actualizar el resumen
-            let summary = await MonthlySummaryModel.getSummaryByMonthAndYear(month, year);
-            
+            let summary = existingSummary;
+
             if (summary) {
-                // Actualizar el resumen existente
                 summary = await MonthlySummaryModel.updateSummary(summary.id, {
                     totalReservations,
                     totalPayments,
@@ -138,15 +133,15 @@ export default class MonthlySummaryService {
 
     static async getSummaryDetails(month: number, year: number) {
         try {
-            // Obtener el resumen
             const summary = await MonthlySummaryModel.getSummaryByMonthAndYear(month, year);
             if (!summary) {
                 throw new Error('Summary not found');
             }
 
-            // Obtener datos detallados
-            const reservations = await MonthlySummaryModel.getReservationsByMonth(month, year);
-            const payments = await MonthlySummaryModel.getPaymentsByMonth(month, year);
+            const [reservations, payments] = await Promise.all([
+                MonthlySummaryModel.getReservationsByMonth(month, year),
+                MonthlySummaryModel.getPaymentsByMonth(month, year),
+            ]);
 
             return {
                 summary,

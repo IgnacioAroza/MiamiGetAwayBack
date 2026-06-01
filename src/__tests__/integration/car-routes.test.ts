@@ -8,7 +8,8 @@ import { NextFunction, Request, Response } from 'express';
 // Mocks
 vi.mock('../../models/car.js', () => ({
   default: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
+    getCarsWithFilters: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     getCarById: vi.fn().mockResolvedValue(null),
     createCar: vi.fn().mockResolvedValue({}),
     updateCar: vi.fn().mockResolvedValue({}),
@@ -18,7 +19,8 @@ vi.mock('../../models/car.js', () => ({
 
 // Mock de middlewares de autenticación para que no bloqueen los tests
 vi.mock('../../middleware/authMiddleware.js', () => ({
-  authMiddleware: (_req: Request, _res: Response, next: NextFunction) => next()
+  authMiddleware: (_req: Request, _res: Response, next: NextFunction) => next(),
+  default: (_req: Request, _res: Response, next: NextFunction) => next()
 }));
 
 // Mock de Cloudinary
@@ -87,7 +89,7 @@ describe('Rutas de Autos', () => {
         { id: 1, brand: 'BMW', model: 'X5', description: 'Luxury SUV', price: 150, images: [] },
         { id: 2, brand: 'Mercedes', model: 'C-Class', description: 'Elegant sedan', price: 120, images: [] }
       ];
-      vi.mocked(CarModel.getAll).mockResolvedValueOnce(mockCars);
+      vi.mocked(CarModel.getAll).mockResolvedValueOnce({ rows: mockCars, total: mockCars.length } as any);
 
       // Realizar la petición
       const response = await request(app)
@@ -113,23 +115,19 @@ describe('Rutas de Autos', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      // Verificar la respuesta
-      expect(response.body).toEqual(mockCar);
+      // Verificar la respuesta (controller agrega responsiveImages al detail)
+      expect(response.body).toMatchObject(mockCar);
       expect(CarModel.getCarById).toHaveBeenCalledWith(1);
     });
 
-    it('debería retornar un objeto vacío si el auto no existe', async () => {
-      // Mock para auto no encontrado
+    it('debería retornar 404 si el auto no existe', async () => {
       vi.mocked(CarModel.getCarById).mockResolvedValueOnce(null);
 
-      // Realizar la petición
-      const response = await request(app)
+      await request(app)
         .get('/api/cars/999')
-        .expect(200);
+        .expect(404);
 
-      // Verificar la respuesta
       expect(CarModel.getCarById).toHaveBeenCalledWith(999);
-      expect(response.body).toEqual({});
     });
   });
 
@@ -238,11 +236,11 @@ describe('Rutas de Autos', () => {
 
     it('debería retornar 400 con datos inválidos (validación de esquema)', async () => {
       // Mock para fallar en la validación
-      vi.mocked(carSchemaMock.validatePartialCar).mockReturnValueOnce({ 
-        success: false, 
-        error: { 
-          message: JSON.stringify({ formErrors: ['Brand cannot be empty'] })
-        } 
+      vi.mocked(carSchemaMock.validatePartialCar).mockReturnValueOnce({
+        success: false,
+        error: {
+          flatten: () => ({ formErrors: ['Brand cannot be empty'], fieldErrors: {} })
+        }
       } as any);
 
       // Realizar la petición

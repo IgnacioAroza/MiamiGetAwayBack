@@ -3,6 +3,7 @@ import UserModel from '../models/user.js'
 import { validateUser, validateUserFilters } from '../schemas/userSchema.js'
 import { Client } from '../types/index.js'
 import type { UserFilters } from '../schemas/userSchema.js'
+import { parsePagination, paginatedResponse } from '../utils/pagination.js'
 
 interface CreateUserData {
   name: string;
@@ -44,8 +45,13 @@ class UserController {
                 }
             }
 
-            const users = await UserModel.getAll(Object.keys(filters).length ? filters : undefined)
-            res.status(200).json(users)
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await UserModel.getAll(Object.keys(filters).length ? filters : undefined, pagination ?? undefined);
+            if (pagination) {
+                res.status(200).json(paginatedResponse(rows, total, pagination));
+            } else {
+                res.status(200).json(rows);
+            }
         } catch (error: any) {
             res.status(500).json({ error: error.message })
         }

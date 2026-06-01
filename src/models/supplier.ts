@@ -1,20 +1,19 @@
 import db from '../utils/db_render.js';
 import { Supplier, CreateSupplierDTO, UpdateSupplierDTO } from '../types/suppliers.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export class SupplierModel {
-    static async getAll(): Promise<Supplier[]> {
-        const { rows } = await db.query(`
-            SELECT
-                id,
-                name,
-                company,
-                email,
-                phone,
-                created_at as "createdAt"
-            FROM suppliers
-            ORDER BY name ASC
-        `);
-        return rows;
+    static async getAll(pagination?: PaginationParams): Promise<{ rows: Supplier[], total: number }> {
+        const base = `SELECT id, name, company, email, phone, created_at as "createdAt" FROM suppliers ORDER BY name ASC`;
+        if (pagination) {
+            const [data, count] = await Promise.all([
+                db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),
+                db.query('SELECT COUNT(*) FROM suppliers'),
+            ]);
+            return { rows: data.rows, total: parseInt(count.rows[0].count) };
+        }
+        const { rows } = await db.query(base);
+        return { rows, total: rows.length };
     }
 
     static async getById(id: number): Promise<Supplier | null> {
