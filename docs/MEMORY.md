@@ -64,7 +64,8 @@ Scripts SQL en `migrations/scripts/` (000 al 011 + `000b_create_missing_tables.s
 
 ## Cambios pendientes del cliente
 
-> Estado: **fixes de seguridad completados (PR #34) — features del cliente pendientes**
+> Estado: **security + optimizaciones + paginación mergeados a main (PR #39 + #40, 2026-05-31) — features del cliente pendientes**
+> Última sesión: `docs/memory/2026-05-31.md`
 > Documentos de referencia:
 > - `docs/api-frontend-contract.md` — contrato completo API ↔ Frontend con todos los endpoints, bodies y responses
 > - `docs/presupuesto.md` — presupuesto técnico y propuesta para el cliente ($1.500 USD)
