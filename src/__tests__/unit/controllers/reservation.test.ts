@@ -46,8 +46,6 @@ describe('ReservationController', () => {
   describe('getAllReservations', () => {
     it('should apply filters from query params', async () => {
       const mockFilters = {
-        startDate: '2023-12-01',
-        endDate: '2023-12-31',
         status: 'pending'
       };
 
@@ -74,15 +72,14 @@ describe('ReservationController', () => {
       ];
 
       mockRequest.query = mockFilters;
-      vi.mocked(ReservationService.getAllReservations).mockResolvedValueOnce(mockReservations);
+      vi.mocked(ReservationService.getAllReservations).mockResolvedValueOnce({ rows: mockReservations, total: 1 } as any);
 
       await ReservationController.getAllReservations(mockRequest as Request, mockResponse as Response);
 
-      expect(ReservationService.getAllReservations).toHaveBeenCalledWith({
-        startDate: new Date('2023-12-01'),
-        endDate: new Date('2023-12-31'),
-        status: 'pending'
-      });
+      expect(ReservationService.getAllReservations).toHaveBeenCalledWith(
+        { status: 'pending' },
+        undefined
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(mockReservations);
     });

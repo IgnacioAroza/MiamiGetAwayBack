@@ -56,7 +56,7 @@ describe('UserController', () => {
                 { id: 2, name: 'Jane', lastname: 'Doe', email: 'jane@example.com', phone: '987654321', address: '456 Oak St', city: 'New York', country: 'USA', notes: 'Test notes 2' }
             ];
             
-            (UserModel.getAll as any).mockResolvedValueOnce(mockUsers);
+            (UserModel.getAll as any).mockResolvedValueOnce({ rows: mockUsers, total: mockUsers.length });
 
             await UserController.getAllUsers(mockRequest as Request, mockResponse as Response);
 
@@ -69,12 +69,12 @@ describe('UserController', () => {
 
         it('debería aplicar filtros de búsqueda y pasar valores normalizados al modelo', async () => {
             mockRequest.query = { name: ' John ', email: 'example', phone: '123' };
-            (UserModel.getAll as any).mockResolvedValueOnce([]);
+            (UserModel.getAll as any).mockResolvedValueOnce({ rows: [], total: 0 });
 
             await UserController.getAllUsers(mockRequest as Request, mockResponse as Response);
 
             expect(validateUserFilters).toHaveBeenCalledWith({ name: 'John', email: 'example', phone: '123' });
-            expect(UserModel.getAll).toHaveBeenCalledWith({ name: 'John', email: 'example', phone: '123' });
+            expect(UserModel.getAll).toHaveBeenCalledWith({ name: 'John', email: 'example', phone: '123' }, undefined);
             expect(mockResponse.status).toHaveBeenCalledWith(200);
         });
 

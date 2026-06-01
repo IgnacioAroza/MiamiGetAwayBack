@@ -39,13 +39,12 @@ describe('UserModel', () => {
 
     describe('getAll', () => {
         it('debería obtener todos los usuarios', async () => {
-            // Mock para devolver un array de usuarios
             (db.query as any).mockResolvedValueOnce({ rows: [{ id: 1, name: 'John' }] });
-            
+
             const result = await UserModel.getAll();
-            
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM clients', []);
-            expect(result).toEqual([{ id: 1, name: 'John' }]);
+
+            expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM clients'), expect.any(Array));
+            expect(result).toEqual({ rows: [{ id: 1, name: 'John' }], total: 1 });
         });
 
         it('debería aplicar filtros correctamente', async () => {
@@ -54,18 +53,17 @@ describe('UserModel', () => {
             await UserModel.getAll({ name: 'John', email: 'example' });
 
             expect(db.query).toHaveBeenCalledWith(
-                'SELECT * FROM clients WHERE name ILIKE $1 AND email ILIKE $2',
-                ['%John%', '%example%']
+                expect.stringContaining('WHERE name ILIKE'),
+                expect.arrayContaining(['%John%', '%example%'])
             );
         });
         
-        it('debería devolver un array vacío cuando hay un error', async () => {
-            // Mock para simular un error de base de datos
+        it('debería devolver resultado vacío cuando hay un error', async () => {
             (db.query as any).mockRejectedValueOnce(new Error('Database error'));
-            
+
             const result = await UserModel.getAll();
-            
-            expect(result).toEqual([]);
+
+            expect(result).toEqual({ rows: [], total: 0 });
         });
     });
 

@@ -50,8 +50,8 @@ describe('YachtModel', () => {
 
             const result = await YachtModel.getAll();
 
-            expect(result).toEqual([mockYacht]);
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM yachts');
+            expect(result).toEqual({ rows: [mockYacht], total: 1 });
+            expect(db.query).toHaveBeenCalledWith('SELECT * FROM yachts ORDER BY id ASC');
         });
 
         it('debería manejar errores y reenviarlos', async () => {

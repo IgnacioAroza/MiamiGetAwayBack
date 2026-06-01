@@ -34,6 +34,9 @@ describe('ReservationPaymentsService', () => {
       };
 
       vi.mocked(ReservationPaymentModel.createReservationPayment).mockResolvedValue(mockPayment as ReservationPayment);
+      vi.mocked(ReservationPaymentModel.getPaymentsByReservation).mockResolvedValue([mockPayment as ReservationPayment]);
+      vi.mocked(ReservationModel.getReservationById).mockResolvedValue({ totalAmount: 500 } as any);
+      vi.mocked(ReservationModel.updateReservation).mockResolvedValue({} as any);
 
       const result = await ReservationPaymentsService.createPayment(paymentData);
 

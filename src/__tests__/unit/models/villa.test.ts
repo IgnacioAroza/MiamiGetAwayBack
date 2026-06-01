@@ -44,8 +44,8 @@ describe('VillaModel', () => {
 
             const result = await VillaModel.getAll();
 
-            expect(result).toEqual(mockVillas);
-            expect(db.query).toHaveBeenCalledWith('SELECT * FROM villas');
+            expect(result).toEqual({ rows: mockVillas, total: mockVillas.length });
+            expect(db.query).toHaveBeenCalledWith('SELECT * FROM villas ORDER BY id ASC');
         });
 
         it('should throw error when database fails', async () => {

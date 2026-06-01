@@ -8,7 +8,7 @@ import { NextFunction, Request, Response } from 'express';
 // Mocks
 vi.mock('../../models/apartment.js', () => ({
   default: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     getApartmentById: vi.fn().mockResolvedValue(null),
     createApartment: vi.fn().mockResolvedValue({}),
     updateApartment: vi.fn().mockResolvedValue({}),
@@ -18,7 +18,8 @@ vi.mock('../../models/apartment.js', () => ({
 
 // Mock de middlewares de autenticación para que no bloqueen los tests
 vi.mock('../../middleware/authMiddleware.js', () => ({
-  authMiddleware: (_req: Request, _res: Response, next: NextFunction) => next()
+  authMiddleware: (_req: Request, _res: Response, next: NextFunction) => next(),
+  default: (_req: Request, _res: Response, next: NextFunction) => next()
 }));
 
 // Mock de Cloudinary
@@ -87,7 +88,7 @@ describe('Rutas de Apartamentos', () => {
         { id: 1, name: 'Apartment 1', address: 'Address 1', price: 100, capacity: 2, bathrooms: 1, rooms: 1, description: 'Description', images: [], unitNumber: '1A' },
         { id: 2, name: 'Apartment 2', address: 'Address 2', price: 200, capacity: 4, bathrooms: 2, rooms: 2, description: 'Description', images: [], unitNumber: '2B' }
       ];
-      vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce(mockApartments);
+      vi.mocked(ApartmentModel.getAll).mockResolvedValueOnce({ rows: mockApartments, total: mockApartments.length } as any);
 
       // Realizar la petición
       const response = await request(app)
@@ -124,8 +125,8 @@ describe('Rutas de Apartamentos', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      // Verificar la respuesta
-      expect(response.body).toEqual(mockApartment);
+      // Verificar la respuesta (controller agrega responsiveImages al detail)
+      expect(response.body).toMatchObject(mockApartment);
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(1);
     });
 

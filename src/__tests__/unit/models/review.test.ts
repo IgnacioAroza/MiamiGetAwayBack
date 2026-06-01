@@ -153,15 +153,15 @@ describe('ReviewModel', () => {
                 comment: 'Updated Comment'
             };
             const updatedReview = { ...mockReview, ...updateData };
-            
+
             (validatePartialReview as any).mockReturnValueOnce({ success: true, data: updateData });
-            (db.query as any).mockResolvedValueOnce({ rowCount: 1 }); // Para el UPDATE
-            (db.query as any).mockResolvedValueOnce({ rows: [updatedReview] }); // Para el SELECT
+            // Modelo usa UPDATE ... RETURNING * en una sola query
+            (db.query as any).mockResolvedValueOnce({ rows: [updatedReview] });
 
             const result = await ReviewModel.updateReview(1, updateData);
 
             expect(result).toEqual(updatedReview);
-            expect(db.query).toHaveBeenCalledTimes(2);
+            expect(db.query).toHaveBeenCalledTimes(1);
         });
 
         it('debería manejar errores cuando no hay campos para actualizar', async () => {
@@ -172,10 +172,10 @@ describe('ReviewModel', () => {
 
         it('debería manejar errores cuando la reseña no existe', async () => {
             const updateData: UpdateReviewDTO = { name: 'Updated Name' };
-            
+
             (validatePartialReview as any).mockReturnValueOnce({ success: true, data: updateData });
-            (db.query as any).mockResolvedValueOnce({ rowCount: 1 }); // Para el UPDATE
-            (db.query as any).mockResolvedValueOnce({ rows: [] }); // Para el SELECT (no encontró la reseña)
+            // UPDATE RETURNING * devuelve [] cuando no encuentra la fila
+            (db.query as any).mockResolvedValueOnce({ rows: [] });
 
             await expect(ReviewModel.updateReview(999, updateData)).rejects.toThrow('Review not found');
         });

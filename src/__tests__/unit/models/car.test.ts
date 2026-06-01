@@ -40,18 +40,18 @@ describe('CarModel', () => {
   });
 
   test('getAll devuelve todos los autos', async () => {
-    vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [testCar], 
-      rowCount: 1, 
-      command: 'SELECT', 
-      oid: 0, 
-      fields: [] 
+    vi.mocked(db.query).mockResolvedValueOnce({
+      rows: [testCar],
+      rowCount: 1,
+      command: 'SELECT',
+      oid: 0,
+      fields: []
     });
-    
+
     const result = await CarModel.getAll();
-    
-    expect(db.query).toHaveBeenCalledWith('SELECT * FROM cars');
-    expect(result).toEqual([testCar]);
+
+    expect(db.query).toHaveBeenCalledWith('SELECT * FROM cars ORDER BY id ASC');
+    expect(result).toEqual({ rows: [testCar], total: 1 });
   });
 
   test('getAll maneja correctamente las imágenes en formato JSON', async () => {
@@ -59,18 +59,18 @@ describe('CarModel', () => {
       ...testCar,
       images: JSON.stringify(['https://example.com/bmw.jpg'])
     };
-    
-    vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [carWithStringImages], 
-      rowCount: 1, 
-      command: 'SELECT', 
-      oid: 0, 
-      fields: [] 
+
+    vi.mocked(db.query).mockResolvedValueOnce({
+      rows: [carWithStringImages],
+      rowCount: 1,
+      command: 'SELECT',
+      oid: 0,
+      fields: []
     });
-    
+
     const result = await CarModel.getAll();
-    
-    expect(result[0].images).toEqual(['https://example.com/bmw.jpg']);
+
+    expect(result.rows[0].images).toEqual(['https://example.com/bmw.jpg']);
   });
 
   test('getCarById devuelve un auto si existe', async () => {
@@ -126,20 +126,20 @@ describe('CarModel', () => {
 
   test('createCar crea correctamente un auto', async () => {
     const { id, ...carData } = testCar;
-    vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [{ id: 1 }], 
-      rowCount: 1, 
-      command: 'INSERT', 
-      oid: 0, 
-      fields: [] 
+    vi.mocked(db.query).mockResolvedValueOnce({
+      rows: [{ id: 1 }],
+      rowCount: 1,
+      command: 'INSERT',
+      oid: 0,
+      fields: []
     });
-    
+
     const result = await CarModel.createCar(carData as Cars);
-    
+
     expect(validateCar).toHaveBeenCalled();
     expect(db.query).toHaveBeenCalledWith(
-      'INSERT INTO cars (brand, model, price, description, images) VALUES ($1, $2, $3, $4, $5) RETURNING *;',
-      [carData.brand, carData.model, carData.price, carData.description, JSON.stringify(carData.images)]
+      'INSERT INTO cars (brand, model, price, description, passengers, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
+      [carData.brand, carData.model, carData.price, carData.description, null, JSON.stringify(carData.images)]
     );
     expect(result).toHaveProperty('id', 1);
   });

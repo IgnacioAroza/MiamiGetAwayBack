@@ -124,17 +124,16 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     })
 })
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    // Logs solo en desarrollo y test
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-        console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
-        console.log(`📍 Database: ${process.env.DATABASE_URL || 'Not configured'}`);
-    }
-    
-    // Iniciar el servicio de cron
-    // const cronService = CronService.getInstance();
-    // cronService.startAllJobs();
-})
+// Iniciar el servidor (no en test — supertest maneja el binding)
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
+            console.log(`📍 Database: ${process.env.DATABASE_URL || 'Not configured'}`);
+        }
+        // const cronService = CronService.getInstance();
+        // cronService.startAllJobs();
+    })
+}
 
 export default app;

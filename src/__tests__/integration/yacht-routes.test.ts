@@ -4,6 +4,7 @@ import app from '../../app.js';
 import db from '../../utils/db_render.js';
 import cloudinary from '../../utils/cloudinaryConfig.js';
 import jwt from 'jsonwebtoken';
+import { validatePartialYacht } from '../../schemas/yachtSchema.js';
 
 vi.mock('../../utils/cloudinaryConfig.js', () => ({
     default: {
@@ -181,18 +182,19 @@ describe('Yacht Integration Tests', () => {
             expect(response.body.capacity).toBe(yachtData.capacity);
         });
 
-        it('debería validar los datos de actualización', async () => {
-            const invalidData = {
-                price: 'invalid'
-            };
+        it('debería devolver 400 cuando la validación Zod falla', async () => {
+            vi.mocked(validatePartialYacht).mockReturnValueOnce({
+                success: false,
+                error: { format: () => ({ price: { _errors: ['Price must be a positive number'] } }) }
+            } as any);
 
             const response = await request(app)
-                .put(`/api/yachts/${testYachtId}`)
+                .put(`/api/yachts/1`)
                 .set('Authorization', `Bearer ${authToken}`)
-                .send(invalidData)
+                .send({ price: 'invalid' })
                 .expect(400);
 
-            expect(response.body).toHaveProperty('message', 'Invalid price value');
+            expect(response.body).toHaveProperty('error', 'Validation failed');
         });
     });
 

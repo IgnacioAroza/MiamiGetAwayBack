@@ -53,9 +53,9 @@ describe('ApartmentModel', () => {
     });
     
     const result = await ApartmentModel.getAll();
-    
-    expect(db.query).toHaveBeenCalledWith('SELECT * FROM apartments');
-    expect(result[0]).toHaveProperty('unitNumber', 'A101');
+
+    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM apartments'), []);
+    expect(result.rows[0]).toHaveProperty('unitNumber', 'A101');
   });
 
   test('getApartmentById devuelve un apartamento si existe', async () => {
@@ -109,33 +109,24 @@ describe('ApartmentModel', () => {
   });
 
   test('updateApartment actualiza correctamente', async () => {
-    // Mock para el UPDATE
-    vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [], 
-      rowCount: 1, 
-      command: 'UPDATE', 
-      oid: 0, 
-      fields: [] 
-    });
-    
-    // Mock para el SELECT posterior
-    const updatedApartment = { 
-      ...testApartment, 
-      name: 'Updated Name', 
-      unit_number: 'A101' 
+    const updatedApartment = {
+      ...testApartment,
+      name: 'Updated Name',
+      unit_number: 'A101'
     };
-    
-    vi.mocked(db.query).mockResolvedValueOnce({ 
-      rows: [updatedApartment], 
-      rowCount: 1, 
-      command: 'SELECT', 
-      oid: 0, 
-      fields: [] 
+
+    // Modelo usa UPDATE ... RETURNING * en una sola query
+    vi.mocked(db.query).mockResolvedValueOnce({
+      rows: [updatedApartment],
+      rowCount: 1,
+      command: 'UPDATE',
+      oid: 0,
+      fields: []
     });
-    
+
     const result = await ApartmentModel.updateApartment(1, { name: 'Updated Name' });
-    
-    expect(db.query).toHaveBeenCalledTimes(2);
+
+    expect(db.query).toHaveBeenCalledTimes(1);
     expect(result.name).toBe('Updated Name');
     expect(result.unitNumber).toBe('A101');
   });
