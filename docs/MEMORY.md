@@ -50,7 +50,7 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 ## Entorno local
 
 - PostgreSQL 18 instalado localmente. Base: `MGA_test_db`, usuario: `test`, password: `test`, puerto: `5432`.
-- Arrancar servidor local: `npm run dev:demo` (NODE_ENV=test, carga `.env.test`, puerto 3001).
+- Arrancar servidor local: `npm run dev:demo` (NODE_ENV=demo, carga `.env.test`, puerto 3001).
 - Migraciones locales: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/index.js`
 - `gh` CLI instalado en `C:\Program Files\GitHub CLI\gh.exe` (no está en PATH del sistema).
 

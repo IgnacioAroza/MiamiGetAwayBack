@@ -28,11 +28,11 @@ import { CronService } from './services/cronService.js'
 
 // Configuración de variables de entorno
 // Determinar qué archivo de entorno cargar antes de importar dotenv
-const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env'
+const envFile = (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'demo') ? '.env.test' : '.env'
 dotenv.config({ path: envFile, override: true })
 
 // Logs solo en desarrollo y test
-if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if (['development', 'test', 'demo'].includes(process.env.NODE_ENV || '')) {
     console.log(`🔧 Loading environment from: ${envFile} (NODE_ENV: ${process.env.NODE_ENV})`);
 }
 
@@ -84,7 +84,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Logging solo en desarrollo y test
-if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if (['development', 'test', 'demo'].includes(process.env.NODE_ENV || '')) {
     app.use(morgan('dev'))
 }
 
