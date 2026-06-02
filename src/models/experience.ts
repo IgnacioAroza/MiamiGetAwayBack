@@ -77,8 +77,13 @@ export default class ExperienceModel {
     static async createInquiry(data: CreateInquiryDTO): Promise<ExperienceInquiry> {
         const { experience_id, name, lastname, email, phone } = data;
         const { rows } = await db.query(
-            `INSERT INTO experience_inquiries (experience_id, name, lastname, email, phone)
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            `WITH inserted AS (
+                INSERT INTO experience_inquiries (experience_id, name, lastname, email, phone)
+                VALUES ($1, $2, $3, $4, $5) RETURNING *
+             )
+             SELECT i.*, e.title AS experience_title
+             FROM inserted i
+             LEFT JOIN experiences e ON i.experience_id = e.id`,
             [experience_id ?? null, name, lastname, email, phone ?? null]
         );
         return rows[0];
