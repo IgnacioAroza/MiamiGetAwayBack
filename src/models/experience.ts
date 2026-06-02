@@ -41,7 +41,7 @@ export default class ExperienceModel {
         const { rows } = await db.query(
             `INSERT INTO experiences (title, description, capacity, price, images)
              VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [title, description ?? null, capacity ?? null, price ?? null, JSON.stringify(images || [])]
+            [title, description ?? null, capacity ?? null, price ?? null, images || []]
         );
         return this.parseImages(rows[0]);
     }
@@ -55,7 +55,7 @@ export default class ExperienceModel {
         if (data.description !== undefined) { fields.push(`description = $${i++}`); values.push(data.description ?? null); }
         if (data.capacity !== undefined)    { fields.push(`capacity = $${i++}`);    values.push(data.capacity ?? null); }
         if (data.price !== undefined)       { fields.push(`price = $${i++}`);       values.push(data.price ?? null); }
-        if (data.images !== undefined)      { fields.push(`images = $${i++}`);      values.push(JSON.stringify(data.images)); }
+        if (data.images !== undefined)      { fields.push(`images = $${i++}`);      values.push(data.images); }
 
         if (fields.length === 0) throw new Error('No valid fields to update');
 
