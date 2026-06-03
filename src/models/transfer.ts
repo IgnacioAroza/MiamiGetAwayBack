@@ -77,16 +77,16 @@ export default class TransferModel {
 
     // Inquiries
     static async createInquiry(data: CreateInquiryDTO): Promise<TransferInquiry> {
-        const { vehicle_id, pick_up, drop_off, date, time, passengers, service_type, client_name, client_email, client_phone, notes } = data;
+        const { vehicle_id, pick_up, drop_off, date, time, passengers, luggage_large, luggage_medium, luggage_carry_on, service_type, client_name, client_email, client_phone, notes } = data;
         const { rows } = await db.query(
             `WITH inserted AS (
-                INSERT INTO transfer_inquiries (vehicle_id, pick_up, drop_off, date, time, passengers, service_type, client_name, client_email, client_phone, notes)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *
+                INSERT INTO transfer_inquiries (vehicle_id, pick_up, drop_off, date, time, passengers, luggage_large, luggage_medium, luggage_carry_on, service_type, client_name, client_email, client_phone, notes)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *
              )
              SELECT i.*, v.name AS vehicle_name
              FROM inserted i
              LEFT JOIN transfer_vehicles v ON i.vehicle_id = v.id`,
-            [vehicle_id ?? null, pick_up, drop_off, date, time, passengers, service_type, client_name, client_email, client_phone, notes ?? null]
+            [vehicle_id ?? null, pick_up, drop_off, date, time, passengers, luggage_large ?? 0, luggage_medium ?? 0, luggage_carry_on ?? 0, service_type, client_name, client_email, client_phone, notes ?? null]
         );
         return rows[0];
     }

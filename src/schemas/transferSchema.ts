@@ -32,6 +32,18 @@ export const inquirySchema = z.object({
         (val) => (typeof val === 'string' ? parseInt(val) : val),
         z.number().int().positive('Passengers must be a positive integer')
     ),
+    luggage_large: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? 0 : typeof val === 'string' ? parseInt(val) : val),
+        z.number().int().min(0).default(0)
+    ),
+    luggage_medium: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? 0 : typeof val === 'string' ? parseInt(val) : val),
+        z.number().int().min(0).default(0)
+    ),
+    luggage_carry_on: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? 0 : typeof val === 'string' ? parseInt(val) : val),
+        z.number().int().min(0).default(0)
+    ),
     service_type: z.enum(SERVICE_TYPES),
     client_name: z.string().min(1, 'Client name is required'),
     client_email: z.string().email('Invalid email address'),

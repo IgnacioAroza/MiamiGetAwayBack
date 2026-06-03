@@ -33,6 +33,9 @@ export interface TransferInquiry {
     date: string;
     time: string;
     passengers: number;
+    luggage_large?: number;
+    luggage_medium?: number;
+    luggage_carry_on?: number;
     service_type: ServiceType;
     client_name: string;
     client_email: string;

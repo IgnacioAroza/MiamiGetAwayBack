@@ -44,6 +44,9 @@ interface TransferInquiry {
   date: string;                 // formato MM-DD-YYYY
   time: string;                 // formato HH:mm
   passengers: number;
+  luggage_large: number;        // valijas grandes, default 0
+  luggage_medium: number;       // valijas medianas, default 0
+  luggage_carry_on: number;     // carry-on, default 0
   service_type: ServiceType;
   client_name: string;
   client_email: string;
@@ -225,6 +228,9 @@ Content-Type: application/json
 | `date` | string | ✅ | formato `MM-DD-YYYY`, ej: `"06-15-2026"` |
 | `time` | string | ✅ | formato `HH:mm`, ej: `"14:30"` |
 | `passengers` | number | ✅ | entero positivo |
+| `luggage_large` | number | ❌ | valijas grandes, default `0` |
+| `luggage_medium` | number | ❌ | valijas medianas, default `0` |
+| `luggage_carry_on` | number | ❌ | carry-on, default `0` |
 | `service_type` | string | ✅ | ver valores válidos abajo |
 | `client_name` | string | ✅ | nombre completo |
 | `client_email` | string | ✅ | debe ser email válido |

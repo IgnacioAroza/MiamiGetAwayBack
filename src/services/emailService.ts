@@ -6,6 +6,13 @@ import PdfService from '../services/pdfService.js';
 import fs from 'fs';
 
 export default class EmailService {
+    private static formatTime12h(time: string): string {
+        const [h, m] = time.split(':').map(Number);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const hour = h % 12 || 12;
+        return `${hour}:${m.toString().padStart(2, '0')} ${period}`;
+    }
+
     private static transporter = nodemailer.createTransport({
         // Configuración segun tu proveedor de email
         host: process.env.EMAIL_HOST,
@@ -183,8 +190,11 @@ export default class EmailService {
                         <li><strong>Pick Up:</strong> ${inquiry.pick_up}</li>
                         <li><strong>Drop Off:</strong> ${inquiry.drop_off}</li>
                         <li><strong>Date:</strong> ${inquiry.date}</li>
-                        <li><strong>Time:</strong> ${inquiry.time}</li>
+                        <li><strong>Time:</strong> ${this.formatTime12h(inquiry.time)}</li>
                         <li><strong>Passengers:</strong> ${inquiry.passengers}</li>
+                        <li><strong>Luggage (Large):</strong> ${inquiry.luggage_large ?? 0}</li>
+                        <li><strong>Luggage (Medium):</strong> ${inquiry.luggage_medium ?? 0}</li>
+                        <li><strong>Carry-on:</strong> ${inquiry.luggage_carry_on ?? 0}</li>
                         <li><strong>Service Type:</strong> ${inquiry.service_type}</li>
                         ${inquiry.vehicle_name ? `<li><strong>Vehicle:</strong> ${inquiry.vehicle_name}</li>` : ''}
                         ${inquiry.notes ? `<li><strong>Notes:</strong> ${inquiry.notes}</li>` : ''}
