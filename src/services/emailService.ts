@@ -1,10 +1,18 @@
 import nodemailer from 'nodemailer';
 import { Reservation, ReservationWithClient } from '../types/reservations.js';
 import { ExperienceInquiry } from '../types/experiences.js';
+import { TransferInquiry } from '../types/transfers.js';
 import PdfService from '../services/pdfService.js';
 import fs from 'fs';
 
 export default class EmailService {
+    private static formatTime12h(time: string): string {
+        const [h, m] = time.split(':').map(Number);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const hour = h % 12 || 12;
+        return `${hour}:${m.toString().padStart(2, '0')} ${period}`;
+    }
+
     private static transporter = nodemailer.createTransport({
         // Configuración segun tu proveedor de email
         host: process.env.EMAIL_HOST,
@@ -162,6 +170,40 @@ export default class EmailService {
             });
         } catch (error) {
             console.error('Error sending experience inquiry notification:', error);
+            throw error;
+        }
+    }
+
+    static async sendTransferInquiryNotification(to: string, inquiry: TransferInquiry & { vehicle_name?: string }): Promise<void> {
+        try {
+            await this.transporter.sendMail({
+                from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,
+                to,
+                subject: `New Transfer Inquiry from ${inquiry.client_name}`,
+                html: `
+                    <h1 style="font-size: 24px;">New Transfer Inquiry</h1>
+                    <p style="font-size: 16px;">You have received a new transfer inquiry from the website.</p>
+                    <ul style="font-size: 16px;">
+                        <li><strong>Name:</strong> ${inquiry.client_name}</li>
+                        <li><strong>Email:</strong> ${inquiry.client_email}</li>
+                        <li><strong>Phone:</strong> ${inquiry.client_phone}</li>
+                        <li><strong>Pick Up:</strong> ${inquiry.pick_up}</li>
+                        <li><strong>Drop Off:</strong> ${inquiry.drop_off}</li>
+                        <li><strong>Date:</strong> ${inquiry.date}</li>
+                        <li><strong>Time:</strong> ${this.formatTime12h(inquiry.time)}</li>
+                        <li><strong>Passengers:</strong> ${inquiry.passengers}</li>
+                        <li><strong>Luggage (Large):</strong> ${inquiry.luggage_large ?? 0}</li>
+                        <li><strong>Luggage (Medium):</strong> ${inquiry.luggage_medium ?? 0}</li>
+                        <li><strong>Carry-on:</strong> ${inquiry.luggage_carry_on ?? 0}</li>
+                        <li><strong>Service Type:</strong> ${inquiry.service_type}</li>
+                        ${inquiry.vehicle_name ? `<li><strong>Vehicle:</strong> ${inquiry.vehicle_name}</li>` : ''}
+                        ${inquiry.notes ? `<li><strong>Notes:</strong> ${inquiry.notes}</li>` : ''}
+                    </ul>
+                    <p style="font-size: 16px;">Best regards,<br>Miami Get Away System</p>
+                `,
+            });
+        } catch (error) {
+            console.error('Error sending transfer inquiry notification:', error);
             throw error;
         }
     }

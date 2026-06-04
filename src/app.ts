@@ -23,6 +23,7 @@ import monthlySummaryRoutes from './routes/monthlySummary.js'
 import googleMyBusinessRoutes from './routes/googleMyBusiness.js'
 import investmentRoutes from './routes/investment.js'
 import experienceRoutes from './routes/experience.js'
+import transferRoutes from './routes/transfer.js'
 
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
@@ -107,6 +108,7 @@ app.use('/api/summaries', monthlySummaryRoutes)
 app.use('/api/google-mybusiness', googleMyBusinessRoutes)
 app.use('/api/investments', investmentRoutes)
 app.use('/api/experiences', uploadRateLimit, experienceRoutes)
+app.use('/api/transfers', transferRoutes)
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
