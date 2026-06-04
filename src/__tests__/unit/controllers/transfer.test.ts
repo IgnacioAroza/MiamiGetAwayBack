@@ -62,6 +62,7 @@ const mockRes = (): Response => {
   const res: Partial<Response> = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.send = vi.fn().mockReturnValue(res);
   return res as Response;
 };
 
@@ -109,7 +110,7 @@ describe('TransferController', () => {
       const res = mockRes();
       await TransferController.getVehicleById(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Vehicle not found' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Vehicle not found' });
     });
   });
 

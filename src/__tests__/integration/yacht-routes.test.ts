@@ -143,7 +143,7 @@ describe('Yacht Integration Tests', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(404);
 
-            expect(response.body).toHaveProperty('message', 'Yacht not found');
+            expect(response.body).toHaveProperty('error', 'Yacht not found');
         });
     });
 
@@ -234,7 +234,7 @@ describe('Yacht Integration Tests', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(404);
 
-            expect(response.body).toHaveProperty('message', 'Yacht not found');
+            expect(response.body).toHaveProperty('error', 'Yacht not found');
         });
     });
 }); 

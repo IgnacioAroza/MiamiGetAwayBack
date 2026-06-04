@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import InvestmentModel from '../models/investment.js';
 import { validateInvestment, validatePartialInvestment } from '../schemas/investmentSchema.js';
 import ImageService from '../services/imageService.js';
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
 
 export default class InvestmentController {
     static async getAll(req: Request, res: Response): Promise<void> {
@@ -13,9 +14,9 @@ export default class InvestmentController {
                 }
                 return inv;
             });
-            res.status(200).json(result);
+            ok(res, result);
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching investments' });
+            serverError(res, 'Error fetching investments');
         }
     }
 
@@ -23,17 +24,17 @@ export default class InvestmentController {
         try {
             const investment = await InvestmentModel.getById(Number(req.params.id));
             if (!investment) {
-                res.status(404).json({ message: 'Investment not found' });
+                notFound(res, 'Investment not found');
                 return;
             }
             if (investment.images && Array.isArray(investment.images)) {
                 const optimized = ImageService.optimizeForContext(investment.images, 'detail');
-                res.status(200).json({ ...investment, images: optimized.images, responsiveImages: optimized.responsiveImages });
+                ok(res, { ...investment, images: optimized.images, responsiveImages: optimized.responsiveImages });
             } else {
-                res.status(200).json(investment);
+                ok(res, investment);
             }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching investment' });
+            serverError(res, 'Error fetching investment');
         }
     }
 
@@ -52,24 +53,24 @@ export default class InvestmentController {
 
             const result = validateInvestment(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid investment data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid investment data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'investments' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls as never[];
             }
 
             const investment = await InvestmentModel.create(data);
-            res.status(201).json(investment);
+            created(res, investment);
         } catch (error: any) {
             console.error('Error in createInvestment:', error);
-            res.status(500).json({ error: 'Error creating investment' });
+            serverError(res, 'Error creating investment');
         }
     }
 
@@ -88,27 +89,27 @@ export default class InvestmentController {
 
             const result = validatePartialInvestment(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid investment data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid investment data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'investments' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls;
             }
 
             const investment = await InvestmentModel.update(id, data);
-            res.status(200).json(investment);
+            ok(res, investment);
         } catch (error: any) {
             if (error.message === 'Investment not found') {
-                res.status(404).json({ message: 'Investment not found' });
+                notFound(res, 'Investment not found');
             } else {
                 console.error('Error in updateInvestment:', error);
-                res.status(500).json({ error: 'Error updating investment' });
+                serverError(res, 'Error updating investment');
             }
         }
     }
@@ -118,7 +119,7 @@ export default class InvestmentController {
             const id = Number(req.params.id);
             const investment = await InvestmentModel.getById(id);
             if (!investment) {
-                res.status(404).json({ message: 'Investment not found' });
+                notFound(res, 'Investment not found');
                 return;
             }
 
@@ -130,10 +131,10 @@ export default class InvestmentController {
             }
 
             await InvestmentModel.delete(id);
-            res.status(200).json({ message: 'Investment and associated images deleted successfully' });
+            ok(res, { message: 'Investment and associated images deleted successfully' });
         } catch (error: any) {
             console.error('Error in deleteInvestment:', error);
-            res.status(500).json({ error: 'Error deleting investment' });
+            serverError(res, 'Error deleting investment');
         }
     }
 }

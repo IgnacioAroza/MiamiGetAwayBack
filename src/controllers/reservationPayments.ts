@@ -3,6 +3,7 @@ import { validateReservationPayment, validatePartialReservationPayment } from '.
 import ReservationPaymentsService from '../services/reservationPaymentsService.js';
 import ImageService from '../services/imageService.js';
 import { parsePagination, paginatedResponse } from '../utils/pagination.js';
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
 
 export class ReservationPaymentController {
     static async getAllReservationPayments(req: Request, res: Response): Promise<void> {
@@ -15,17 +16,17 @@ export class ReservationPaymentController {
                 const startDate = req.query.startDate as string;
                 const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
                 if (!dateRegex.test(startDate)) {
-                    res.status(400).json({ error: 'startDate format is invalid. Use MM-DD-YYYY' });
+                    badRequest(res, 'startDate format is invalid. Use MM-DD-YYYY');
                     return;
                 }
                 filters.startDate = startDate;
             }
-            
+
             if (req.query.endDate) {
                 const endDate = req.query.endDate as string;
                 const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
                 if (!dateRegex.test(endDate)) {
-                    res.status(400).json({ error: 'endDate format is invalid. Use MM-DD-YYYY' });
+                    badRequest(res, 'endDate format is invalid. Use MM-DD-YYYY');
                     return;
                 }
                 filters.endDate = endDate;
@@ -57,7 +58,7 @@ export class ReservationPaymentController {
             if (req.query.reservationId) {
                 const reservationId = parseInt(req.query.reservationId as string);
                 if (isNaN(reservationId)) {
-                    res.status(400).json({ error: 'reservationId must be a valid number' });
+                    badRequest(res, 'reservationId must be a valid number');
                     return;
                 }
                 filters.reservationId = reservationId;
@@ -67,16 +68,16 @@ export class ReservationPaymentController {
             // if (req.query.status) {
             //     filters.status = req.query.status as string;
             // }
-            
+
             const pagination = parsePagination(req.query);
             const { rows, total } = await ReservationPaymentsService.getAllPayments(filters, pagination ?? undefined);
             if (pagination) {
-                res.status(200).json(paginatedResponse(rows, total, pagination));
+                ok(res, paginatedResponse(rows, total, pagination));
             } else {
-                res.status(200).json(rows);
+                ok(res, rows);
             }
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservation payments' });
+            serverError(res, 'Error fetching reservation payments');
         }
     }
 
@@ -85,17 +86,16 @@ export class ReservationPaymentController {
         try {
             const reservationPayment = await ReservationPaymentsService.getPaymentById(parseInt(id));
             if (!reservationPayment) {
-                res.status(404).json({ error: 'Reservation payment not found' });
+                notFound(res, 'Reservation payment not found');
                 return;
             }
-            res.status(200).json(reservationPayment);
+            ok(res, reservationPayment);
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservation payment' });
+            serverError(res, 'Error fetching reservation payment');
         }
     }
 
     static async createReservationPayment(req: Request, res: Response): Promise<void> {
-        // Cuando llega como multipart, los números vienen como strings — coercionar
         const body = {
             ...req.body,
             reservationId: req.body.reservationId ? Number(req.body.reservationId) : undefined,
@@ -104,7 +104,7 @@ export class ReservationPaymentController {
 
         const { error } = validateReservationPayment(body);
         if (error) {
-            res.status(400).json({ error: JSON.parse(error.message) });
+            badRequest(res, JSON.parse(error.message));
             return;
         }
 
@@ -113,23 +113,22 @@ export class ReservationPaymentController {
             if (req.file) {
                 const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
                 if (!result.success || result.urls.length === 0) {
-                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    serverError(res, 'Error uploading receipt image', result.errors);
                     return;
                 }
                 receiptImage = result.urls[0];
             }
 
             const newReservationPayment = await ReservationPaymentsService.createPayment({ ...body, receiptImage });
-            res.status(201).json(newReservationPayment);
+            created(res, newReservationPayment);
         } catch (error) {
-            res.status(500).json({ error: 'Error creating reservation payment' });
+            serverError(res, 'Error creating reservation payment');
         }
     }
 
     static async updateReservationPayment(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
 
-        // Transformar datos de snake_case a camelCase
         const transformedData = {
             amount: req.body.amount,
             paymentDate: req.body.payment_date,
@@ -141,7 +140,7 @@ export class ReservationPaymentController {
 
         const { error } = validatePartialReservationPayment(transformedData);
         if (error) {
-            res.status(400).json({ error: JSON.parse(error.message) });
+            badRequest(res, JSON.parse(error.message));
             return;
         }
         try {
@@ -149,7 +148,7 @@ export class ReservationPaymentController {
             if (req.file) {
                 const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
                 if (!result.success || result.urls.length === 0) {
-                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    serverError(res, 'Error uploading receipt image', result.errors);
                     return;
                 }
                 receiptImage = result.urls[0];
@@ -162,9 +161,9 @@ export class ReservationPaymentController {
                 : transformedData;
 
             const updatedReservationPayment = await ReservationPaymentsService.updatePayment(parseInt(id), dataToUpdate);
-            res.status(200).json(updatedReservationPayment);
+            ok(res, updatedReservationPayment);
         } catch (error) {
-            res.status(500).json({ error: 'Error updating reservation payment' });
+            serverError(res, 'Error updating reservation payment');
         }
     }
 
@@ -172,9 +171,9 @@ export class ReservationPaymentController {
         const { id } = req.params;
         try {
             await ReservationPaymentsService.deletePayment(parseInt(id));
-            res.status(200).json({ message: 'Reservation payment deleted successfully' });
+            ok(res, { message: 'Reservation payment deleted successfully' });
         } catch (error) {
-            res.status(500).json({ error: 'Error deleting reservation payment' });
+            serverError(res, 'Error deleting reservation payment');
         }
     }
 
@@ -182,9 +181,9 @@ export class ReservationPaymentController {
         const { id } = req.params;
         try {
             const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
-            res.status(200).json(payments);
+            ok(res, payments);
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservation payments' });
+            serverError(res, 'Error fetching reservation payments');
         }
     }
 }

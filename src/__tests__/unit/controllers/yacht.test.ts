@@ -48,7 +48,8 @@ describe('YachtController', () => {
         };
         mockResponse = {
             json: responseJson,
-            status: responseStatus
+            status: responseStatus,
+            send: vi.fn()
         };
         vi.clearAllMocks();
     });
@@ -106,7 +107,7 @@ describe('YachtController', () => {
             await YachtController.getYachtById(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(404);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Yacht not found' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'Yacht not found' });
         });
 
         it('debería manejar errores y devolver status 500', async () => {
@@ -252,7 +253,7 @@ describe('YachtController', () => {
             await YachtController.updateYacht(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'No valid fields to update' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'No valid fields to update' });
         });
 
         it('debería manejar errores durante la actualización y devolver status 500', async () => {
@@ -311,7 +312,7 @@ describe('YachtController', () => {
             await YachtController.deleteYacht(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(404);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Yacht not found' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'Yacht not found' });
         });
 
         it('debería manejar errores durante la eliminación y devolver status 500', async () => {

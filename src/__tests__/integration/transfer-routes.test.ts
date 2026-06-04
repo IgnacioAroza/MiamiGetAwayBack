@@ -97,7 +97,7 @@ describe('Rutas de Transfers', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(TransferModel.getVehicleById).mockResolvedValueOnce(null);
       const res = await request(app).get('/api/transfers/vehicles/999').expect(404);
-      expect(res.body).toHaveProperty('message', 'Vehicle not found');
+      expect(res.body).toHaveProperty('error', 'Vehicle not found');
     });
   });
 
@@ -117,7 +117,7 @@ describe('Rutas de Transfers', () => {
         error: { flatten: () => ({ fieldErrors: { name: ['Name is required'] } }) }
       } as any);
       const res = await request(app).post('/api/transfers/vehicles').send({}).expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid vehicle data');
+      expect(res.body).toHaveProperty('error', 'Invalid vehicle data');
     });
   });
 
@@ -133,7 +133,7 @@ describe('Rutas de Transfers', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(TransferModel.updateVehicle).mockRejectedValueOnce(new Error('Vehicle not found'));
       const res = await request(app).put('/api/transfers/vehicles/999').send({ name: 'X' }).expect(404);
-      expect(res.body).toHaveProperty('message', 'Vehicle not found');
+      expect(res.body).toHaveProperty('error', 'Vehicle not found');
     });
 
     it('devuelve 400 si la validación falla', async () => {
@@ -142,7 +142,7 @@ describe('Rutas de Transfers', () => {
         error: { flatten: () => ({ fieldErrors: { category: ['Invalid enum value'] } }) }
       } as any);
       const res = await request(app).put('/api/transfers/vehicles/1').send({ category: 'helicopter' }).expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid vehicle data');
+      expect(res.body).toHaveProperty('error', 'Invalid vehicle data');
     });
   });
 
@@ -158,7 +158,7 @@ describe('Rutas de Transfers', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(TransferModel.getVehicleById).mockResolvedValueOnce(null);
       const res = await request(app).delete('/api/transfers/vehicles/999').expect(404);
-      expect(res.body).toHaveProperty('message', 'Vehicle not found');
+      expect(res.body).toHaveProperty('error', 'Vehicle not found');
       expect(TransferModel.deleteVehicle).not.toHaveBeenCalled();
     });
   });
@@ -195,7 +195,7 @@ describe('Rutas de Transfers', () => {
         .post('/api/transfers/inquiries')
         .send({ client_email: 'not-an-email' })
         .expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid inquiry data');
+      expect(res.body).toHaveProperty('error', 'Invalid inquiry data');
     });
   });
 
@@ -233,7 +233,7 @@ describe('Rutas de Transfers', () => {
         .patch('/api/transfers/inquiries/1')
         .send({ status: 'invalid_status' })
         .expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid status');
+      expect(res.body).toHaveProperty('error', 'Invalid status');
     });
 
     it('devuelve 404 si el inquiry no existe', async () => {
@@ -242,7 +242,7 @@ describe('Rutas de Transfers', () => {
         .patch('/api/transfers/inquiries/999')
         .send({ status: 'confirmed' })
         .expect(404);
-      expect(res.body).toHaveProperty('message', 'Inquiry not found');
+      expect(res.body).toHaveProperty('error', 'Inquiry not found');
     });
   });
 });
