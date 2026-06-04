@@ -4,18 +4,24 @@ import { validateExperience, validatePartialExperience, validateInquiry, validat
 import ImageService from '../services/imageService.js';
 import EmailService from '../services/emailService.js';
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export default class ExperienceController {
     static async getAll(req: Request, res: Response): Promise<void> {
         try {
-            const experiences = await ExperienceModel.getAll();
-            const result = experiences.map(exp => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ExperienceModel.getAll(pagination ?? undefined);
+            const result = rows.map(exp => {
                 if (exp.images && Array.isArray(exp.images)) {
                     return { ...exp, images: ImageService.optimizeForContext(exp.images, 'list').images };
                 }
                 return exp;
             });
-            ok(res, result);
+            if (pagination) {
+                ok(res, paginatedResponse(result, total, pagination));
+            } else {
+                ok(res, result);
+            }
         } catch (error: any) {
             serverError(res, 'Error fetching experiences');
         }
@@ -167,8 +173,13 @@ export default class ExperienceController {
 
     static async getAllInquiries(req: Request, res: Response): Promise<void> {
         try {
-            const inquiries = await ExperienceModel.getAllInquiries();
-            ok(res, inquiries);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ExperienceModel.getAllInquiries(pagination ?? undefined);
+            if (pagination) {
+                ok(res, paginatedResponse(rows, total, pagination));
+            } else {
+                ok(res, rows);
+            }
         } catch (error: any) {
             serverError(res, 'Error fetching inquiries');
         }

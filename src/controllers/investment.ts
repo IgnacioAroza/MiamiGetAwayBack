@@ -3,18 +3,24 @@ import InvestmentModel from '../models/investment.js';
 import { validateInvestment, validatePartialInvestment } from '../schemas/investmentSchema.js';
 import ImageService from '../services/imageService.js';
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export default class InvestmentController {
     static async getAll(req: Request, res: Response): Promise<void> {
         try {
-            const investments = await InvestmentModel.getAll();
-            const result = investments.map(inv => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await InvestmentModel.getAll(pagination ?? undefined);
+            const result = rows.map(inv => {
                 if (inv.images && Array.isArray(inv.images)) {
                     return { ...inv, images: ImageService.optimizeForContext(inv.images, 'list').images };
                 }
                 return inv;
             });
-            ok(res, result);
+            if (pagination) {
+                ok(res, paginatedResponse(result, total, pagination));
+            } else {
+                ok(res, result);
+            }
         } catch (error: any) {
             serverError(res, 'Error fetching investments');
         }

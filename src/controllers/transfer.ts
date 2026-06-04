@@ -4,19 +4,25 @@ import { validateVehicle, validatePartialVehicle, validateInquiry, validateInqui
 import ImageService from '../services/imageService.js';
 import EmailService from '../services/emailService.js';
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export default class TransferController {
     // Vehicles
     static async getAllVehicles(req: Request, res: Response): Promise<void> {
         try {
-            const vehicles = await TransferModel.getAllVehicles();
-            const result = vehicles.map(v => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await TransferModel.getAllVehicles(pagination ?? undefined);
+            const result = rows.map(v => {
                 if (v.images && Array.isArray(v.images)) {
                     return { ...v, images: ImageService.optimizeForContext(v.images, 'list').images };
                 }
                 return v;
             });
-            ok(res, result);
+            if (pagination) {
+                ok(res, paginatedResponse(result, total, pagination));
+            } else {
+                ok(res, result);
+            }
         } catch (error: any) {
             serverError(res, 'Error fetching vehicles');
         }
@@ -179,8 +185,13 @@ export default class TransferController {
 
     static async getAllInquiries(req: Request, res: Response): Promise<void> {
         try {
-            const inquiries = await TransferModel.getAllInquiries();
-            ok(res, inquiries);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await TransferModel.getAllInquiries(pagination ?? undefined);
+            if (pagination) {
+                ok(res, paginatedResponse(rows, total, pagination));
+            } else {
+                ok(res, rows);
+            }
         } catch (error: any) {
             serverError(res, 'Error fetching inquiries');
         }

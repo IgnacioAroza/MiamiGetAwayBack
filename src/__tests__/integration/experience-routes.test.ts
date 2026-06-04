@@ -4,13 +4,13 @@ import { NextFunction, Request, Response } from 'express';
 
 vi.mock('../../models/experience.js', () => ({
   default: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     getById: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue(undefined),
     createInquiry: vi.fn().mockResolvedValue({}),
-    getAllInquiries: vi.fn().mockResolvedValue([]),
+    getAllInquiries: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     updateInquiryStatus: vi.fn().mockResolvedValue({}),
   }
 }));
@@ -70,14 +70,14 @@ describe('Rutas de Experiences', () => {
 
   describe('GET /api/experiences', () => {
     it('devuelve lista vacía cuando no hay experiences', async () => {
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce([]);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: [], total: 0 });
       const res = await request(app).get('/api/experiences').expect(200);
       expect(res.body).toEqual([]);
     });
 
     it('devuelve la lista de experiences', async () => {
       const mock = [{ id: 1, title: 'Deep Sea Fishing', description: null, capacity: 8, price: 350, images: [], created_at: '2026-06-01T00:00:00.000Z' }];
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce(mock);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: mock, total: mock.length });
       const res = await request(app).get('/api/experiences').expect(200);
       expect(res.body).toEqual(mock);
       expect(ExperienceModel.getAll).toHaveBeenCalledOnce();
@@ -204,7 +204,7 @@ describe('Rutas de Experiences', () => {
         { id: 1, experience_id: 1, experience_title: 'Deep Sea Fishing', name: 'John', lastname: 'Doe', email: 'john@example.com', phone: null, status: 'pending', created_at: '2026-06-01T00:00:00.000Z' },
         { id: 2, experience_id: null, experience_title: null, name: 'Jane', lastname: 'Smith', email: 'jane@example.com', phone: null, status: 'contacted', created_at: '2026-06-01T01:00:00.000Z' },
       ];
-      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce(mock);
+      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce({ rows: mock, total: mock.length });
       const res = await request(app).get('/api/experiences/inquiries').expect(200);
       expect(res.body).toEqual(mock);
       expect(ExperienceModel.getAllInquiries).toHaveBeenCalledOnce();

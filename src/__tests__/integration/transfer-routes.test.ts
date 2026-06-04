@@ -4,13 +4,13 @@ import { NextFunction, Request, Response } from 'express';
 
 vi.mock('../../models/transfer.js', () => ({
   default: {
-    getAllVehicles: vi.fn().mockResolvedValue([]),
+    getAllVehicles: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     getVehicleById: vi.fn().mockResolvedValue(null),
     createVehicle: vi.fn().mockResolvedValue({}),
     updateVehicle: vi.fn().mockResolvedValue({}),
     deleteVehicle: vi.fn().mockResolvedValue(undefined),
     createInquiry: vi.fn().mockResolvedValue({}),
-    getAllInquiries: vi.fn().mockResolvedValue([]),
+    getAllInquiries: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     updateInquiryStatus: vi.fn().mockResolvedValue({}),
   }
 }));
@@ -73,13 +73,13 @@ describe('Rutas de Transfers', () => {
 
   describe('GET /api/transfers/vehicles', () => {
     it('devuelve lista vacía cuando no hay vehículos', async () => {
-      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce([]);
+      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce({ rows: [], total: 0 });
       const res = await request(app).get('/api/transfers/vehicles').expect(200);
       expect(res.body).toEqual([]);
     });
 
     it('devuelve la lista de vehículos', async () => {
-      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce([mockVehicle] as any);
+      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce({ rows: [mockVehicle], total: 1 } as any);
       const res = await request(app).get('/api/transfers/vehicles').expect(200);
       expect(res.body).toEqual([mockVehicle]);
       expect(TransferModel.getAllVehicles).toHaveBeenCalledOnce();
@@ -205,7 +205,7 @@ describe('Rutas de Transfers', () => {
         { ...mockInquiry, vehicle_name: null },
         { ...mockInquiry, id: 2, vehicle_id: 1, vehicle_name: 'Mercedes Benz S Class' },
       ];
-      vi.mocked(TransferModel.getAllInquiries).mockResolvedValueOnce(mock as any);
+      vi.mocked(TransferModel.getAllInquiries).mockResolvedValueOnce({ rows: mock, total: mock.length } as any);
       const res = await request(app).get('/api/transfers/inquiries').expect(200);
       expect(res.body).toEqual(mock);
       expect(TransferModel.getAllInquiries).toHaveBeenCalledOnce();

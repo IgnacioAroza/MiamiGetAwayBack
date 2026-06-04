@@ -78,7 +78,7 @@ describe('TransferController', () => {
 
   describe('getAllVehicles', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce([mockVehicle] as any);
+      vi.mocked(TransferModel.getAllVehicles).mockResolvedValueOnce({ rows: [mockVehicle], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await TransferController.getAllVehicles(req, res);
@@ -206,7 +206,7 @@ describe('TransferController', () => {
 
   describe('getAllInquiries', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(TransferModel.getAllInquiries).mockResolvedValueOnce([mockInquiry] as any);
+      vi.mocked(TransferModel.getAllInquiries).mockResolvedValueOnce({ rows: [mockInquiry], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await TransferController.getAllInquiries(req, res);

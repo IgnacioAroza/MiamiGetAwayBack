@@ -76,7 +76,7 @@ describe('ExperienceController', () => {
 
   describe('getAll', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce([mockExperience] as any);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: [mockExperience], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await ExperienceController.getAll(req, res);
@@ -203,7 +203,7 @@ describe('ExperienceController', () => {
 
   describe('getAllInquiries', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce([mockInquiry] as any);
+      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce({ rows: [mockInquiry], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await ExperienceController.getAllInquiries(req, res);
