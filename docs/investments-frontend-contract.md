@@ -32,6 +32,14 @@ interface Investment {
 ### GET /api/investments
 Lista todas las inversiones. **Público.**
 
+**Query params opcionales:**
+| Param | Tipo | Default | Notas |
+|---|---|---|---|
+| `page` | number | — | número de página (base 1) |
+| `limit` | number | — | ítems por página (máx 20) |
+
+Sin params devuelve array directo. Con `?page=1&limit=10` devuelve `{ data: [...], pagination: { page, limit, total, totalPages } }`.
+
 **Response 200:**
 ```json
 [
@@ -78,7 +86,7 @@ Detalle de una inversión. **Público.**
 
 **Response 404:**
 ```json
-{ "message": "Investment not found" }
+{ "error": "Investment not found" }
 ```
 
 ---
