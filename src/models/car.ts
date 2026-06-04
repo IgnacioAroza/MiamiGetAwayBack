@@ -2,42 +2,16 @@ import db from '../utils/db_render.js';
 import { Cars, CarFilters } from '../types/index.js';
 import { validateCar } from '../schemas/carSchema.js';
 import { PaginationParams } from '../utils/pagination.js';
+import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class CarModel {
-    /**
-     * Normaliza el array de imágenes, soportando múltiples formatos:
-     * - Array de strings: ['url1', 'url2']
-     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
-     * - Mix de ambos
-     */
-    private static normalizeImageArray(imageData: any): string[] {
-        if (!Array.isArray(imageData)) {
-            return [];
-        }
-
-        return imageData
-            .map((item: any) => {
-                // Si es un string, devolverlo directamente
-                if (typeof item === 'string') {
-                    return item;
-                }
-                // Si es un objeto con propiedad 'url', extraer la URL
-                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
-                    return item.url;
-                }
-                // Si no es ninguno de los formatos esperados, ignorar
-                return null;
-            })
-            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
-    }
-
     private static processCarImages(rows: any[]): Cars[] {
         return rows.map(car => {
             if (typeof car.images === 'string') {
-                try { car.images = this.normalizeImageArray(JSON.parse(car.images)); }
+                try { car.images = normalizeImageArray(JSON.parse(car.images)); }
                 catch { car.images = []; }
             } else if (Array.isArray(car.images)) {
-                car.images = this.normalizeImageArray(car.images);
+                car.images = normalizeImageArray(car.images);
             } else {
                 car.images = [];
             }
@@ -103,13 +77,13 @@ export default class CarModel {
                 const car = rows[0];
                 if (typeof car.images === 'string') {
                     try {
-                        car.images = this.normalizeImageArray(JSON.parse(car.images));
+                        car.images = normalizeImageArray(JSON.parse(car.images));
                     } catch (error) {
                         console.error('Error parsing car images:', error);
                         car.images = [];
                     }
                 } else if (Array.isArray(car.images)) {
-                    car.images = this.normalizeImageArray(car.images);
+                    car.images = normalizeImageArray(car.images);
                 } else {
                     car.images = [];
                 }
@@ -189,13 +163,13 @@ export default class CarModel {
                 // Normalizar imágenes
                 if (typeof updatedCar.images === 'string') {
                     try {
-                        updatedCar.images = this.normalizeImageArray(JSON.parse(updatedCar.images));
+                        updatedCar.images = normalizeImageArray(JSON.parse(updatedCar.images));
                     } catch (error) {
                         console.error('Error parsing car images:', error);
                         updatedCar.images = [];
                     }
                 } else if (Array.isArray(updatedCar.images)) {
-                    updatedCar.images = this.normalizeImageArray(updatedCar.images);
+                    updatedCar.images = normalizeImageArray(updatedCar.images);
                 } else {
                     updatedCar.images = [];
                 }

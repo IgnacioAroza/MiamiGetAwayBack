@@ -1,24 +1,14 @@
 import db from '../utils/db_render.js';
 import { Investment } from '../types/investments.js';
+import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class InvestmentModel {
-    private static normalizeImages(imageData: any): string[] {
-        if (!Array.isArray(imageData)) return [];
-        return imageData
-            .map((item: any) => {
-                if (typeof item === 'string') return item;
-                if (typeof item === 'object' && item !== null && typeof item.url === 'string') return item.url;
-                return null;
-            })
-            .filter((url): url is string => url !== null && url.trim() !== '');
-    }
-
     private static parseImages(row: any): any {
         if (typeof row.images === 'string') {
-            try { row.images = this.normalizeImages(JSON.parse(row.images)); }
+            try { row.images = normalizeImageArray(JSON.parse(row.images)); }
             catch { row.images = []; }
         } else if (Array.isArray(row.images)) {
-            row.images = this.normalizeImages(row.images);
+            row.images = normalizeImageArray(row.images);
         } else {
             row.images = [];
         }
