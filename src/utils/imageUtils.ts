@@ -75,6 +75,33 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
         transformations: {
             quality: 85
         }
+    },
+    investments: {
+        folder: 'investments',
+        maxFiles: 30,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        transformations: {
+            quality: 85
+        }
+    },
+    experiences: {
+        folder: 'experiences',
+        maxFiles: 30,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        transformations: {
+            quality: 85
+        }
+    },
+    transfers: {
+        folder: 'transfers',
+        maxFiles: 20,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        transformations: {
+            quality: 85
+        }
     }
 };
 

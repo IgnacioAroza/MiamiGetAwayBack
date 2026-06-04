@@ -11,7 +11,7 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 - **Stack**: Node.js + TypeScript (ESM) + Express + PostgreSQL
 - **Autenticación**: JWT (`/api/auth/login`)
 - **Imágenes**: Cloudinary (multipart/form-data, campo `images`, máx. 30)
-- **Email**: Nodemailer + Zoho SMTP
+- **Email**: Nodemailer + Zoho SMTP (`ADMIN_EMAIL` env var para notificaciones al admin)
 - **PDF**: PDFKit
 - **Validación**: Zod
 - **Tests**: Vitest + Supertest
@@ -32,203 +32,106 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 | Reviews internas | `/api/reviews` | No |
 | Reservaciones | `/api/reservations` | Todos |
 | Pagos de reservaciones | `/api/reservation-payments` | Todos |
+| Suppliers | `/api/suppliers` | Todos |
 | Resúmenes mensuales | `/api/summaries` | Todos |
 | Google My Business | `/api/google-mybusiness` | Solo admin endpoints |
 | Cron | `/api/cron` | Sí |
+| Inversiones | `/api/investments` | GET público, escritura JWT |
+| Experiencias | `/api/experiences` | GET público, escritura JWT |
 
 ---
 
 ## Convenciones
 
 - Fechas de reservaciones: formato `MM-DD-YYYY HH:mm`
-- Imágenes: `multipart/form-data`, campo `images`
-- Cron de actualización automática de estados: **desactivado** (`app.ts:93`)
-- `NODE_ENV=development` activa morgan y logs de debug
+- Imágenes: `multipart/form-data`, campo `images` — **pasar array directo a pg, nunca `JSON.stringify`** para columnas `TEXT[]`
+- Nueva entidad con imágenes: registrar en `IMAGE_CONFIGS` en `src/utils/imageUtils.ts` o Cloudinary falla
+- Cron de actualización automática de estados: **desactivado** (`app.ts`)
+- `NODE_ENV=demo` carga `.env.test` y activa morgan/logs (igual que `development`)
 
 ---
 
 ## Entorno local
 
-- PostgreSQL 18 instalado localmente. Base: `MGA_test_db`, usuario: `test`, password: `test`, puerto: `5432`.
-- Arrancar servidor local: `npm run dev:demo` (NODE_ENV=test, carga `.env.test`, puerto 3001).
-- Migraciones locales: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/index.js`
-- `gh` CLI instalado en `C:\Program Files\GitHub CLI\gh.exe` (no está en PATH del sistema).
-
-## Migraciones
-
-Scripts SQL en `migrations/scripts/` (000 al 011 + `000b_create_missing_tables.sql`). Ejecutar con `npm run migrate`.
-
-`000b` es solo para setup local — crea tablas que existían en producción antes del sistema de migraciones (admins, cars, villas, yachts, reviews) y columnas faltantes en clients/reservations/apartments.
+- PostgreSQL 18 local. Base: `MGA_test_db`, usuario: `postgres`, password: `postgres`, puerto: `5432`
+- Arrancar servidor local: `npm run dev:demo` (NODE_ENV=demo, carga `.env.test`, puerto 3001)
+- Matar proceso en puerto 3001: `kill $(lsof -ti:3001)`
+- Migraciones locales individuales: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/runSingle.js <archivo.sql>`
+- Migraciones producción individuales: `npx cross-env NODE_ENV=production node migrations/runSingle.js <archivo.sql>`
+- `.env.test` tiene credenciales falsas de Cloudinary — para probar uploads reales en dev, copiar las credenciales del `.env`
 
 ---
 
-## Cambios pendientes del cliente
+## Migraciones
 
-> Estado: **fixes de seguridad completados (PR #34) — features del cliente pendientes**
+Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index.js` en producción.
+
+| # | Descripción | Entorno |
+|---|---|---|
+| 000-008 | Base del schema | prod |
+| 009-010 | Google OAuth tokens y reviews | prod |
+| 011 | Performance indexes | prod |
+| 012 | receipt_image en reservation_payments | prod |
+| 013 | Tabla suppliers, reservation_suppliers, supplier_payments | prod |
+| 014 | Amount columns en reservations | prod |
+| 015 | payment_reference en payments | prod |
+| 016 | **ELIMINADA** (era RENAME COLUMN) | — |
+| 017 | cleaning_fee en reservation_suppliers | prod |
+| 018 | Normaliza payment_status 'complete' → 'completed' | prod |
+| 019 | Tabla investments | development (pendiente prod) |
+| 020 | Indexes FK en supplier tables | prod |
+| 021 | mga_parse_date() IMMUTABLE + expression indexes | prod |
+| 022 | ON DELETE CASCADE en reservation_payments | prod |
+| 023 | Tablas experiences + experience_inquiries | feature/experiences (pendiente prod) |
+
+---
+
+## Estado de ramas y features del cliente
+
+> Última sesión: `docs/memory/2026-06-02.md`
 > Documentos de referencia:
-> - `docs/api-frontend-contract.md` — contrato completo API ↔ Frontend con todos los endpoints, bodies y responses
-> - `docs/presupuesto.md` — presupuesto técnico y propuesta para el cliente ($1.500 USD)
+> - `docs/api-frontend-contract.md` — contrato general API ↔ Frontend
+> - `docs/investments-frontend-contract.md` — contrato investments
+> - `docs/experiences-frontend-contract.md` — contrato experiences
+> - `docs/presupuesto.md` — presupuesto técnico ($1.500 USD)
 
-### 1. Nuevos servicios: Experiencias, Inversiones y Traslados
-
-Agregar tres nuevas entidades de servicio, similares a apartamentos/villas/yates/autos.
-- Rutas: `/api/experiences`, `/api/investments`, `/api/transfers`
-
-#### Inversiones (`/api/investments`) ✅ campos confirmados
-| Campo | Tipo | Notas |
+| Feature | Rama | Estado |
 |---|---|---|
-| `name` | string | Nombre de la inversión |
-| `unit_number` | string | Número de unidad |
-| `address` | string | Dirección |
-| `description` | string | Descripción |
-| `bathrooms` | number | Cantidad de baños |
-| `rooms` | number | Cantidad de habitaciones |
-| `price` | number / null | "A consultar" — puede ser null |
-| `images` | string[] | URLs Cloudinary |
+| Investments | `development` | ✅ implementado — pendiente merge a main + migration 019 en Render |
+| Experiences | `feature/experiences` | ✅ implementado — pendiente merge a main + migration 023 en Render |
+| Transfers | — | ❌ sin implementar |
 
-#### Experiencias (`/api/experiences`) ✅ campos confirmados
+### Transfers — campos confirmados
 
-Tiene dos responsabilidades separadas:
+**A) Flota (`transfer_fleet`)** — CRUD con auth:
+| Campo | Tipo |
+|---|---|
+| `name` | string |
+| `category` | `sedan` \| `suv` \| `van` |
+| `capacity` | number |
+| `description` | string |
+| `images` | string[] |
 
-**A) Entidad experiencia** — gestionada por el admin (CRUD con auth):
-| Campo | Tipo | Notas |
-|---|---|---|
-| `title` | string | Nombre (ej: "Vuelo en helicóptero") |
-| `description` | string | Descripción |
-| `capacity` | number | Capacidad de personas |
-| `price` | number | Precio "a partir de" (mínimo referencial) |
-| `images` | string[] | URLs Cloudinary, multipart/form-data, máx. 30 |
+**B) Inquiries (`transfer_inquiries`)** — endpoint público + email al admin:
+| Campo | Tipo |
+|---|---|
+| `pick_up` | string |
+| `drop_off` | string |
+| `date` | string |
+| `time` | string |
+| `passengers` | number |
+| `service_type` | `airport` \| `business` \| `private_event` \| `sports_event` |
+| `vehicle_id` | number / null |
+| `name`, `lastname`, `email`, `phone` | string |
+| `status` | `pending` \| `contacted` \| `closed` |
 
-**B) Consulta de cliente** — endpoint público (`POST /api/experiences/:id/inquiry` o similar):
-| Campo | Tipo | Notas |
-|---|---|---|
-| `name` | string | Nombre del cliente interesado |
-| `lastname` | string | Apellido |
-| `email` | string | Email |
-| `phone` | string | Teléfono |
+---
 
-Al recibir la consulta, el backend debe:
-- **Guardar la consulta en BD** (tabla `experience_inquiries`) con `experience_id` + datos del cliente + `created_at`
-- **Estado de la consulta**: `pending` | `contacted` | `closed` (para seguimiento desde el panel del admin)
-- Enviar **email de notificación al admin** del negocio
-- El **WhatsApp** lo maneja el frontend (link/redirect, no el backend)
+## Fixes MEDIUM pendientes (security audit, no aplicados)
 
-#### Traslados (`/api/transfers`) ✅ campos confirmados
-
-Tiene dos entidades separadas:
-
-**A) Flota (`transfer_fleet`)** — gestionada por el admin (CRUD con auth):
-| Campo | Tipo | Notas |
-|---|---|---|
-| `name` | string | Nombre del vehículo (ej: "Mercedes Benz S Class") |
-| `category` | enum | `sedan` \| `suv` \| `van` |
-| `capacity` | number | Capacidad de pasajeros |
-| `description` | string | Descripción / amenidades |
-| `images` | string[] | URLs Cloudinary |
-
-**B) Consultas de traslado (`transfer_inquiries`)** — endpoint público:
-| Campo | Tipo | Notas |
-|---|---|---|
-| `pick_up` | string | Lugar de recogida |
-| `drop_off` | string | Lugar de destino |
-| `date` | string | Fecha del traslado |
-| `time` | string | Hora del traslado |
-| `passengers` | number | Cantidad de pasajeros |
-| `service_type` | enum | `airport` \| `business` \| `private_event` \| `sports_event` |
-| `vehicle_id` | number / null | Vehículo preferido (opcional) |
-| `name` | string | Nombre del cliente |
-| `lastname` | string | Apellido del cliente |
-| `email` | string | Email del cliente |
-| `phone` | string | Teléfono del cliente |
-| `status` | enum | `pending` \| `contacted` \| `closed` |
-
-Al recibir la consulta:
-- **Guardar en BD**
-- Enviar **email de notificación al admin**
-- El **WhatsApp** lo maneja el frontend
-
-### 2. Datos del proveedor en reservaciones ✅ confirmado (ver imagen UI)
-
-Tres entidades nuevas para reemplazar Excel en el cálculo de profit:
-
-**A) Tabla `suppliers`** — proveedores reutilizables entre reservas (CRUD con auth):
-| Campo | Tipo | Notas |
-|---|---|---|
-| `name` | string | Nombre del proveedor (ej: "Carolina Méndez") |
-| `company` | string | Empresa (ej: "Coastal Stays Management") |
-| `email` | string | Email |
-| `phone` | string | Teléfono |
-
-**B) Tabla `reservation_suppliers`** — vincula un proveedor a una reserva con sus condiciones de pago:
-| Campo | Tipo | Notas |
-|---|---|---|
-| `reservation_id` | number | FK a `reservations` |
-| `supplier_id` | number | FK a `suppliers` |
-| `payout_per_night` | number | Costo por noche al proveedor |
-| `payment_terms` | string | Ej: "Within 48h after check-out" |
-
-Campos calculados (no se guardan, se derivan):
-- **Total** = noches × payout_per_night
-- **Paid** = suma de pagos registrados al proveedor
-- **Balance** = total - paid
-
-**C) Tabla `supplier_payments`** — historial de pagos al proveedor:
-| Campo | Tipo | Notas |
-|---|---|---|
-| `reservation_supplier_id` | number | FK a `reservation_suppliers` |
-| `amount` | number | Monto del pago |
-| `method` | enum | `cash` \| `wire` \| `card` \| `transfer` |
-| `date` | date | Fecha del pago |
-| `reference_notes` | string | Referencia / notas libres |
-| `receipt_images` | string[] | URLs Cloudinary (recibos) |
-
-**Cálculo de profit por reserva:**
-- Revenue = suma de `reservation_payments` (lo que paga el cliente)
-- Cost = suma de `supplier_payments` (lo que se le paga al proveedor)
-- **Profit = Revenue − Cost**
-
-**Campo `supplier_status` en tabla `reservations`:**
-| Estado | Cuándo | Quién lo setea |
-|---|---|---|
-| `unassigned` | Al crear la reserva (default) | API automáticamente |
-| `searching` | El admin está buscando proveedor | Admin manualmente |
-| `confirmed` | Al asignar proveedor (`POST /reservations/:id/supplier`) | API automáticamente |
-
-- Al eliminar proveedor (`DELETE /reservations/:id/supplier`) → vuelve a `unassigned` automáticamente
-- Frontend usa este campo para colorear: 🔴 unassigned, 🟡 searching, 🟢 confirmed
-- El admin solo interviene manualmente para setear `searching`
-
-### 3. Cambios en PDFs generados
-
-Afecta: `src/services/pdfService.ts`
-
-**A) Fix de impresión del fondo**
-
-Problema actual: `addBackgroundImage()` (línea 682) renderiza la foto de fondo con `fillOpacity(1)` + todo el texto en blanco. Al imprimir sale negro o el texto queda invisible sobre papel blanco.
-
-Solución acordada:
-- Bajar la opacidad del fondo a ~0.15 (watermark sutil, no afecta impresión)
-- Cambiar todos los colores de texto de `white` a dark navy (`#1a2a3a` o similar)
-- El encabezado del table (`#1B4B82`) se mantiene con texto blanco — ese sí imprime bien
-
-**B) Agregar políticas de reserva**
-
-- Agregar una página nueva al final del PDF con las políticas de la empresa
-- El texto de las políticas está listo — **pendiente que el cliente lo pase**
-- Mantener el mismo estilo visual (fondo watermark + texto dark navy)
-- Implementar con `doc.addPage()` después de la sección de notas actuales
-
-### 4. Imágenes en notas de pagos de reserva
-
-**Alcance acotado (más simple de lo inicial):**
-- **Una sola imagen** por pago (no array) — el recibo del pago
-- Se sube a Cloudinary y se guarda la URL en la tabla `reservation_payments`
-- Nuevo campo: `receipt_image` (string, nullable) en `reservation_payments`
-
-**Endpoints afectados:**
-- `POST /api/reservations/:id/payments` — acepta imagen como `multipart/form-data`
-- `PUT /api/reservation-payments/:id` — permite actualizar/reemplazar la imagen
-- `GET /api/reservations/:id/payments` — incluye `receipt_image` en la respuesta (para verla desde la reserva)
-- `GET /api/reservation-payments/:id` — incluye `receipt_image` en la respuesta
-
-**Nota sobre supplier_payments:** también tendrán `receipt_images` (ver punto 2C), misma lógica.
+- Fix 18: `cancellationFee` guardado pero no usado en cálculo de `amountDue`
+- Fix 19: `updatePaymentStatus` sin validación de input
+- Fix 20: inconsistencia respuestas — algunos usan `{ error }`, otros `{ message }`
+- Fix 21: endpoints DELETE devuelven 200 con body en vez de 204
+- Fix 22: PUT y PATCH en `/reservations/:id` apuntan al mismo handler
+- Fix 24: `normalizeImageArray` duplicada en 4 controllers

@@ -10,6 +10,7 @@ export * from './clients.js'
 export * from './reservations.js'
 export * from './reservationPayments.js'
 export * from './images.js'
+export * from './investments.js'
 
 // Para autenticación
 export interface AuthResponse extends Response {
