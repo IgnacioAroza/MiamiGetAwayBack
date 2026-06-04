@@ -22,6 +22,7 @@ import cronRoutes from './routes/cron.js'
 import monthlySummaryRoutes from './routes/monthlySummary.js'
 import googleMyBusinessRoutes from './routes/googleMyBusiness.js'
 import investmentRoutes from './routes/investment.js'
+import experienceRoutes from './routes/experience.js'
 
 // Importar el servicio de cron
 import { CronService } from './services/cronService.js'
@@ -105,6 +106,7 @@ app.use('/api/cron', cronRoutes)
 app.use('/api/summaries', monthlySummaryRoutes)
 app.use('/api/google-mybusiness', googleMyBusinessRoutes)
 app.use('/api/investments', investmentRoutes)
+app.use('/api/experiences', uploadRateLimit, experienceRoutes)
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
@@ -129,7 +131,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Iniciar el servidor (no en test — supertest maneja el binding)
 if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => {
-        if (process.env.NODE_ENV === 'development') {
+        if (['development', 'demo'].includes(process.env.NODE_ENV || '')) {
             console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
             console.log(`📍 Database: ${process.env.DATABASE_URL || 'Not configured'}`);
         }

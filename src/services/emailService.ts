@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { Reservation, ReservationWithClient } from '../types/reservations.js';
+import { ExperienceInquiry } from '../types/experiences.js';
 import PdfService from '../services/pdfService.js';
 import fs from 'fs';
 
@@ -139,6 +140,30 @@ export default class EmailService {
                 <p style="font-size: 16px;">Best regards,<br>Miami Get Away Team</p>
             `
         });
+    }
+
+    static async sendExperienceInquiryNotification(to: string, inquiry: ExperienceInquiry & { experience_title?: string }): Promise<void> {
+        try {
+            await this.transporter.sendMail({
+                from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,
+                to,
+                subject: `New Experience Inquiry from ${inquiry.name} ${inquiry.lastname}`,
+                html: `
+                    <h1 style="font-size: 24px;">New Experience Inquiry</h1>
+                    <p style="font-size: 16px;">You have received a new inquiry from the website.</p>
+                    <ul style="font-size: 16px;">
+                        <li><strong>Name:</strong> ${inquiry.name} ${inquiry.lastname}</li>
+                        <li><strong>Email:</strong> ${inquiry.email}</li>
+                        ${inquiry.phone ? `<li><strong>Phone:</strong> ${inquiry.phone}</li>` : ''}
+                        ${inquiry.experience_title ? `<li><strong>Experience:</strong> ${inquiry.experience_title}</li>` : '<li><strong>Experience:</strong> General inquiry</li>'}
+                    </ul>
+                    <p style="font-size: 16px;">Best regards,<br>Miami Get Away System</p>
+                `,
+            });
+        } catch (error) {
+            console.error('Error sending experience inquiry notification:', error);
+            throw error;
+        }
     }
 
     static async sendMonthlySummaryEmail(

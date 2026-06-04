@@ -41,7 +41,7 @@ export default class InvestmentModel {
         const { rows } = await db.query(
             `INSERT INTO investments (name, unit_number, address, description, bathrooms, rooms, price, images)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [name, unit_number ?? null, address, description ?? null, bathrooms, rooms, price ?? null, JSON.stringify(images || [])]
+            [name, unit_number ?? null, address, description ?? null, bathrooms, rooms, price ?? null, images || []]
         );
         return this.parseImages(rows[0]);
     }
@@ -58,7 +58,7 @@ export default class InvestmentModel {
         if (data.bathrooms !== undefined)    { fields.push(`bathrooms = $${i++}`);   values.push(data.bathrooms); }
         if (data.rooms !== undefined)        { fields.push(`rooms = $${i++}`);       values.push(data.rooms); }
         if (data.price !== undefined)        { fields.push(`price = $${i++}`);       values.push(data.price ?? null); }
-        if (data.images !== undefined)       { fields.push(`images = $${i++}`);      values.push(JSON.stringify(data.images)); }
+        if (data.images !== undefined)       { fields.push(`images = $${i++}`);      values.push(data.images); }
 
         if (fields.length === 0) throw new Error('No valid fields to update');
 
