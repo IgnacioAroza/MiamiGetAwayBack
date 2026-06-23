@@ -73,7 +73,7 @@ export interface SupplierPayment {
     id: number;
     reservationSupplierId: number;
     amount: number;
-    method: 'cash' | 'wire' | 'card' | 'transfer';
+    method: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
     date: Date;
     referenceNotes?: string | null;
     receiptImages: string[];
@@ -83,7 +83,7 @@ export interface SupplierPayment {
 export interface CreateSupplierPaymentDTO {
     reservationSupplierId: number;
     amount: number;
-    method: 'cash' | 'wire' | 'card' | 'transfer';
+    method: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
     date: string;
     referenceNotes?: string;
     receiptImages?: string[];
@@ -91,7 +91,7 @@ export interface CreateSupplierPaymentDTO {
 
 export interface UpdateSupplierPaymentDTO {
     amount?: number;
-    method?: 'cash' | 'wire' | 'card' | 'transfer';
+    method?: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
     date?: string;
     referenceNotes?: string | null;
     receiptImages?: string[];
