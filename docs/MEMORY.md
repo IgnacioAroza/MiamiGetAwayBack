@@ -38,6 +38,8 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 | Cron | `/api/cron` | Sí |
 | Inversiones | `/api/investments` | GET público, escritura JWT |
 | Experiencias | `/api/experiences` | GET público, escritura JWT |
+| Transfers vehículos | `/api/transfers/vehicles` | GET público, escritura JWT |
+| Transfers inquiries | `/api/transfers/inquiries` | POST público, GET/PATCH JWT |
 
 ---
 
@@ -78,60 +80,45 @@ Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index
 | 016 | **ELIMINADA** (era RENAME COLUMN) | — |
 | 017 | cleaning_fee en reservation_suppliers | prod |
 | 018 | Normaliza payment_status 'complete' → 'completed' | prod |
-| 019 | Tabla investments | development (pendiente prod) |
+| 019 | Tabla investments | prod |
 | 020 | Indexes FK en supplier tables | prod |
 | 021 | mga_parse_date() IMMUTABLE + expression indexes | prod |
 | 022 | ON DELETE CASCADE en reservation_payments | prod |
-| 023 | Tablas experiences + experience_inquiries | feature/experiences (pendiente prod) |
+| 023 | Tablas experiences + experience_inquiries | prod |
+| 024 | Tablas transfer_vehicles + transfer_inquiries | prod |
+| 025 | luggage_large/medium/carry_on en transfer_inquiries | prod |
+| 026 | Actualiza CHECK constraint métodos de pago supplier | prod — **⚠️ pendiente en BD local** |
 
 ---
 
 ## Estado de ramas y features del cliente
 
-> Última sesión: `docs/memory/2026-06-02.md`
+> Última sesión: `docs/memory/2026-06-23.md`
 > Documentos de referencia:
 > - `docs/api-frontend-contract.md` — contrato general API ↔ Frontend
 > - `docs/investments-frontend-contract.md` — contrato investments
 > - `docs/experiences-frontend-contract.md` — contrato experiences
+> - `docs/transfers-frontend-contract.md` — contrato transfers
 > - `docs/presupuesto.md` — presupuesto técnico ($1.500 USD)
 
 | Feature | Rama | Estado |
 |---|---|---|
-| Investments | `development` | ✅ implementado — pendiente merge a main + migration 019 en Render |
-| Experiences | `feature/experiences` | ✅ implementado — pendiente merge a main + migration 023 en Render |
-| Transfers | — | ❌ sin implementar |
-
-### Transfers — campos confirmados
-
-**A) Flota (`transfer_fleet`)** — CRUD con auth:
-| Campo | Tipo |
-|---|---|
-| `name` | string |
-| `category` | `sedan` \| `suv` \| `van` |
-| `capacity` | number |
-| `description` | string |
-| `images` | string[] |
-
-**B) Inquiries (`transfer_inquiries`)** — endpoint público + email al admin:
-| Campo | Tipo |
-|---|---|
-| `pick_up` | string |
-| `drop_off` | string |
-| `date` | string |
-| `time` | string |
-| `passengers` | number |
-| `service_type` | `airport` \| `business` \| `private_event` \| `sports_event` |
-| `vehicle_id` | number / null |
-| `name`, `lastname`, `email`, `phone` | string |
-| `status` | `pending` \| `contacted` \| `closed` |
+| Investments | `main` | ✅ en producción |
+| Experiences | `main` | ✅ en producción |
+| Transfers | `main` | ✅ en producción |
 
 ---
 
-## Fixes MEDIUM pendientes (security audit, no aplicados)
+## Métodos de pago
 
-- Fix 18: `cancellationFee` guardado pero no usado en cálculo de `amountDue`
-- Fix 19: `updatePaymentStatus` sin validación de input
-- Fix 20: inconsistencia respuestas — algunos usan `{ error }`, otros `{ message }`
-- Fix 21: endpoints DELETE devuelven 200 con body en vez de 204
-- Fix 22: PUT y PATCH en `/reservations/:id` apuntan al mismo handler
-- Fix 24: `normalizeImageArray` duplicada en 4 controllers
+**Reservation payments** (`reservation_payments.payment_method`):
+`card` | `cash` | `transfer` | `paypal` | `zelle` | `stripe` | `other`
+
+**Supplier payments** (`supplier_payments.method`):
+`cash` | `card` | `transfer` | `paypal` | `zelle` | `stripe` | `other`
+
+---
+
+## Pendientes
+
+- ⚠️ Correr migration 026 en BD local: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/runSingle.js 026_update_supplier_payment_method_enum.sql`
