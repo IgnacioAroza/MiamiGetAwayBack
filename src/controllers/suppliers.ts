@@ -189,6 +189,49 @@ export class ReservationSupplierController {
 // ---- Supplier payments ----
 
 export class SupplierPaymentController {
+    static async getAll(req: Request, res: Response): Promise<void> {
+        try {
+            const filters: { supplierId?: number; reservationId?: number; startDate?: string; endDate?: string } = {};
+
+            if (req.query.supplierId) {
+                const supplierId = parseInt(req.query.supplierId as string);
+                if (isNaN(supplierId)) { res.status(400).json({ error: 'supplierId must be a valid number' }); return; }
+                filters.supplierId = supplierId;
+            }
+
+            if (req.query.reservationId) {
+                const reservationId = parseInt(req.query.reservationId as string);
+                if (isNaN(reservationId)) { res.status(400).json({ error: 'reservationId must be a valid number' }); return; }
+                filters.reservationId = reservationId;
+            }
+
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+            if (req.query.startDate) {
+                const startDate = req.query.startDate as string;
+                if (!dateRegex.test(startDate)) { res.status(400).json({ error: 'startDate format is invalid. Use YYYY-MM-DD' }); return; }
+                filters.startDate = startDate;
+            }
+
+            if (req.query.endDate) {
+                const endDate = req.query.endDate as string;
+                if (!dateRegex.test(endDate)) { res.status(400).json({ error: 'endDate format is invalid. Use YYYY-MM-DD' }); return; }
+                filters.endDate = endDate;
+            }
+
+            const pagination = parsePagination(req.query);
+            const { rows, total, summary } = await SupplierService.getAllSupplierPayments(filters, pagination ?? undefined);
+
+            if (pagination) {
+                res.status(200).json({ ...paginatedResponse(rows, total, pagination), summary });
+            } else {
+                res.status(200).json({ data: rows, summary });
+            }
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
     static async getByReservationSupplier(req: Request, res: Response): Promise<void> {
         try {
             const reservationSupplierId = parseInt(req.params.reservationSupplierId);

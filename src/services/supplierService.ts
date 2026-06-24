@@ -11,9 +11,12 @@ import {
     ReservationSupplierResponse,
     AssignSupplierDTO,
     SupplierPayment,
+    SupplierPaymentWithDetails,
+    SupplierPaymentSummary,
     CreateSupplierPaymentDTO,
     UpdateSupplierPaymentDTO
 } from '../types/suppliers.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 function formatReservationSupplier(row: ReservationSupplier): ReservationSupplierResponse {
     const total = Number(row.totalPayout ?? 0);
@@ -118,6 +121,13 @@ export default class SupplierService {
     }
 
     // --- Supplier payments ---
+
+    static async getAllSupplierPayments(
+        filters: { supplierId?: number; reservationId?: number; startDate?: string; endDate?: string } = {},
+        pagination?: PaginationParams
+    ): Promise<{ rows: SupplierPaymentWithDetails[], total: number, summary: SupplierPaymentSummary | null }> {
+        return SupplierPaymentModel.getAll(filters, pagination);
+    }
 
     static async getPaymentsByReservationSupplier(reservationSupplierId: number): Promise<SupplierPayment[]> {
         return SupplierPaymentModel.getByReservationSupplier(reservationSupplierId);
