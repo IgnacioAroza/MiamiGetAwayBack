@@ -17,6 +17,7 @@ export default router;
 // Separate router for supplier payments (mounted at /api/supplier-payments)
 export const supplierPaymentsRouter = Router();
 
+supplierPaymentsRouter.get('/', authMiddleware, SupplierPaymentController.getAll);
 supplierPaymentsRouter.get(
     '/by-reservation-supplier/:reservationSupplierId',
     authMiddleware,

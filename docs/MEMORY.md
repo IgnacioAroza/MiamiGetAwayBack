@@ -33,6 +33,7 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 | Reservaciones | `/api/reservations` | Todos |
 | Pagos de reservaciones | `/api/reservation-payments` | Todos |
 | Suppliers | `/api/suppliers` | Todos |
+| Pagos a suppliers | `/api/supplier-payments` | Todos |
 | Resúmenes mensuales | `/api/summaries` | Todos |
 | Google My Business | `/api/google-mybusiness` | Solo admin endpoints |
 | Cron | `/api/cron` | Sí |
@@ -64,48 +65,30 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 
 ---
 
-## Migraciones
+## Migraciones (actualizado 2026-06-24)
 
 Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index.js` en producción.
 
-| # | Descripción | Entorno |
+| # | Descripción | Estado |
 |---|---|---|
-| 000-008 | Base del schema | prod |
-| 009-010 | Google OAuth tokens y reviews | prod |
-| 011 | Performance indexes | prod |
-| 012 | receipt_image en reservation_payments | prod |
-| 013 | Tabla suppliers, reservation_suppliers, supplier_payments | prod |
-| 014 | Amount columns en reservations | prod |
-| 015 | payment_reference en payments | prod |
+| 000-008 | Base del schema | prod + local |
+| 009-010 | Google OAuth tokens y reviews | prod + local |
+| 011 | Performance indexes | prod + local |
+| 012 | receipt_image en reservation_payments | prod + local |
+| 013 | Tabla suppliers, reservation_suppliers, supplier_payments | prod + local |
+| 014 | Amount columns en reservations | prod + local |
+| 015 | payment_reference en payments | prod + local |
 | 016 | **ELIMINADA** (era RENAME COLUMN) | — |
-| 017 | cleaning_fee en reservation_suppliers | prod |
-| 018 | Normaliza payment_status 'complete' → 'completed' | prod |
-| 019 | Tabla investments | prod |
-| 020 | Indexes FK en supplier tables | prod |
-| 021 | mga_parse_date() IMMUTABLE + expression indexes | prod |
-| 022 | ON DELETE CASCADE en reservation_payments | prod |
-| 023 | Tablas experiences + experience_inquiries | prod |
-| 024 | Tablas transfer_vehicles + transfer_inquiries | prod |
-| 025 | luggage_large/medium/carry_on en transfer_inquiries | prod |
-| 026 | Actualiza CHECK constraint métodos de pago supplier | prod — **⚠️ pendiente en BD local** |
-
----
-
-## Estado de ramas y features del cliente
-
-> Última sesión: `docs/memory/2026-06-23.md`
-> Documentos de referencia:
-> - `docs/api-frontend-contract.md` — contrato general API ↔ Frontend
-> - `docs/investments-frontend-contract.md` — contrato investments
-> - `docs/experiences-frontend-contract.md` — contrato experiences
-> - `docs/transfers-frontend-contract.md` — contrato transfers
-> - `docs/presupuesto.md` — presupuesto técnico ($1.500 USD)
-
-| Feature | Rama | Estado |
-|---|---|---|
-| Investments | `main` | ✅ en producción |
-| Experiences | `main` | ✅ en producción |
-| Transfers | `main` | ✅ en producción |
+| 017 | cleaning_fee en reservation_suppliers | prod + local |
+| 018 | Normaliza payment_status 'complete' → 'completed' | prod + local |
+| 019 | Tabla investments | prod + local |
+| 020 | Indexes FK en supplier tables | prod + local |
+| 021 | mga_parse_date() IMMUTABLE + expression indexes | prod + local |
+| 022 | ON DELETE CASCADE en reservation_payments | prod + local |
+| 023 | Tablas experiences + experience_inquiries | prod + local |
+| 024 | Tablas transfer_vehicles + transfer_inquiries | prod + local |
+| 025 | luggage_large/medium/carry_on en transfer_inquiries | prod + local |
+| 026 | Actualiza CHECK constraint métodos de pago supplier | prod + local ✅ |
 
 ---
 
@@ -119,6 +102,30 @@ Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index
 
 ---
 
-## Pendientes
+## Estado de ramas y features
 
-- ⚠️ Correr migration 026 en BD local: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/runSingle.js 026_update_supplier_payment_method_enum.sql`
+> Última sesión: `docs/memory/2026-06-24.md`
+> Documentos de referencia:
+> - `docs/api-frontend-contract.md` — contrato general API ↔ Frontend
+> - `docs/investments-frontend-contract.md` — contrato investments
+> - `docs/experiences-frontend-contract.md` — contrato experiences
+> - `docs/transfers-frontend-contract.md` — contrato transfers
+
+| Feature | Rama | Estado |
+|---|---|---|
+| Investments | `main` | ✅ en producción |
+| Experiences | `main` | ✅ en producción |
+| Transfers | `main` | ✅ en producción |
+| GET /supplier-payments | PR #43 `development → main` | ✅ pendiente merge |
+
+---
+
+## Endpoint: GET /api/supplier-payments (2026-06-24)
+
+Devuelve pagos a proveedores con contexto completo. Auth: JWT.
+
+**Query params:** `supplierId`, `reservationId`, `startDate` (YYYY-MM-DD), `endDate` (YYYY-MM-DD), `page`, `limit`
+
+**Response:** `{ data[], pagination, summary }` — `summary` es `null` sin `supplierId`; con él incluye `{ totalPaid, totalOwed, balance }` calculado sobre **todas** las reservas del supplier.
+
+**JOIN chain:** `supplier_payments → reservation_suppliers → reservations → apartments → suppliers`

@@ -69,11 +69,13 @@ export interface AssignSupplierDTO {
     payment_terms?: string;
 }
 
+export type SupplierPaymentMethod = 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
+
 export interface SupplierPayment {
     id: number;
     reservationSupplierId: number;
     amount: number;
-    method: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
+    method: SupplierPaymentMethod;
     date: Date;
     referenceNotes?: string | null;
     receiptImages: string[];
@@ -83,7 +85,7 @@ export interface SupplierPayment {
 export interface CreateSupplierPaymentDTO {
     reservationSupplierId: number;
     amount: number;
-    method: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
+    method: SupplierPaymentMethod;
     date: string;
     referenceNotes?: string;
     receiptImages?: string[];
@@ -91,8 +93,33 @@ export interface CreateSupplierPaymentDTO {
 
 export interface UpdateSupplierPaymentDTO {
     amount?: number;
-    method?: 'cash' | 'card' | 'transfer' | 'paypal' | 'zelle' | 'stripe' | 'other';
+    method?: SupplierPaymentMethod;
     date?: string;
     referenceNotes?: string | null;
     receiptImages?: string[];
+}
+
+export interface SupplierPaymentWithDetails {
+    id: number;
+    amount: number;
+    method: SupplierPaymentMethod;
+    date: string;
+    referenceNotes?: string | null;
+    receiptImages: string[];
+    createdAt: Date;
+    supplierId: number;
+    supplierName: string;
+    supplierEmail?: string | null;
+    supplierPhone?: string | null;
+    reservationId: number;
+    apartmentName?: string | null;
+    checkInDate: string;
+    checkOutDate: string;
+    nights: number;
+}
+
+export interface SupplierPaymentSummary {
+    totalPaid: number;
+    totalOwed: number;
+    balance: number;
 }
