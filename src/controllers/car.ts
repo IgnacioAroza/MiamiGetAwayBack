@@ -4,6 +4,7 @@ import { validateCar, validatePartialCar, validateCarFilters } from '../schemas/
 import ImageService from '../services/imageService.js'
 import { Cars, CreateCarsDTO, UpdateCarsDTO, CarFilters } from '../types/index.js'
 import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class CarController {
     static async getAllCars(req: Request, res: Response): Promise<void> {
@@ -31,10 +32,7 @@ class CarController {
             if (Object.keys(cleanFilters).length > 0) {
                 const validationResult = validateCarFilters(cleanFilters);
                 if (!validationResult.success) {
-                    res.status(400).json({ 
-                        message: 'Invalid filters', 
-                        error: validationResult.error.flatten() 
-                    });
+                    badRequest(res, 'Invalid filters', validationResult.error.flatten());
                     return;
                 }
             }
@@ -52,13 +50,13 @@ class CarController {
             });
 
             if (pagination) {
-                res.status(200).json(paginatedResponse(optimizedCars, total, pagination));
+                ok(res, paginatedResponse(optimizedCars, total, pagination));
             } else {
-                res.status(200).json(optimizedCars);
+                ok(res, optimizedCars);
             }
         } catch (error: any) {
             console.error('Error in getAllCars:', error);
-            res.status(500).json({ error: 'An error occurred while fetching cars' });
+            serverError(res, 'An error occurred while fetching cars');
         }
     }
 
@@ -66,25 +64,23 @@ class CarController {
         try {
             const { id } = req.params
             const car = await CarModel.getCarById(Number(id))
-            
+
             if (car) {
-                // Optimizar imágenes para vista detalle (contexto 'detail')
                 if (car.images && Array.isArray(car.images)) {
                     const optimizedImages = ImageService.optimizeForContext(car.images, 'detail');
-                    const carWithOptimizedImages = {
+                    ok(res, {
                         ...car,
-                        images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
-                    };
-                    res.status(200).send(carWithOptimizedImages);
+                        images: optimizedImages.images,
+                        responsiveImages: optimizedImages.responsiveImages
+                    });
                 } else {
-                    res.status(200).send(car);
+                    ok(res, car);
                 }
             } else {
-                res.status(404).json({ message: 'Car not found' });
+                notFound(res, 'Car not found');
             }
         } catch (error: any) {
-            res.status(500).send(error.message)
+            serverError(res, error.message)
         }
     }
 
@@ -95,29 +91,25 @@ class CarController {
                 model: req.body.model,
                 price: typeof req.body.price === 'string' ? parseFloat(req.body.price) : req.body.price,
                 description: req.body.description,
-                passengers: req.body.passengers ? 
-                    (typeof req.body.passengers === 'string' ? parseInt(req.body.passengers) : req.body.passengers) 
+                passengers: req.body.passengers ?
+                    (typeof req.body.passengers === 'string' ? parseInt(req.body.passengers) : req.body.passengers)
                     : undefined,
                 images: []
             }
 
             const result = validateCar(carData)
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid car data', errors: result.error.flatten() })
+                badRequest(res, 'Invalid car data', result.error.flatten())
                 return
             }
 
-            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, {
                     entityType: 'cars'
                 });
 
                 if (!uploadResult.success) {
-                    res.status(400).json({ 
-                        error: 'Error uploading images', 
-                        details: uploadResult.errors 
-                    });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
 
@@ -125,65 +117,59 @@ class CarController {
             }
 
             const newCar = await CarModel.createCar(carData as unknown as Cars)
-            res.status(201).json(newCar)
+            created(res, newCar)
         } catch (error: any) {
             console.error('Error in createCar:', error)
-            res.status(500).json({ message: 'Error creating car', error: error.message })
+            serverError(res, error.message || 'Error creating car')
         }
     }
 
     static async updateCar(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
-            
+
             const carData: UpdateCarsDTO = {
                 brand: req.body.brand,
                 model: req.body.model,
                 description: req.body.description
             }
 
-            // Manejar price
             if (req.body.price !== undefined) {
                 const parsedPrice = typeof req.body.price === 'string' ? parseFloat(req.body.price) : req.body.price;
                 if (!isNaN(parsedPrice) && parsedPrice > 0) {
                     carData.price = parsedPrice;
                 } else {
-                    res.status(400).json({ message: 'Invalid price value' });
+                    badRequest(res, 'Invalid price value');
                     return
                 }
             }
 
-            // Manejar passengers
             if (req.body.passengers !== undefined) {
                 const parsedPassengers = typeof req.body.passengers === 'string' ? parseInt(req.body.passengers) : req.body.passengers;
                 if (!isNaN(parsedPassengers) && parsedPassengers > 0) {
                     carData.passengers = parsedPassengers;
                 } else if (req.body.passengers === null || req.body.passengers === '') {
-                    carData.passengers = undefined; // Para limpiar el campo
+                    carData.passengers = undefined;
                 } else {
-                    res.status(400).json({ message: 'Invalid passengers value. Must be a positive integer.' });
+                    badRequest(res, 'Invalid passengers value. Must be a positive integer.');
                     return
                 }
             }
 
-            const result = validatePartialCar(carData) // Cambiar a carData en lugar de req.body
+            const result = validatePartialCar(carData)
 
             if (!result.success) {
-                res.status(400).json({ message: 'Error updating car', error: result.error.flatten() })
+                badRequest(res, 'Error updating car', result.error.flatten())
                 return
             }
 
-            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, {
                     entityType: 'cars'
                 });
 
                 if (!uploadResult.success) {
-                    res.status(400).json({ 
-                        error: 'Error uploading images', 
-                        details: uploadResult.errors 
-                    });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
 
@@ -191,15 +177,15 @@ class CarController {
             }
 
             const updatedCar = await CarModel.updateCar(parseInt(id), carData);
-            
+
             if (updatedCar) {
-                res.json(updatedCar);
+                ok(res, updatedCar);
             } else {
-                res.status(404).json({ message: 'Car not found' });
+                notFound(res, 'Car not found');
             }
         } catch (error) {
             console.error('Error in updateCar:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            serverError(res, 'Internal server error');
         }
     }
 
@@ -209,31 +195,24 @@ class CarController {
             const car = await CarModel.getCarById(Number(id))
 
             if (!car) {
-                res.status(404).json({ message: 'Car not found' })
+                notFound(res, 'Car not found')
                 return
             }
 
-            // Eliminar imágenes usando el servicio centralizado
             if (car.images && Array.isArray(car.images)) {
                 const deleteResult = await ImageService.deleteImages(car.images, 'cars');
-                
+
                 if (!deleteResult.success && deleteResult.errors.length > 0) {
                     console.warn('Algunas imágenes no pudieron ser eliminadas:', deleteResult.errors);
-                    // Continuamos con la eliminación del coche aunque algunas imágenes fallen
                 }
             }
 
-            const result = await CarModel.deleteCar(Number(id))
+            await CarModel.deleteCar(Number(id))
 
-            // Verificamos la estructura de la respuesta
-            if (result && typeof result === 'object' && 'message' in result) {
-                res.status(200).json({ message: 'Car and associated images deleted successfully' })
-            } else {
-                res.status(500).json({ message: 'Error deleting car from database' })
-            }
+            ok(res, { message: 'Car and associated images deleted successfully' })
         } catch (error: any) {
             console.error('Error in deleteCar:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while deleting the car' })
+            serverError(res, error.message || 'An error occurred while deleting the car')
         }
     }
 }

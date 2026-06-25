@@ -40,16 +40,17 @@ describe('ReviewController', () => {
 
     beforeEach(() => {
         responseJson = vi.fn().mockReturnThis();
-        responseStatus = vi.fn().mockReturnValue({ json: responseJson });
-        
+        responseStatus = vi.fn().mockReturnThis();
+
         mockRequest = {
             params: {},
             body: {}
         };
-        
+
         mockResponse = {
             status: responseStatus,
-            json: responseJson
+            json: responseJson,
+            send: vi.fn()
         };
         
         vi.clearAllMocks();

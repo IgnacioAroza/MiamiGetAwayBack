@@ -3,20 +3,27 @@ import ExperienceModel from '../models/experience.js';
 import { validateExperience, validatePartialExperience, validateInquiry, validateInquiryStatus } from '../schemas/experienceSchema.js';
 import ImageService from '../services/imageService.js';
 import EmailService from '../services/emailService.js';
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export default class ExperienceController {
     static async getAll(req: Request, res: Response): Promise<void> {
         try {
-            const experiences = await ExperienceModel.getAll();
-            const result = experiences.map(exp => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ExperienceModel.getAll(pagination ?? undefined);
+            const result = rows.map(exp => {
                 if (exp.images && Array.isArray(exp.images)) {
                     return { ...exp, images: ImageService.optimizeForContext(exp.images, 'list').images };
                 }
                 return exp;
             });
-            res.status(200).json(result);
+            if (pagination) {
+                ok(res, paginatedResponse(result, total, pagination));
+            } else {
+                ok(res, result);
+            }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching experiences' });
+            serverError(res, 'Error fetching experiences');
         }
     }
 
@@ -24,17 +31,17 @@ export default class ExperienceController {
         try {
             const experience = await ExperienceModel.getById(Number(req.params.id));
             if (!experience) {
-                res.status(404).json({ message: 'Experience not found' });
+                notFound(res, 'Experience not found');
                 return;
             }
             if (experience.images && Array.isArray(experience.images)) {
                 const optimized = ImageService.optimizeForContext(experience.images, 'detail');
-                res.status(200).json({ ...experience, images: optimized.images, responsiveImages: optimized.responsiveImages });
+                ok(res, { ...experience, images: optimized.images, responsiveImages: optimized.responsiveImages });
             } else {
-                res.status(200).json(experience);
+                ok(res, experience);
             }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching experience' });
+            serverError(res, 'Error fetching experience');
         }
     }
 
@@ -50,24 +57,24 @@ export default class ExperienceController {
 
             const result = validateExperience(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid experience data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid experience data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'experiences' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls as never[];
             }
 
             const experience = await ExperienceModel.create(data);
-            res.status(201).json(experience);
+            created(res, experience);
         } catch (error: any) {
             console.error('Error in createExperience:', error);
-            res.status(500).json({ error: 'Error creating experience' });
+            serverError(res, 'Error creating experience');
         }
     }
 
@@ -83,27 +90,27 @@ export default class ExperienceController {
 
             const result = validatePartialExperience(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid experience data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid experience data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'experiences' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls;
             }
 
             const experience = await ExperienceModel.update(id, data);
-            res.status(200).json(experience);
+            ok(res, experience);
         } catch (error: any) {
             if (error.message === 'Experience not found') {
-                res.status(404).json({ message: 'Experience not found' });
+                notFound(res, 'Experience not found');
             } else {
                 console.error('Error in updateExperience:', error);
-                res.status(500).json({ error: 'Error updating experience' });
+                serverError(res, 'Error updating experience');
             }
         }
     }
@@ -113,7 +120,7 @@ export default class ExperienceController {
             const id = Number(req.params.id);
             const experience = await ExperienceModel.getById(id);
             if (!experience) {
-                res.status(404).json({ message: 'Experience not found' });
+                notFound(res, 'Experience not found');
                 return;
             }
 
@@ -125,10 +132,10 @@ export default class ExperienceController {
             }
 
             await ExperienceModel.delete(id);
-            res.status(200).json({ message: 'Experience and associated images deleted successfully' });
+            ok(res, { message: 'Experience and associated images deleted successfully' });
         } catch (error: any) {
             console.error('Error in deleteExperience:', error);
-            res.status(500).json({ error: 'Error deleting experience' });
+            serverError(res, 'Error deleting experience');
         }
     }
 
@@ -145,12 +152,12 @@ export default class ExperienceController {
 
             const result = validateInquiry(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid inquiry data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid inquiry data', result.error.flatten());
                 return;
             }
 
             const inquiry = await ExperienceModel.createInquiry(result.data);
-            res.status(201).json(inquiry);
+            created(res, inquiry);
 
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
@@ -160,16 +167,21 @@ export default class ExperienceController {
             }
         } catch (error: any) {
             console.error('Error in createInquiry:', error);
-            res.status(500).json({ error: 'Error creating inquiry' });
+            serverError(res, 'Error creating inquiry');
         }
     }
 
     static async getAllInquiries(req: Request, res: Response): Promise<void> {
         try {
-            const inquiries = await ExperienceModel.getAllInquiries();
-            res.status(200).json(inquiries);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await ExperienceModel.getAllInquiries(pagination ?? undefined);
+            if (pagination) {
+                ok(res, paginatedResponse(rows, total, pagination));
+            } else {
+                ok(res, rows);
+            }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching inquiries' });
+            serverError(res, 'Error fetching inquiries');
         }
     }
 
@@ -178,18 +190,18 @@ export default class ExperienceController {
             const id = Number(req.params.id);
             const result = validateInquiryStatus(req.body);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid status', errors: result.error.flatten() });
+                badRequest(res, 'Invalid status', result.error.flatten());
                 return;
             }
 
             const inquiry = await ExperienceModel.updateInquiryStatus(id, result.data.status);
-            res.status(200).json(inquiry);
+            ok(res, inquiry);
         } catch (error: any) {
             if (error.message === 'Inquiry not found') {
-                res.status(404).json({ message: 'Inquiry not found' });
+                notFound(res, 'Inquiry not found');
             } else {
                 console.error('Error in updateInquiryStatus:', error);
-                res.status(500).json({ error: 'Error updating inquiry status' });
+                serverError(res, 'Error updating inquiry status');
             }
         }
     }

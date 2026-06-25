@@ -8,6 +8,7 @@ import {
     validateSupplierPayment,
     validatePartialSupplierPayment
 } from '../schemas/suppliersSchema.js';
+import { ok, created, badRequest, notFound, serverError, sendError } from '../utils/response.js';
 
 // ---- Suppliers CRUD ----
 
@@ -17,23 +18,23 @@ export class SupplierController {
             const pagination = parsePagination(req.query);
             const { rows, total } = await SupplierService.getAllSuppliers(pagination ?? undefined);
             if (pagination) {
-                res.status(200).json(paginatedResponse(rows, total, pagination));
+                ok(res, paginatedResponse(rows, total, pagination));
             } else {
-                res.status(200).json(rows);
+                ok(res, rows);
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            serverError(res, error.message);
         }
     }
 
     static async getById(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            if (isNaN(id)) { res.status(400).json({ error: 'Invalid supplier ID' }); return; }
+            if (isNaN(id)) { badRequest(res, 'Invalid supplier ID'); return; }
             const supplier = await SupplierService.getSupplierById(id);
-            res.status(200).json(supplier);
+            ok(res, supplier);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
@@ -41,40 +42,40 @@ export class SupplierController {
         try {
             const result = validateSupplier(req.body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const supplier = await SupplierService.createSupplier(result.data);
-            res.status(201).json(supplier);
+            created(res, supplier);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            serverError(res, error.message);
         }
     }
 
     static async update(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            if (isNaN(id)) { res.status(400).json({ error: 'Invalid supplier ID' }); return; }
+            if (isNaN(id)) { badRequest(res, 'Invalid supplier ID'); return; }
             const result = validatePartialSupplier(req.body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const supplier = await SupplierService.updateSupplier(id, result.data);
-            res.status(200).json(supplier);
+            ok(res, supplier);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async remove(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            if (isNaN(id)) { res.status(400).json({ error: 'Invalid supplier ID' }); return; }
+            if (isNaN(id)) { badRequest(res, 'Invalid supplier ID'); return; }
             await SupplierService.deleteSupplier(id);
-            res.status(200).json({ message: 'Supplier deleted successfully' });
+            ok(res, { message: 'Supplier deleted successfully' });
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 }
@@ -85,87 +86,87 @@ export class ReservationSupplierController {
     static async get(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const data = await SupplierService.getReservationSupplier(reservationId);
-            res.status(200).json(data ?? null);
+            ok(res, data ?? null);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async assign(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const result = validateAssignSupplier(req.body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const data = await SupplierService.assignSupplier(reservationId, result.data);
-            res.status(201).json(data);
+            created(res, data);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async update(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const data = await SupplierService.updateReservationSupplier(reservationId, req.body);
-            res.status(200).json(data);
+            ok(res, data);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async unassign(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             await SupplierService.unassignSupplier(reservationId);
-            res.status(200).json({ message: 'Supplier unassigned successfully' });
+            ok(res, { message: 'Supplier unassigned successfully' });
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async setStatus(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const { status } = req.body;
             if (!['unassigned', 'searching', 'confirmed'].includes(status)) {
-                res.status(400).json({ error: 'status must be unassigned | searching | confirmed' });
+                badRequest(res, 'status must be unassigned | searching | confirmed');
                 return;
             }
             await SupplierService.setSupplierStatus(reservationId, status);
-            res.status(200).json({ message: 'Supplier status updated' });
+            ok(res, { message: 'Supplier status updated' });
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async getPayments(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const row = await SupplierService.getReservationSupplierRow(reservationId);
-            if (!row) { res.status(200).json([]); return; }
+            if (!row) { ok(res, []); return; }
             const payments = await SupplierService.getPaymentsByReservationSupplier(row.id);
-            res.status(200).json(payments);
+            ok(res, payments);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async createPayment(req: Request, res: Response): Promise<void> {
         try {
             const reservationId = parseInt(req.params.id);
-            if (isNaN(reservationId)) { res.status(400).json({ error: 'Invalid reservation ID' }); return; }
+            if (isNaN(reservationId)) { badRequest(res, 'Invalid reservation ID'); return; }
             const row = await SupplierService.getReservationSupplierRow(reservationId);
-            if (!row) { res.status(404).json({ error: 'No supplier assigned to this reservation' }); return; }
+            if (!row) { notFound(res, 'No supplier assigned to this reservation'); return; }
 
             const body = {
                 ...req.body,
@@ -174,14 +175,14 @@ export class ReservationSupplierController {
             };
             const result = validateSupplierPayment(body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const files = req.files as Express.Multer.File[] | undefined;
             const payment = await SupplierService.createSupplierPayment(result.data, files);
-            res.status(201).json(payment);
+            created(res, payment);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 }
@@ -235,11 +236,11 @@ export class SupplierPaymentController {
     static async getByReservationSupplier(req: Request, res: Response): Promise<void> {
         try {
             const reservationSupplierId = parseInt(req.params.reservationSupplierId);
-            if (isNaN(reservationSupplierId)) { res.status(400).json({ error: 'Invalid ID' }); return; }
+            if (isNaN(reservationSupplierId)) { badRequest(res, 'Invalid ID'); return; }
             const payments = await SupplierService.getPaymentsByReservationSupplier(reservationSupplierId);
-            res.status(200).json(payments);
+            ok(res, payments);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            serverError(res, error.message);
         }
     }
 
@@ -252,44 +253,44 @@ export class SupplierPaymentController {
             };
             const result = validateSupplierPayment(body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const files = req.files as Express.Multer.File[] | undefined;
             const payment = await SupplierService.createSupplierPayment(result.data, files);
-            res.status(201).json(payment);
+            created(res, payment);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async update(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            if (isNaN(id)) { res.status(400).json({ error: 'Invalid payment ID' }); return; }
+            if (isNaN(id)) { badRequest(res, 'Invalid payment ID'); return; }
             const body = { ...req.body };
             if (body.amount !== undefined) body.amount = Number(body.amount);
             const result = validatePartialSupplierPayment(body);
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) });
+                badRequest(res, JSON.parse(result.error.message));
                 return;
             }
             const files = req.files as Express.Multer.File[] | undefined;
             const payment = await SupplierService.updateSupplierPayment(id, result.data, files);
-            res.status(200).json(payment);
+            ok(res, payment);
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 
     static async remove(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            if (isNaN(id)) { res.status(400).json({ error: 'Invalid payment ID' }); return; }
+            if (isNaN(id)) { badRequest(res, 'Invalid payment ID'); return; }
             await SupplierService.deleteSupplierPayment(id);
-            res.status(200).json({ message: 'Supplier payment deleted successfully' });
+            ok(res, { message: 'Supplier payment deleted successfully' });
         } catch (error: any) {
-            res.status(error.status ?? 500).json({ error: error.message });
+            sendError(res, error.status ?? 500, error.message);
         }
     }
 }

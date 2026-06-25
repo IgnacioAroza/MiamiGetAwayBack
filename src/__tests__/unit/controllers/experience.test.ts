@@ -62,6 +62,7 @@ const mockRes = (): Response => {
   const res: Partial<Response> = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.send = vi.fn().mockReturnValue(res);
   return res as Response;
 };
 
@@ -75,7 +76,7 @@ describe('ExperienceController', () => {
 
   describe('getAll', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce([mockExperience] as any);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: [mockExperience], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await ExperienceController.getAll(req, res);
@@ -107,7 +108,7 @@ describe('ExperienceController', () => {
       const res = mockRes();
       await ExperienceController.getById(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Experience not found' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Experience not found' });
     });
   });
 
@@ -202,7 +203,7 @@ describe('ExperienceController', () => {
 
   describe('getAllInquiries', () => {
     it('devuelve 200 con la lista', async () => {
-      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce([mockInquiry] as any);
+      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce({ rows: [mockInquiry], total: 1 } as any);
       const req = mockReq();
       const res = mockRes();
       await ExperienceController.getAllInquiries(req, res);

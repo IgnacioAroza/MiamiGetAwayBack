@@ -90,7 +90,7 @@ describe('UserController', () => {
             expect(UserModel.getAll).not.toHaveBeenCalled();
             expect(mockResponse.status).toHaveBeenCalledWith(400);
             expect(responseObject.statusCode).toBe(400);
-            expect(responseObject.body).toHaveProperty('message', 'Invalid filters');
+            expect(responseObject.body).toHaveProperty('error', 'Invalid filters');
         });
 
         it('debería manejar errores y devolver status 500', async () => {

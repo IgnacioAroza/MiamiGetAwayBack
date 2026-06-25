@@ -2,14 +2,15 @@ import { Request, Response } from 'express'
 import AdminModel from '../models/admin.js'
 import { validateAdmin, validatePartialAdmin } from '../schemas/adminSchema.js'
 import { Admin, CreateAdminDTO, UpdateAdminDTO } from '../types/index.js'
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class AdminController {
     static async getAllAdmins(req: Request, res: Response): Promise<void> {
         try {
             const admins = await AdminModel.getAll()
-            res.status(200).json(admins)
+            ok(res, admins)
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 
@@ -18,12 +19,12 @@ class AdminController {
             const { id } = req.params
             const admin = await AdminModel.getAdminById(Number(id))
             if (admin) {
-                res.status(200).json(admin)
+                ok(res, admin)
             } else {
-                res.status(404).json({ message: 'Admin not found' })
+                notFound(res, 'Admin not found')
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 
@@ -32,16 +33,16 @@ class AdminController {
             const result = validateAdmin(req.body)
 
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
+                badRequest(res, JSON.parse(result.error.message))
                 return
             }
-            
+
             const adminData = req.body as CreateAdminDTO
             const newAdmin = await AdminModel.createAdmin(adminData as unknown as Admin)
-            res.status(201).json(newAdmin)
+            created(res, newAdmin)
         } catch (error: any) {
             console.error('Error in createAdmin:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while creating the admin' })
+            serverError(res, error.message || 'An error occurred while creating the admin')
         }
     }
 
@@ -50,17 +51,17 @@ class AdminController {
             const result = validatePartialAdmin(req.body)
 
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
+                badRequest(res, JSON.parse(result.error.message))
                 return
             }
-            
+
             const { id } = req.params
             const inputData = result.data as UpdateAdminDTO
             const updatedAdmin = await AdminModel.updateAdmin(Number(id), inputData)
-            res.status(200).json(updatedAdmin)
+            ok(res, updatedAdmin)
         } catch (error: any) {
             console.error('Error in updateAdmin:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while updating the admin' })
+            serverError(res, error.message || 'An error occurred while updating the admin')
         }
     }
 
@@ -68,14 +69,14 @@ class AdminController {
         try {
             const { id } = req.params
             const result = await AdminModel.deleteAdmin(Number(id))
-            
+
             if (result && typeof result === 'object' && 'success' in result && result.success) {
-                res.status(200).json({ message: result.message })
+                ok(res, { message: result.message })
             } else {
-                res.status(404).json({ message: result && typeof result === 'object' ? result.message : 'Admin not found' })
+                notFound(res, result && typeof result === 'object' ? result.message : 'Admin not found')
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 }

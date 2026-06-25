@@ -46,17 +46,23 @@ describe('TransferModel', () => {
 
   describe('getAllVehicles', () => {
     it('devuelve todos los vehículos', async () => {
-      vi.mocked(db.query).mockResolvedValueOnce({ rows: [mockVehicle], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows: [mockVehicle], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await TransferModel.getAllVehicles();
       expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM transfer_vehicles'));
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe('Mercedes Benz S Class');
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].name).toBe('Mercedes Benz S Class');
+      expect(result.total).toBe(1);
     });
 
     it('devuelve array vacío si no hay registros', async () => {
-      vi.mocked(db.query).mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await TransferModel.getAllVehicles();
-      expect(result).toEqual([]);
+      expect(result.rows).toEqual([]);
+      expect(result.total).toBe(0);
     });
   });
 
@@ -144,10 +150,13 @@ describe('TransferModel', () => {
   describe('getAllInquiries', () => {
     it('devuelve todos los inquiries con JOIN a transfer_vehicles', async () => {
       const rows = [{ ...mockInquiry, vehicle_name: 'Mercedes Benz S Class' }];
-      vi.mocked(db.query).mockResolvedValueOnce({ rows, rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows, rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await TransferModel.getAllInquiries();
       expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN transfer_vehicles'));
-      expect(result[0]).toHaveProperty('vehicle_name', 'Mercedes Benz S Class');
+      expect(result.rows[0]).toHaveProperty('vehicle_name', 'Mercedes Benz S Class');
+      expect(result.total).toBe(1);
     });
   });
 

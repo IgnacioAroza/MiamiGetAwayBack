@@ -141,7 +141,7 @@ describe('Rutas de Apartamentos', () => {
         .expect(404);
 
       // Verificar la respuesta
-      expect(response.body).toHaveProperty('message', 'Apartment not found');
+      expect(response.body).toHaveProperty('error', 'Apartment not found');
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(999);
     });
   });
@@ -268,7 +268,7 @@ describe('Rutas de Apartamentos', () => {
         .send({ price: 'not-a-number' });
 
       expect(response1.status).toBe(400);
-      expect(response1.body).toHaveProperty('message', 'Invalid price value');
+      expect(response1.body).toHaveProperty('error', 'Invalid price value');
       
       // Test 2: Capacidad inválida - necesitamos un nuevo request para evitar errores de cabecera
       const response2 = await request(app)
@@ -276,7 +276,7 @@ describe('Rutas de Apartamentos', () => {
         .send({ capacity: 'not-a-number' });
 
       expect(response2.status).toBe(400);
-      expect(response2.body).toHaveProperty('message', 'Valor inválido para capacity');
+      expect(response2.body).toHaveProperty('error', 'Valor inválido para capacity');
       
       // Test 3: Baños inválidos
       const response3 = await request(app)
@@ -284,7 +284,7 @@ describe('Rutas de Apartamentos', () => {
         .send({ bathrooms: 'not-a-number' });
 
       expect(response3.status).toBe(400);
-      expect(response3.body).toHaveProperty('message', 'Valor inválido para bathrooms');
+      expect(response3.body).toHaveProperty('error', 'Valor inválido para bathrooms');
       
       // Test 4: Habitaciones inválidas
       const response4 = await request(app)
@@ -292,7 +292,7 @@ describe('Rutas de Apartamentos', () => {
         .send({ rooms: 'not-a-number' });
 
       expect(response4.status).toBe(400);
-      expect(response4.body).toHaveProperty('message', 'Valor inválido para rooms');
+      expect(response4.body).toHaveProperty('error', 'Valor inválido para rooms');
     });
   });
   
@@ -321,7 +321,6 @@ describe('Rutas de Apartamentos', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      // Verificar la respuesta
       expect(response.body).toHaveProperty('message', 'Apartment and associated images deleted successfully');
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(1);
       expect(ApartmentModel.deleteApartment).toHaveBeenCalledWith(1);
@@ -338,7 +337,7 @@ describe('Rutas de Apartamentos', () => {
         .expect(404);
 
       // Verificar la respuesta
-      expect(response.body).toHaveProperty('message', 'Apartment not found');
+      expect(response.body).toHaveProperty('error', 'Apartment not found');
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(999);
       expect(ApartmentModel.deleteApartment).not.toHaveBeenCalled();
     });

@@ -57,7 +57,7 @@ const corsOptions = {
 
 const globalRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 200,
+    limit: 500,
     message: { error: 'Too many requests, please try again later' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -65,7 +65,7 @@ const globalRateLimit = rateLimit({
 
 const uploadRateLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 30,
+    limit: 100,
     message: { error: 'Too many upload requests, please try again later' },
     standardHeaders: true,
     legacyHeaders: false,

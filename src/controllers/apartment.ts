@@ -4,6 +4,7 @@ import { validateApartment, validatePartialApartment, validateApartmentFilters }
 import ImageService from '../services/imageService.js'
 import { Apartment, CreateApartmentDTO, UpdateApartmentDTO } from '../types/index.js'
 import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class ApartmentController {
     static async getAllApartments(req: Request, res: Response): Promise<void> {
@@ -30,10 +31,7 @@ class ApartmentController {
             if (Object.keys(filters).length > 0) {
                 const validationResult = validateApartmentFilters(filters);
                 if (!validationResult.success) {
-                    res.status(400).json({ 
-                        message: 'Invalid filters', 
-                        error: validationResult.error.flatten() 
-                    });
+                    badRequest(res, 'Invalid filters', validationResult.error.flatten());
                     return;
                 }
             }
@@ -47,12 +45,12 @@ class ApartmentController {
                 return apartment;
             });
             if (pagination) {
-                res.status(200).json(paginatedResponse(optimizedApartments, total, pagination));
+                ok(res, paginatedResponse(optimizedApartments, total, pagination));
             } else {
-                res.status(200).json(optimizedApartments);
+                ok(res, optimizedApartments);
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 
@@ -61,23 +59,21 @@ class ApartmentController {
             const { id } = req.params
             const apartment = await ApartmentModel.getApartmentById(Number(id))
             if (apartment) {
-                // Optimizar imágenes para vista detalle (contexto 'detail')
                 if (apartment.images && Array.isArray(apartment.images)) {
                     const optimizedImages = ImageService.optimizeForContext(apartment.images, 'detail');
-                    const apartmentWithOptimizedImages = {
+                    ok(res, {
                         ...apartment,
-                        images: optimizedImages.images, // URLs principales optimizadas
-                        responsiveImages: optimizedImages.responsiveImages // Todas las variantes de tamaño
-                    };
-                    res.status(200).json(apartmentWithOptimizedImages);
+                        images: optimizedImages.images,
+                        responsiveImages: optimizedImages.responsiveImages
+                    });
                 } else {
-                    res.status(200).json(apartment);
+                    ok(res, apartment);
                 }
             } else {
-                res.status(404).json({ message: 'Apartment not found' })
+                notFound(res, 'Apartment not found')
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 
@@ -98,21 +94,17 @@ class ApartmentController {
             const result = validateApartment(apartmentData)
 
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
+                badRequest(res, JSON.parse(result.error.message))
                 return
             }
 
-            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, {
                     entityType: 'apartments'
                 });
 
                 if (!uploadResult.success) {
-                    res.status(400).json({ 
-                        error: 'Error uploading images', 
-                        details: uploadResult.errors 
-                    });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
 
@@ -120,10 +112,10 @@ class ApartmentController {
             }
 
             const newApartment = await ApartmentModel.createApartment(apartmentData as unknown as Apartment)
-            res.status(201).json(newApartment)
+            created(res, newApartment)
         } catch (error: any) {
             console.error('Error in createApartment:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while creating the apartment' })
+            serverError(res, error.message || 'An error occurred while creating the apartment')
         }
     }
 
@@ -133,27 +125,25 @@ class ApartmentController {
             const apartmentData: UpdateApartmentDTO = {}
 
             const updatableFields = ['name', 'unitNumber', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
-            
-            // Validar campos numéricos primero, antes de procesar cualquier dato
+
             for (const field of updatableFields) {
                 if (req.body[field] !== undefined) {
                     if (['capacity', 'bathrooms', 'rooms'].includes(field)) {
                         const parsedValue = parseInt(req.body[field]);
                         if (isNaN(parsedValue)) {
-                            res.status(400).json({ message: `Valor inválido para ${field}` });
+                            badRequest(res, `Valor inválido para ${field}`);
                             return;
                         }
                     } else if (field === 'price') {
                         const parsedPrice = parseFloat(req.body[field]);
                         if (isNaN(parsedPrice)) {
-                            res.status(400).json({ message: 'Invalid price value' });
+                            badRequest(res, 'Invalid price value');
                             return;
                         }
                     }
                 }
             }
-            
-            // Una vez validados, añadir los campos al objeto de datos
+
             for (const field of updatableFields) {
                 if (req.body[field] !== undefined) {
                     if (['capacity', 'bathrooms', 'rooms'].includes(field)) {
@@ -165,25 +155,21 @@ class ApartmentController {
                     }
                 }
             }
-            
+
             const result = validatePartialApartment(apartmentData)
 
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
+                badRequest(res, JSON.parse(result.error.message))
                 return
             }
 
-            // Procesar imágenes usando el servicio centralizado
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, {
                     entityType: 'apartments'
                 });
 
                 if (!uploadResult.success) {
-                    res.status(400).json({ 
-                        error: 'Error uploading images', 
-                        details: uploadResult.errors 
-                    });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
 
@@ -191,10 +177,10 @@ class ApartmentController {
             }
 
             const updatedApartment = await ApartmentModel.updateApartment(Number(id), apartmentData)
-            res.status(200).json(updatedApartment)
+            ok(res, updatedApartment)
         } catch (error: any) {
             console.error('Error in updateApartment:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while updating the apartment' })
+            serverError(res, error.message || 'An error occurred while updating the apartment')
         }
     }
 
@@ -204,31 +190,24 @@ class ApartmentController {
             const apartment = await ApartmentModel.getApartmentById(Number(id))
 
             if (!apartment) {
-                res.status(404).json({ message: 'Apartment not found' })
+                notFound(res, 'Apartment not found')
                 return
             }
 
-            // Eliminar imágenes usando el servicio centralizado
             if (apartment.images && Array.isArray(apartment.images)) {
                 const deleteResult = await ImageService.deleteImages(apartment.images, 'apartments');
-                
+
                 if (!deleteResult.success && deleteResult.errors.length > 0) {
                     console.warn('Algunas imágenes no pudieron ser eliminadas:', deleteResult.errors);
-                    // Continuamos con la eliminación del apartamento aunque algunas imágenes fallen
                 }
             }
 
-            const result = await ApartmentModel.deleteApartment(Number(id))
+            await ApartmentModel.deleteApartment(Number(id))
 
-            // Verificamos la estructura de la respuesta
-            if (result && typeof result === 'object' && 'message' in result) {
-                res.status(200).json({ message: 'Apartment and associated images deleted successfully' })
-            } else {
-                res.status(500).json({ message: 'Error deleting apartment from database' })
-            }
+            ok(res, { message: 'Apartment and associated images deleted successfully' })
         } catch (error: any) {
             console.error('Error in deleteApartment:', error)
-            res.status(500).json({ error: error.message || 'An error occurred while deleting the apartment' })
+            serverError(res, error.message || 'An error occurred while deleting the apartment')
         }
     }
 }

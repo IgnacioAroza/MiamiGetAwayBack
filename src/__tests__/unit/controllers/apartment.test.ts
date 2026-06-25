@@ -152,7 +152,7 @@ describe('ApartmentController', () => {
       // Verificaciones
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(999);
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Apartment not found' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Apartment not found' });
     });
 
     it('debería manejar errores y devolver status 500', async () => {
@@ -332,7 +332,7 @@ describe('ApartmentController', () => {
 
       // Verificaciones
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid price value' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Invalid price value' });
     });
 
     it('debería manejar valores numéricos inválidos y devolver status 400', async () => {
@@ -347,7 +347,7 @@ describe('ApartmentController', () => {
 
       // Verificaciones
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Valor inválido para capacity' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Valor inválido para capacity' });
     });
   });
 
@@ -394,7 +394,7 @@ describe('ApartmentController', () => {
       expect(ApartmentModel.getApartmentById).toHaveBeenCalledWith(999);
       expect(ApartmentModel.deleteApartment).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Apartment not found' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Apartment not found' });
     });
 
     it('debería manejar errores al eliminar imágenes de Cloudinary', async () => {

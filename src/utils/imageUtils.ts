@@ -60,7 +60,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     reservation_payments: {
         folder: 'reservation_payments',
-        maxFiles: 1,
+        maxFiles: 5,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -219,6 +219,22 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * Normaliza el array de imágenes desde la DB, soportando:
+ * - Array de strings: ['url1', 'url2']
+ * - Array de objetos: [{url: 'url1'}, {url: 'url2'}]
+ */
+export function normalizeImageArray(imageData: any): string[] {
+    if (!Array.isArray(imageData)) return [];
+    return imageData
+        .map((item: any) => {
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object' && item !== null && typeof item.url === 'string') return item.url;
+            return null;
+        })
+        .filter((url: string | null): url is string => url !== null && url.trim() !== '');
 }
 
 /**

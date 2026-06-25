@@ -63,31 +63,6 @@ export default class ReservationService {
         return updatedReservation;
     }
     
-    // Actualizar campos de pago
-    static async updatePaymentFields(id: number, amountPaid: number, amountDue: number, paymentStatus: 'pending' | 'partial' | 'completed'): Promise<Reservation> {
-        // Verificar que la reserva existe
-        const reservation = await ReservationModel.getReservationById(id);
-        if (!reservation) {
-            const error: any = new Error('Reservation not found');
-            error.status = 404;
-            throw error;
-        }
-
-        try {
-            // Actualizar solo los campos relacionados con el pago
-            const updatedReservation = await ReservationModel.updateReservation(id, {
-                amount_paid: amountPaid,
-                amount_due: amountDue,
-                payment_status: paymentStatus
-            } as any);
-            
-            return updatedReservation;
-        } catch (error) {
-            console.error('Error updating payment fields:', error);
-            throw error;
-        }
-    }
-    
     // Generar PDF solo para descarga (sin enviar por email)
     static async generatePdfForDownload(id: number): Promise<Buffer> {
         try {

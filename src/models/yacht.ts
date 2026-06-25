@@ -2,42 +2,16 @@ import db from '../utils/db_render.js';
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js';
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js';
 import { PaginationParams } from '../utils/pagination.js';
+import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class YachtModel {
-    /**
-     * Normaliza el array de imágenes, soportando múltiples formatos:
-     * - Array de strings: ['url1', 'url2']
-     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
-     * - Mix de ambos
-     */
-    private static normalizeImageArray(imageData: any): string[] {
-        if (!Array.isArray(imageData)) {
-            return [];
-        }
-
-        return imageData
-            .map((item: any) => {
-                // Si es un string, devolverlo directamente
-                if (typeof item === 'string') {
-                    return item;
-                }
-                // Si es un objeto con propiedad 'url', extraer la URL
-                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
-                    return item.url;
-                }
-                // Si no es ninguno de los formatos esperados, ignorar
-                return null;
-            })
-            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
-    }
-
     private static processYachtImages(rows: any[]): Yacht[] {
         return rows.map(yacht => {
             if (typeof yacht.images === 'string') {
-                try { yacht.images = this.normalizeImageArray(JSON.parse(yacht.images)); }
+                try { yacht.images = normalizeImageArray(JSON.parse(yacht.images)); }
                 catch { yacht.images = []; }
             } else if (Array.isArray(yacht.images)) {
-                yacht.images = this.normalizeImageArray(yacht.images);
+                yacht.images = normalizeImageArray(yacht.images);
             } else {
                 yacht.images = [];
             }
@@ -70,13 +44,13 @@ export default class YachtModel {
             const yacht = rows[0];
             if (typeof yacht.images === 'string') {
                 try {
-                    yacht.images = this.normalizeImageArray(JSON.parse(yacht.images));
+                    yacht.images = normalizeImageArray(JSON.parse(yacht.images));
                 } catch (error) {
                     console.error('Error parsing yacht images:', error);
                     yacht.images = [];
                 }
             } else if (Array.isArray(yacht.images)) {
-                yacht.images = this.normalizeImageArray(yacht.images);
+                yacht.images = normalizeImageArray(yacht.images);
             } else {
                 yacht.images = [];
             }
@@ -206,13 +180,13 @@ export default class YachtModel {
             // Normalizar imágenes
             if (typeof updatedYacht.images === 'string') {
                 try {
-                    updatedYacht.images = this.normalizeImageArray(JSON.parse(updatedYacht.images));
+                    updatedYacht.images = normalizeImageArray(JSON.parse(updatedYacht.images));
                 } catch (error) {
                     console.error('Error parsing yacht images:', error);
                     updatedYacht.images = [];
                 }
             } else if (Array.isArray(updatedYacht.images)) {
-                updatedYacht.images = this.normalizeImageArray(updatedYacht.images);
+                updatedYacht.images = normalizeImageArray(updatedYacht.images);
             } else {
                 updatedYacht.images = [];
             }

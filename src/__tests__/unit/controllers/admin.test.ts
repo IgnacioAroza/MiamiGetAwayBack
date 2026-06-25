@@ -84,7 +84,7 @@ describe('AdminController', () => {
             await AdminController.getAdminById(req, res);
 
             expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith({ message: 'Admin not found' });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Admin not found' });
         });
 
         it('debería manejar errores y devolver status 500', async () => {

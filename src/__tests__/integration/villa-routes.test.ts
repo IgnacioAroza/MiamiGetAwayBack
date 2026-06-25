@@ -156,7 +156,7 @@ describe('Villa Integration Tests', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(404);
 
-            expect(response.body).toHaveProperty('message', 'Villa not found');
+            expect(response.body).toHaveProperty('error', 'Villa not found');
         });
     });
 
@@ -256,7 +256,7 @@ describe('Villa Integration Tests', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(404);
 
-            expect(response.body).toHaveProperty('message', 'Villa not found');
+            expect(response.body).toHaveProperty('error', 'Villa not found');
         });
     });
 }); 
