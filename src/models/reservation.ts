@@ -122,7 +122,9 @@ export class ReservationModel {
             
             const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
             query += whereClause;
-            query += ` ORDER BY mga_parse_date(r.check_in_date) DESC`;
+            query += filters.upcoming
+                ? ` ORDER BY mga_parse_date(r.check_in_date) ASC`
+                : ` ORDER BY mga_parse_date(r.check_in_date) DESC`;
 
             if (pagination) {
                 const countQuery = `SELECT COUNT(*) FROM reservations r LEFT JOIN clients c ON r.client_id = c.id LEFT JOIN apartments a ON r.apartment_id = a.id${whereClause}`;
