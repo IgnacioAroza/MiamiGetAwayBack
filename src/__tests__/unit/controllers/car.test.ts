@@ -127,7 +127,7 @@ describe('CarController', () => {
       // Verificaciones
       expect(CarModel.getCarById).toHaveBeenCalledWith(1);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ id: 1, brand: 'BMW' }));
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, brand: 'BMW' }));
     });
 
     it('debería manejar errores y devolver status 500', async () => {
@@ -141,7 +141,7 @@ describe('CarController', () => {
 
       // Verificaciones
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(errorMsg);
+      expect(res.json).toHaveBeenCalledWith({ error: errorMsg });
     });
   });
 
@@ -214,8 +214,8 @@ describe('CarController', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Invalid car data',
-          errors: expect.objectContaining({
+          error: 'Invalid car data',
+          details: expect.objectContaining({
             formErrors: expect.arrayContaining(['Price must be a number'])
           })
         })
@@ -291,10 +291,7 @@ describe('CarController', () => {
 
       // Verificaciones
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ 
-        message: 'Error creating car', 
-        error: 'Database error' 
-      });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Database error' });
     });
   });
 
@@ -342,7 +339,7 @@ describe('CarController', () => {
 
       // Verificaciones
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid price value' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Invalid price value' });
     });
 
     it('debería manejar datos inválidos y devolver status 400', async () => {
@@ -366,8 +363,8 @@ describe('CarController', () => {
       expect(validatePartialCar).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Error updating car',
-        error: { formErrors: ['Brand cannot be empty'], fieldErrors: {} }
+        error: 'Error updating car',
+        details: { formErrors: ['Brand cannot be empty'], fieldErrors: {} }
       });
     });
 
@@ -449,9 +446,7 @@ describe('CarController', () => {
       expect(CarModel.getCarById).toHaveBeenCalledWith(1);
       expect(CarModel.deleteCar).toHaveBeenCalledWith(1);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ 
-        message: 'Car and associated images deleted successfully' 
-      });
+      expect(res.json).toHaveBeenCalledWith({ message: 'Car and associated images deleted successfully' });
     });
 
     it('debería devolver 404 si el auto no existe', async () => {
@@ -466,7 +461,7 @@ describe('CarController', () => {
       expect(CarModel.getCarById).toHaveBeenCalledWith(999);
       expect(CarModel.deleteCar).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Car not found' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Car not found' });
     });
 
     it('debería manejar errores durante la eliminación y devolver status 500', async () => {

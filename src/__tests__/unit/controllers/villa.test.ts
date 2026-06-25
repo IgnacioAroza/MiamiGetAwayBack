@@ -53,10 +53,11 @@ describe('VillaController', () => {
 
     beforeEach(() => {
         responseJson = vi.fn();
-        responseStatus = vi.fn().mockReturnValue({ json: responseJson });
+        responseStatus = vi.fn().mockReturnThis();
         mockResponse = {
             status: responseStatus,
-            json: responseJson
+            json: responseJson,
+            send: vi.fn()
         };
         mockRequest = { query: {} };
         vi.clearAllMocks();
@@ -106,7 +107,7 @@ describe('VillaController', () => {
             await VillaController.getVillaById(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(404);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Villa not found' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'Villa not found' });
         });
 
         it('debería manejar errores y devolver status 500', async () => {
@@ -163,12 +164,7 @@ describe('VillaController', () => {
             await VillaController.createVilla(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ 
-                error: { 
-                    formErrors: ['Missing required fields'], 
-                    fieldErrors: {} 
-                } 
-            });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'Missing required fields' });
         });
 
         it('debería manejar errores durante la creación y devolver status 500', async () => {
@@ -247,7 +243,7 @@ describe('VillaController', () => {
             await VillaController.updateVilla(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(400);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'No valid fields to update' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'No valid fields to update' });
         });
 
         it('debería manejar errores durante la actualización y devolver status 500', async () => {
@@ -293,9 +289,7 @@ describe('VillaController', () => {
 
             expect(cloudinary.uploader.destroy).toHaveBeenCalled();
             expect(responseStatus).toHaveBeenCalledWith(200);
-            expect(responseJson).toHaveBeenCalledWith({
-                message: 'Villa deleted successfully'
-            });
+            expect(responseJson).toHaveBeenCalledWith({ message: 'Villa deleted successfully' });
         });
 
         it('debería devolver 404 cuando la villa no existe', async () => {
@@ -305,7 +299,7 @@ describe('VillaController', () => {
             await VillaController.deleteVilla(mockRequest as Request, mockResponse as Response);
 
             expect(responseStatus).toHaveBeenCalledWith(404);
-            expect(responseJson).toHaveBeenCalledWith({ message: 'Villa not found' });
+            expect(responseJson).toHaveBeenCalledWith({ error: 'Villa not found' });
         });
 
         it('debería manejar errores durante la eliminación y devolver status 500', async () => {

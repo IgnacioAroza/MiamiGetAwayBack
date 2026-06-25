@@ -43,7 +43,13 @@ interface ExperienceInquiry {
 ### GET /api/experiences
 Lista todas las experiencias. **Público.**
 
-**Response 200:**
+**Query params opcionales:**
+| Param | Tipo | Default | Notas |
+|---|---|---|---|
+| `page` | number | — | número de página (base 1) |
+| `limit` | number | — | ítems por página (máx 20) |
+
+**Response 200 (sin paginación):**
 ```json
 [
   {
@@ -56,6 +62,19 @@ Lista todas las experiencias. **Público.**
     "created_at": "2026-06-01T12:00:00.000Z"
   }
 ]
+```
+
+**Response 200 (con `?page=1&limit=10`):**
+```json
+{
+  "data": [ { ... } ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
 ```
 
 > Las imágenes vienen optimizadas para listado (tamaño reducido).
@@ -83,7 +102,7 @@ Detalle de una experiencia. **Público.**
 
 **Response 404:**
 ```json
-{ "message": "Experience not found" }
+{ "error": "Experience not found" }
 ```
 
 ---
@@ -216,6 +235,8 @@ Lista todos los inquiries. **Requiere JWT.**
 ```
 Authorization: Bearer <token>
 ```
+
+**Query params opcionales:** `?page=N&limit=N` — mismo comportamiento que `/api/experiences`.
 
 **Response 200:**
 ```json

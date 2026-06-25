@@ -1,24 +1,15 @@
 import db from '../utils/db_render.js';
 import { TransferVehicle, TransferInquiry, CreateInquiryDTO } from '../types/transfers.js';
+import { normalizeImageArray } from '../utils/imageUtils.js';
+import { PaginationParams } from '../utils/pagination.js';
 
 export default class TransferModel {
-    private static normalizeImages(imageData: any): string[] {
-        if (!Array.isArray(imageData)) return [];
-        return imageData
-            .map((item: any) => {
-                if (typeof item === 'string') return item;
-                if (typeof item === 'object' && item !== null && typeof item.url === 'string') return item.url;
-                return null;
-            })
-            .filter((url): url is string => url !== null && url.trim() !== '');
-    }
-
     private static parseImages(row: any): any {
         if (typeof row.images === 'string') {
-            try { row.images = this.normalizeImages(JSON.parse(row.images)); }
+            try { row.images = normalizeImageArray(JSON.parse(row.images)); }
             catch { row.images = []; }
         } else if (Array.isArray(row.images)) {
-            row.images = this.normalizeImages(row.images);
+            row.images = normalizeImageArray(row.images);
         } else {
             row.images = [];
         }
@@ -26,9 +17,19 @@ export default class TransferModel {
     }
 
     // Vehicles
-    static async getAllVehicles(): Promise<TransferVehicle[]> {
-        const { rows } = await db.query('SELECT * FROM transfer_vehicles ORDER BY id ASC');
-        return rows.map(row => this.parseImages(row));
+    static async getAllVehicles(pagination?: PaginationParams): Promise<{ rows: TransferVehicle[], total: number }> {
+        const base = 'SELECT * FROM transfer_vehicles ORDER BY id ASC';
+        const countQuery = 'SELECT COUNT(*) FROM transfer_vehicles';
+        if (pagination) {
+            const [data, count] = await Promise.all([
+                db.query(`${base} LIMIT $1 OFFSET $2`, [pagination.limit, pagination.offset]),
+                db.query(countQuery),
+            ]);
+            return { rows: data.rows.map(row => this.parseImages(row)), total: parseInt(count.rows[0].count) };
+        }
+        const { rows } = await db.query(base);
+        const count = await db.query(countQuery);
+        return { rows: rows.map(row => this.parseImages(row)), total: parseInt(count.rows[0].count) };
     }
 
     static async getVehicleById(id: number): Promise<TransferVehicle | null> {
@@ -91,14 +92,22 @@ export default class TransferModel {
         return rows[0];
     }
 
-    static async getAllInquiries(): Promise<TransferInquiry[]> {
-        const { rows } = await db.query(
-            `SELECT ti.*, v.name AS vehicle_name
+    static async getAllInquiries(pagination?: PaginationParams): Promise<{ rows: TransferInquiry[], total: number }> {
+        const base = `SELECT ti.*, v.name AS vehicle_name
              FROM transfer_inquiries ti
              LEFT JOIN transfer_vehicles v ON ti.vehicle_id = v.id
-             ORDER BY ti.created_at DESC`
-        );
-        return rows;
+             ORDER BY ti.created_at DESC`;
+        const countQuery = 'SELECT COUNT(*) FROM transfer_inquiries';
+        if (pagination) {
+            const [data, count] = await Promise.all([
+                db.query(`${base} LIMIT $1 OFFSET $2`, [pagination.limit, pagination.offset]),
+                db.query(countQuery),
+            ]);
+            return { rows: data.rows, total: parseInt(count.rows[0].count) };
+        }
+        const { rows } = await db.query(base);
+        const count = await db.query(countQuery);
+        return { rows, total: parseInt(count.rows[0].count) };
     }
 
     static async updateInquiryStatus(id: number, status: string): Promise<TransferInquiry> {

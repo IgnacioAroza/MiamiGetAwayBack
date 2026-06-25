@@ -278,7 +278,6 @@ describe('Rutas de Autos', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      // Verificar la respuesta
       expect(response.body).toEqual({ message: 'Car and associated images deleted successfully' });
       expect(CarModel.getCarById).toHaveBeenCalledWith(1);
       expect(CarModel.deleteCar).toHaveBeenCalledWith(1);

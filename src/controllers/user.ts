@@ -4,6 +4,7 @@ import { validateUser, validateUserFilters } from '../schemas/userSchema.js'
 import { Client } from '../types/index.js'
 import type { UserFilters } from '../schemas/userSchema.js'
 import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 interface CreateUserData {
   name: string;
@@ -37,10 +38,7 @@ class UserController {
             if (Object.keys(filters).length > 0) {
                 const validationResult = validateUserFilters(filters)
                 if (!validationResult.success) {
-                    res.status(400).json({
-                        message: 'Invalid filters',
-                        error: validationResult.error.flatten()
-                    })
+                    badRequest(res, 'Invalid filters', validationResult.error.flatten())
                     return
                 }
             }
@@ -48,34 +46,34 @@ class UserController {
             const pagination = parsePagination(req.query);
             const { rows, total } = await UserModel.getAll(Object.keys(filters).length ? filters : undefined, pagination ?? undefined);
             if (pagination) {
-                res.status(200).json(paginatedResponse(rows, total, pagination));
+                ok(res, paginatedResponse(rows, total, pagination));
             } else {
-                res.status(200).json(rows);
+                ok(res, rows);
             }
         } catch (error: any) {
-            res.status(500).json({ error: error.message })
+            serverError(res, error.message)
         }
     }
 
     static async getUserById(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            
+
             if (isNaN(id)) {
-                res.status(400).json({ error: 'Invalid user ID' });
+                badRequest(res, 'Invalid user ID');
                 return;
             }
-            
+
             const user = await UserModel.getUserById(id);
-            
+
             if (!user) {
-                res.status(404).json({ error: 'User not found' });
+                notFound(res, 'User not found');
                 return;
             }
-            
-            res.status(200).json(user);
+
+            ok(res, user);
         } catch (error: any) {
-            res.status(500).json({ error: error.message || 'Error getting user' });
+            serverError(res, error.message || 'Error getting user');
         }
     }
 
@@ -84,20 +82,20 @@ class UserController {
             const result = validateUser(req.body)
 
             if (!result.success) {
-                res.status(400).json({ error: JSON.parse(result.error.message) })
+                badRequest(res, JSON.parse(result.error.message))
                 return
             }
-            
+
             const userData = req.body as CreateUserData
-            
+
             const newUser = await UserModel.createUser(userData as unknown as Client)
-            
+
             if (!newUser) {
-                res.status(500).json({ error: 'Internal error creating user' })
+                serverError(res, 'Internal error creating user')
                 return
             }
-            
-            res.status(201).json({
+
+            created(res, {
                 id: newUser.id,
                 name: newUser.name,
                 lastname: newUser.lastname,
@@ -109,37 +107,36 @@ class UserController {
                 notes: newUser.notes
             })
         } catch (error: any) {
-            res.status(500).json({ error: error.message || 'An error occurred while creating the user' })
+            serverError(res, error.message || 'An error occurred while creating the user')
         }
     }
 
     static async updateUser(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            
+
             if (isNaN(id)) {
-                res.status(400).json({ error: 'Invalid user ID' });
+                badRequest(res, 'Invalid user ID');
                 return;
             }
-            
+
             const userData = req.body as Partial<Client>;
-            
-            // Validar que al menos un campo se está actualizando
+
             if (Object.keys(userData).length === 0) {
-                res.status(400).json({ error: 'No fields provided to update' });
+                badRequest(res, 'No fields provided to update');
                 return;
             }
-            
+
             const updatedUser = await UserModel.updateUser(id, userData);
-            
-            res.status(200).json(updatedUser);
+
+            ok(res, updatedUser);
         } catch (error: any) {
             if (error.message === 'User not found') {
-                res.status(404).json({ error: 'User not found' });
+                notFound(res, 'User not found');
             } else if (error.message === 'No valid fields to update') {
-                res.status(400).json({ error: 'No valid fields to update' });
+                badRequest(res, 'No valid fields to update');
             } else {
-                res.status(500).json({ error: error.message || 'Error updating user' });
+                serverError(res, error.message || 'Error updating user');
             }
         }
     }
@@ -147,20 +144,20 @@ class UserController {
     static async deleteUser(req: Request, res: Response): Promise<void> {
         try {
             const id = parseInt(req.params.id);
-            
+
             if (isNaN(id)) {
-                res.status(400).json({ error: 'Invalid user ID' });
+                badRequest(res, 'Invalid user ID');
                 return;
             }
-            
-            const result = await UserModel.deleteUser(id);
-            
-            res.status(200).json(result);
+
+            await UserModel.deleteUser(id);
+
+            ok(res, { message: 'User deleted successfully' });
         } catch (error: any) {
             if (error.message === 'User not found') {
-                res.status(404).json({ error: 'User not found' });
+                notFound(res, 'User not found');
             } else {
-                res.status(500).json({ error: error.message || 'Error deleting user' });
+                serverError(res, error.message || 'Error deleting user');
             }
         }
     }

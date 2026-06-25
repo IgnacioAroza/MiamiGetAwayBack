@@ -2,42 +2,16 @@ import db from '../utils/db_render.js';
 import { Villa, CreateVillaDTO, UpdateVillaDTO } from '../types/index.js';
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js';
 import { PaginationParams } from '../utils/pagination.js';
+import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class VillaModel {
-    /**
-     * Normaliza el array de imágenes, soportando múltiples formatos:
-     * - Array de strings: ['url1', 'url2']
-     * - Array de objetos: [{url: 'url1', alt: 'text'}, {url: 'url2', alt: 'text'}]
-     * - Mix de ambos
-     */
-    private static normalizeImageArray(imageData: any): string[] {
-        if (!Array.isArray(imageData)) {
-            return [];
-        }
-
-        return imageData
-            .map((item: any) => {
-                // Si es un string, devolverlo directamente
-                if (typeof item === 'string') {
-                    return item;
-                }
-                // Si es un objeto con propiedad 'url', extraer la URL
-                if (typeof item === 'object' && item !== null && typeof item.url === 'string') {
-                    return item.url;
-                }
-                // Si no es ninguno de los formatos esperados, ignorar
-                return null;
-            })
-            .filter((url: string | null): url is string => url !== null && url.trim() !== '');
-    }
-
     private static processVillaImages(rows: any[]): Villa[] {
         return rows.map(villa => {
             if (typeof villa.images === 'string') {
-                try { villa.images = this.normalizeImageArray(JSON.parse(villa.images)); }
+                try { villa.images = normalizeImageArray(JSON.parse(villa.images)); }
                 catch { villa.images = []; }
             } else if (Array.isArray(villa.images)) {
-                villa.images = this.normalizeImageArray(villa.images);
+                villa.images = normalizeImageArray(villa.images);
             } else {
                 villa.images = [];
             }
@@ -70,13 +44,13 @@ export default class VillaModel {
             const villa = rows[0];
             if (typeof villa.images === 'string') {
                 try {
-                    villa.images = this.normalizeImageArray(JSON.parse(villa.images));
+                    villa.images = normalizeImageArray(JSON.parse(villa.images));
                 } catch (error) {
                     console.error('Error parsing villa images:', error);
                     villa.images = [];
                 }
             } else if (Array.isArray(villa.images)) {
-                villa.images = this.normalizeImageArray(villa.images);
+                villa.images = normalizeImageArray(villa.images);
             } else {
                 villa.images = [];
             }
@@ -219,13 +193,13 @@ export default class VillaModel {
             // Normalizar imágenes
             if (typeof updatedVilla.images === 'string') {
                 try {
-                    updatedVilla.images = this.normalizeImageArray(JSON.parse(updatedVilla.images));
+                    updatedVilla.images = normalizeImageArray(JSON.parse(updatedVilla.images));
                 } catch (error) {
                     console.error('Error parsing villa images:', error);
                     updatedVilla.images = [];
                 }
             } else if (Array.isArray(updatedVilla.images)) {
-                updatedVilla.images = this.normalizeImageArray(updatedVilla.images);
+                updatedVilla.images = normalizeImageArray(updatedVilla.images);
             } else {
                 updatedVilla.images = [];
             }

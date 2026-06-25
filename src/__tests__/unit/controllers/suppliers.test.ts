@@ -35,7 +35,8 @@ describe('Supplier controllers', () => {
         req = { body: {}, params: {}, query: {}, files: undefined };
         res = {
             status: vi.fn().mockImplementation((code) => { statusCode = code; return res; }),
-            json: vi.fn().mockImplementation((data) => { responseBody = data; return res; })
+            json: vi.fn().mockImplementation((data) => { responseBody = data; return res; }),
+            send: vi.fn()
         };
     });
 

@@ -8,6 +8,7 @@ import db from '../utils/db_render.js';
 import PdfService from '../services/pdfService.js';
 import ImageService from '../services/imageService.js';
 import { parsePagination, paginatedResponse } from '../utils/pagination.js';
+import { ok, created, badRequest, notFound, conflict, serverError } from '../utils/response.js';
 
 export class ReservationController {
     static async getAllReservations(req: Request, res: Response): Promise<void> {
@@ -26,7 +27,7 @@ export class ReservationController {
                         throw new Error('Check in date format is invalid. Use MM-DD-YYYY HH:mm');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'Check in date is invalid. Format must be MM-DD-YYYY HH:mm' });
+                    badRequest(res, 'Check in date is invalid. Format must be MM-DD-YYYY HH:mm');
                     return;
                 }
             }
@@ -42,7 +43,7 @@ export class ReservationController {
                         throw new Error('Check out date format is invalid. Use MM-DD-YYYY HH:mm');
                     }
                 } catch (error) {
-                    res.status(400).json({ error: 'Check out date is invalid. Format must be MM-DD-YYYY HH:mm' });
+                    badRequest(res, 'Check out date is invalid. Format must be MM-DD-YYYY HH:mm');
                     return;
                 }
             }
@@ -76,7 +77,7 @@ export class ReservationController {
                 } else if (upcomingStr === 'false' || upcomingStr === '0') {
                     filters.upcoming = false;
                 } else {
-                    res.status(400).json({ error: 'upcoming parameter must be true, false, 1, or 0' });
+                    badRequest(res, 'upcoming parameter must be true, false, 1, or 0');
                     return;
                 }
             }
@@ -84,14 +85,14 @@ export class ReservationController {
             // Filtro fromDate (solo válido con upcoming=true)
             if (req.query.fromDate) {
                 if (!filters.upcoming) {
-                    res.status(400).json({ error: 'fromDate can only be used with upcoming=true' });
+                    badRequest(res, 'fromDate can only be used with upcoming=true');
                     return;
                 }
                 
                 const fromDate = req.query.fromDate as string;
                 const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/;
                 if (!dateRegex.test(fromDate)) {
-                    res.status(400).json({ error: 'fromDate format is invalid. Use MM-DD-YYYY' });
+                    badRequest(res, 'fromDate format is invalid. Use MM-DD-YYYY');
                     return;
                 }
                 filters.fromDate = fromDate;
@@ -100,13 +101,13 @@ export class ReservationController {
             // Filtro withinDays (solo válido con upcoming=true)
             if (req.query.withinDays) {
                 if (!filters.upcoming) {
-                    res.status(400).json({ error: 'withinDays can only be used with upcoming=true' });
+                    badRequest(res, 'withinDays can only be used with upcoming=true');
                     return;
                 }
                 
                 const withinDays = parseInt(req.query.withinDays as string);
                 if (isNaN(withinDays) || withinDays <= 0) {
-                    res.status(400).json({ error: 'withinDays must be a positive integer' });
+                    badRequest(res, 'withinDays must be a positive integer');
                     return;
                 }
                 filters.withinDays = withinDays;
@@ -115,12 +116,12 @@ export class ReservationController {
             const pagination = parsePagination(req.query);
             const { rows, total } = await ReservationService.getAllReservations(filters, pagination ?? undefined);
             if (pagination) {
-                res.status(200).json(paginatedResponse(rows, total, pagination));
+                ok(res, paginatedResponse(rows, total, pagination));
             } else {
-                res.status(200).json(rows);
+                ok(res, rows);
             }
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservations' });
+            serverError(res, 'Error fetching reservations');
         }
     }
 
@@ -129,12 +130,12 @@ export class ReservationController {
         try {
             const reservation = await ReservationService.getReservationById(parseInt(id));
             if (!reservation) {
-                res.status(404).json({ error: 'Reservation not found' });
+                notFound(res, 'Reservation not found');
                 return;
             }
-            res.status(200).json(reservation);
+            ok(res, reservation);
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservation' });
+            serverError(res, 'Error fetching reservation');
         }
     }
     
@@ -142,26 +143,19 @@ export class ReservationController {
         try {
             const validateResult = validateReservation(req.body);
             if (!validateResult.success) {
-                res.status(400).json({ 
-                    error: 'Validation failed', 
-                    details: validateResult.error.format() 
-                });
+                badRequest(res, 'Validation failed', validateResult.error.format());
                 return;
             }
 
-            // Extraer initialPayment y separar los datos de la reserva
             const { initialPayment, ...reservationData } = validateResult.data;
 
-            // Crear la reserva primero
             const newReservation = await ReservationService.createReservation(reservationData as any);
 
-            // Si viene un pago inicial en los datos validados, registrarlo y devolver la reserva actualizada
             if (initialPayment) {
                 const { amount, paymentMethod, paymentReference, notes } = initialPayment;
 
-                // Validaciones mínimas (coherentes con registerPayment)
                 if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-                    res.status(400).json({ 
+                    res.status(400).json({
                         error: 'payment_error',
                         message: 'Error al registrar el pago',
                         details: 'Valid initial payment amount is required',
@@ -171,7 +165,7 @@ export class ReservationController {
                 }
 
                 if (!paymentMethod) {
-                    res.status(400).json({ 
+                    res.status(400).json({
                         error: 'payment_error',
                         message: 'Error al registrar el pago',
                         details: 'Initial payment method is required',
@@ -181,7 +175,6 @@ export class ReservationController {
                 }
 
                 try {
-                    // Registrar el pago en la tabla reservation_payments
                     await ReservationPaymentsService.createPayment({
                         reservationId: Number(newReservation.id),
                         amount: Number(amount),
@@ -191,13 +184,10 @@ export class ReservationController {
                         paymentDate: new Date()
                     });
 
-                    // Obtener la reserva ya recalculada
                     const updatedReservation = await ReservationService.getReservationById(Number(newReservation.id));
-                    res.status(201).json(updatedReservation);
+                    created(res, updatedReservation);
                     return;
                 } catch (err: any) {
-                    // Payment failed — delete the reservation to avoid orphan rows.
-                    // ON DELETE CASCADE on reservation_payments ensures any partial payment rows are also removed.
                     await ReservationModel.deleteReservation(Number(newReservation.id)).catch(() => {});
                     res.status(400).json({
                         error: 'payment_error',
@@ -208,11 +198,61 @@ export class ReservationController {
                 }
             }
 
-            // Si no hay pago inicial, devolver la reserva creada
-            res.status(201).json(newReservation);
+            created(res, newReservation);
         } catch (error: any) {
             console.error('Error in createReservation:', error);
-            res.status(500).json({ error: error.message || 'Error creating reservation' });
+            serverError(res, error.message || 'Error creating reservation');
+        }
+    }
+
+    static async putReservation(req: Request, res: Response): Promise<void> {
+        const { id } = req.params;
+        try {
+            const validateResult = validateReservation(req.body);
+            if (!validateResult.success) {
+                badRequest(res, 'Validation failed', validateResult.error.format());
+                return;
+            }
+
+            const data = validateResult.data;
+
+            const subtotal = (data.nights * data.pricePerNight) + data.cleaningFee + data.otherExpenses + data.parkingFee;
+            const totalAmount = subtotal + data.taxes;
+            const amountDue = Math.max(0, totalAmount - data.amountPaid);
+
+            let paymentStatus: 'pending' | 'partial' | 'completed';
+            if (amountDue <= 0) {
+                paymentStatus = 'completed';
+            } else if (data.amountPaid > 0) {
+                paymentStatus = 'partial';
+            } else {
+                paymentStatus = 'pending';
+            }
+
+            const formattedData: any = {
+                apartment_id: data.apartmentId,
+                client_id: data.clientId,
+                check_in_date: data.checkInDate,
+                check_out_date: data.checkOutDate,
+                nights: data.nights,
+                price_per_night: data.pricePerNight,
+                cleaning_fee: data.cleaningFee,
+                other_expenses: data.otherExpenses,
+                taxes: data.taxes,
+                parking_fee: data.parkingFee,
+                cancellation_fee: data.cancellationFee,
+                total_amount: totalAmount,
+                amount_paid: data.amountPaid,
+                amount_due: amountDue,
+                status: data.status,
+                payment_status: paymentStatus,
+                notes: data.notes ?? null,
+            };
+
+            const updatedReservation = await ReservationModel.updateReservation(parseInt(id), formattedData);
+            ok(res, updatedReservation);
+        } catch (error) {
+            serverError(res, 'Error updating reservation');
         }
     }
 
@@ -221,10 +261,7 @@ export class ReservationController {
         try {
             const validateResult = validatePartialReservation(req.body);
             if (!validateResult.success) {
-                res.status(400).json({ 
-                    error: 'Validation failed', 
-                    details: validateResult.error.format() 
-                });
+                badRequest(res, 'Validation failed', validateResult.error.format());
                 return;
             }
 
@@ -235,10 +272,9 @@ export class ReservationController {
                 return;
             }
 
-            // Obtener la reserva actual para calcular los valores faltantes
             const currentReservation = await ReservationService.getReservationById(parseInt(id));
             if (!currentReservation) {
-                res.status(404).json({ error: 'Reservation not found' });
+                notFound(res, 'Reservation not found');
                 return;
             }
 
@@ -259,10 +295,7 @@ export class ReservationController {
             if (needsCalculation && updateData.cleaningFee === undefined && currentReservation.cleaningFee === undefined) missingFields.push('cleaningFee');
             
             if (missingFields.length > 0) {
-                res.status(400).json({ 
-                    error: 'Missing required fields for calculation', 
-                    missingFields 
-                });
+                badRequest(res, 'Missing required fields for calculation', { missingFields });
                 return;
             }
 
@@ -424,21 +457,20 @@ export class ReservationController {
 
             // Verificación final
             if (isNaN(formattedData.total_amount) || formattedData.total_amount === undefined) {
-                res.status(400).json({ error: 'No se pudo calcular un valor válido para total_amount' });
-                return;
-            }
-            
-            if (isNaN(formattedData.amount_due) || formattedData.amount_due === undefined) {
-                res.status(400).json({ error: 'No se pudo calcular un valor válido para amount_due' });
+                badRequest(res, 'No se pudo calcular un valor válido para total_amount');
                 return;
             }
 
-            // Actualizar la reserva con todos los valores calculados
+            if (isNaN(formattedData.amount_due) || formattedData.amount_due === undefined) {
+                badRequest(res, 'No se pudo calcular un valor válido para amount_due');
+                return;
+            }
+
             const updatedReservation = await ReservationModel.updateReservation(parseInt(id), formattedData);
-            res.status(200).json(updatedReservation);
+            ok(res, updatedReservation);
         } catch (error) {
-            console.error('Error in updateReservation:', error); // Log detallado del error
-            res.status(500).json({ error: 'Error updating reservation' });
+            console.error('Error in updateReservation:', error);
+            serverError(res, 'Error updating reservation');
         }
     }
 
@@ -448,14 +480,13 @@ export class ReservationController {
             // Verificar que la reserva existe
             const reservation = await ReservationService.getReservationById(parseInt(id));
             if (!reservation) {
-                res.status(404).json({ error: 'Reservation not found' });
+                notFound(res, 'Reservation not found');
                 return;
             }
 
-            // Verificar si la reserva tiene pagos asociados
             const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
             if (payments && payments.length > 0) {
-                res.status(409).json({ 
+                res.status(409).json({
                     error: 'Cannot delete reservation',
                     message: 'This reservation has associated payments and cannot be deleted. Please remove all payments first.',
                     paymentsCount: payments.length
@@ -463,21 +494,19 @@ export class ReservationController {
                 return;
             }
 
-            // Intentar eliminar la reserva
             await ReservationService.deleteReservation(parseInt(id));
-            res.status(200).json({ message: 'Reservation deleted successfully' });
+            ok(res, { message: 'Reservation deleted successfully' });
         } catch (error: any) {
-            // Manejar error de clave foránea (por si acaso)
             if (error.code === '23503' || error.message?.includes('foreign key')) {
-                res.status(409).json({ 
+                res.status(409).json({
                     error: 'Cannot delete reservation',
                     message: 'This reservation has associated records and cannot be deleted.'
                 });
                 return;
             }
-            
+
             console.error('Error deleting reservation:', error);
-            res.status(500).json({ error: 'Error deleting reservation' });
+            serverError(res, 'Error deleting reservation');
         }
     }
     
@@ -487,12 +516,12 @@ export class ReservationController {
         const { amount, paymentMethod, paymentReference, notes } = req.body;
 
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-            res.status(400).json({ error: 'Valid payment amount is required' });
+            badRequest(res, 'Valid payment amount is required');
             return;
         }
 
         if (!paymentMethod) {
-            res.status(400).json({ error: 'Payment method is required' });
+            badRequest(res, 'Payment method is required');
             return;
         }
 
@@ -501,7 +530,7 @@ export class ReservationController {
             if (req.file) {
                 const result = await ImageService.uploadImages([req.file], { entityType: 'reservation_payments' });
                 if (!result.success || result.urls.length === 0) {
-                    res.status(500).json({ error: 'Error uploading receipt image', details: result.errors });
+                    serverError(res, 'Error uploading receipt image', result.errors);
                     return;
                 }
                 receiptImage = result.urls[0];
@@ -515,10 +544,10 @@ export class ReservationController {
                 notes,
                 receiptImage
             );
-            res.status(200).json(updatedReservation);
+            ok(res, updatedReservation);
         } catch (error: any) {
             console.error('Error in registerPayment:', error);
-            res.status(500).json({ error: error.message || 'Error registering payment' });
+            serverError(res, error.message || 'Error registering payment');
         }
     }
     
@@ -530,40 +559,32 @@ export class ReservationController {
             const pdfPath = await ReservationService.generateAndSendPDF(parseInt(id));
             
             // Enviar respuesta con confirmación
-            res.status(200).json({ 
-                message: 'PDF generated and sent successfully',
-                pdfPath
-            });
+            ok(res, { message: 'PDF generated and sent successfully', pdfPath });
         } catch (error) {
-            res.status(500).json({ error: 'Error generating PDF' });
+            serverError(res, 'Error generating PDF');
         }
     }
 
-    // Método para generar y descargar PDF directamente
     static async downloadPdf(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
 
         if (!id || isNaN(parseInt(id))) {
-            res.status(400).json({ error: 'ID de reserva inválido' });
+            badRequest(res, 'ID de reserva inválido');
             return;
         }
 
         try {
-            // Obtener la reserva
             const reservation = await ReservationService.getReservationById(parseInt(id));
             if (!reservation) {
-                res.status(404).json({ error: 'Reservation not found' });
+                notFound(res, 'Reservation not found');
                 return;
             }
 
-            // Obtener los pagos de la reserva
             const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
-
-            // Generar el PDF pasando los pagos
             const pdfBuffer = await PdfService.generatePdfForDownload(reservation, payments);
 
             if (!pdfBuffer || pdfBuffer.length === 0) {
-                res.status(500).json({ error: 'Error generating PDF: Empty buffer' });
+                serverError(res, 'Error generating PDF: Empty buffer');
                 return;
             }
 
@@ -572,116 +593,19 @@ export class ReservationController {
             res.setHeader('Content-Length', pdfBuffer.length);
             res.status(200).send(pdfBuffer);
         } catch (error: any) {
-            const errorMessage = error.message || 'Error desconocido al generar el PDF';
-            res.status(500).json({
-                error: 'Error generating PDF for download',
-                details: errorMessage,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-            });
+            serverError(res, 'Error generating PDF for download',
+                process.env.NODE_ENV === 'development' ? error.message : undefined
+            );
         }
     }
 
-    // Método para obtener pagos de una reserva específica
     static async getReservationPayments(req: Request, res: Response): Promise<void> {
         const { id } = req.params;
         try {
             const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
-            res.status(200).json(payments);
+            ok(res, payments);
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching reservation payments' });
-        }
-    }
-
-    // Metodo para actualizar el estado del pago de una reserva
-    static async updatePaymentStatus(req: Request, res: Response): Promise<void> {
-        const { id } = req.params;
-        
-        // Obtener los datos del cuerpo, intentando diferentes formatos de nombres de campo
-        // para mayor compatibilidad
-        let amount_paid = req.body.amount_paid;
-        let amount_due = req.body.amount_due;
-        let payment_status = req.body.payment_status;
-        
-        // Intentar con camelCase si los snake_case no están presentes
-        if (amount_paid === undefined) amount_paid = req.body.amountPaid;
-        if (amount_due === undefined) amount_due = req.body.amountDue;
-        if (payment_status === undefined) payment_status = req.body.paymentStatus;
-
-        // Asegurar que los valores sean del tipo correcto
-        if (amount_paid === undefined || amount_paid === null) {
-            amount_paid = 0;
-        }
-
-        if (amount_due === undefined || amount_due === null) {
-            amount_due = 0;
-        }
-
-        // Validaciones
-        if (!id || isNaN(parseInt(id))) {
-            res.status(400).json({ error: 'Valid reservation ID is required' });
-            return;
-        }
-
-        // Transformar strings a números si es necesario
-        // Eliminar comas o cualquier otro carácter no numérico excepto puntos decimales
-        if (typeof amount_paid === 'string') {
-            amount_paid = amount_paid.replace(/[^\d.-]/g, '');
-        }
-        
-        if (typeof amount_due === 'string') {
-            amount_due = amount_due.replace(/[^\d.-]/g, '');
-        }
-
-        // Validar que los montos sean valores numéricos válidos
-        const amountPaid = Number(amount_paid);
-        const amountDue = Number(amount_due);
-        
-        if (isNaN(amountPaid) || amountPaid < 0) {
-            res.status(400).json({ error: 'Amount paid must be a valid non-negative number' });
-            return;
-        }
-        
-        if (isNaN(amountDue) || amountDue < 0) {
-            res.status(400).json({ error: 'Amount due must be a valid non-negative number' });
-            return;
-        }
-        
-        // Validar payment_status
-        const validPaymentStatuses = ['PAID', 'PARTIAL', 'PENDING', 'paid', 'partial', 'pending', 'completed'];
-        
-        // Si no se proporciona un estado de pago, determinar basado en los montos
-        if (!payment_status) {
-            if (amountDue <= 0 && amountPaid > 0) {
-                payment_status = 'PAID';
-            } else if (amountPaid > 0 && amountDue > 0) {
-                payment_status = 'PARTIAL';
-            } else {
-                payment_status = 'PENDING';
-            }
-        }
-        
-        if (!validPaymentStatuses.includes(payment_status.toLowerCase())) {
-            res.status(400).json({ error: 'Payment status must be one of: PAID, PARTIAL, PENDING' });
-            return;
-        }
-        
-        // Normalizar el estado de pago (convertir a minúsculas para la base de datos)
-        let normalizedStatus = payment_status.toLowerCase();
-        if (normalizedStatus === 'paid') normalizedStatus = 'completed';
-        if (normalizedStatus === 'pending') normalizedStatus = 'pending';
-        if (normalizedStatus === 'partial') normalizedStatus = 'partial';
-
-        try {
-            // Actualizar solo los campos relacionados con el pago
-            const updatedReservation = await ReservationService.updatePaymentFields(
-                parseInt(id),
-                amountPaid,
-                amountDue,
-                normalizedStatus
-            );
-            res.status(200).json(updatedReservation);
-        } catch (error: any) {
-            res.status(error.status || 500).json({ error: error.message || 'Error updating payment status' });
+            serverError(res, 'Error fetching reservation payments');
         }
     }
 
@@ -700,20 +624,18 @@ export class ReservationController {
             const reservationData = await ReservationService.getReservationWithClientDetails(parseInt(id));
 
             if (!reservationData) {
-                res.status(404).json({ error: 'Reservation not found' });
+                notFound(res, 'Reservation not found');
                 return;
             }
 
-            // Verify we have the client's email
             if (!reservationData.clientEmail) {
-                res.status(400).json({ error: 'The reservation does not have a client email associated' });
+                badRequest(res, 'The reservation does not have a client email associated');
                 return;
             }
 
-            // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(reservationData.clientEmail)) {
-                res.status(400).json({ error: 'Invalid email format' });
+                badRequest(res, 'Invalid email format');
                 return;
             }
 
@@ -730,10 +652,9 @@ export class ReservationController {
                     const payments = await ReservationPaymentsService.getPaymentsByReservation(parseInt(id));
                     
                     if (!payments || payments.length === 0) {
-                        res.status(400).json({ 
-                            error: 'Cannot send payment notifications without registered payments',
-                            details: 'Please register at least one payment before sending the notification'
-                        });
+                        badRequest(res, 'Cannot send payment notifications without registered payments',
+                            'Please register at least one payment before sending the notification'
+                        );
                         return;
                     }
 
@@ -751,17 +672,14 @@ export class ReservationController {
                     );
                     break;
                 default:
-                    res.status(400).json({ error: 'Invalid notification type' });
+                    badRequest(res, 'Invalid notification type');
                     return;
             }
 
-            res.status(200).json({
-                success: true,
-                message: 'Notification sent successfully'
-            });
+            ok(res, { success: true, message: 'Notification sent successfully' });
         } catch (error) {
             console.error('Error sending notification:', error);
-            res.status(500).json({ error: 'Error sending notification' });
+            serverError(res, 'Error sending notification');
         }
     }
 }

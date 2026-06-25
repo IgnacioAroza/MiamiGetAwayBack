@@ -3,21 +3,28 @@ import TransferModel from '../models/transfer.js';
 import { validateVehicle, validatePartialVehicle, validateInquiry, validateInquiryStatus } from '../schemas/transferSchema.js';
 import ImageService from '../services/imageService.js';
 import EmailService from '../services/emailService.js';
+import { ok, created, badRequest, notFound, serverError } from '../utils/response.js';
+import { parsePagination, paginatedResponse } from '../utils/pagination.js';
 
 export default class TransferController {
     // Vehicles
     static async getAllVehicles(req: Request, res: Response): Promise<void> {
         try {
-            const vehicles = await TransferModel.getAllVehicles();
-            const result = vehicles.map(v => {
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await TransferModel.getAllVehicles(pagination ?? undefined);
+            const result = rows.map(v => {
                 if (v.images && Array.isArray(v.images)) {
                     return { ...v, images: ImageService.optimizeForContext(v.images, 'list').images };
                 }
                 return v;
             });
-            res.status(200).json(result);
+            if (pagination) {
+                ok(res, paginatedResponse(result, total, pagination));
+            } else {
+                ok(res, result);
+            }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching vehicles' });
+            serverError(res, 'Error fetching vehicles');
         }
     }
 
@@ -25,17 +32,17 @@ export default class TransferController {
         try {
             const vehicle = await TransferModel.getVehicleById(Number(req.params.id));
             if (!vehicle) {
-                res.status(404).json({ message: 'Vehicle not found' });
+                notFound(res, 'Vehicle not found');
                 return;
             }
             if (vehicle.images && Array.isArray(vehicle.images)) {
                 const optimized = ImageService.optimizeForContext(vehicle.images, 'detail');
-                res.status(200).json({ ...vehicle, images: optimized.images, responsiveImages: optimized.responsiveImages });
+                ok(res, { ...vehicle, images: optimized.images, responsiveImages: optimized.responsiveImages });
             } else {
-                res.status(200).json(vehicle);
+                ok(res, vehicle);
             }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching vehicle' });
+            serverError(res, 'Error fetching vehicle');
         }
     }
 
@@ -52,24 +59,24 @@ export default class TransferController {
 
             const result = validateVehicle(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid vehicle data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid vehicle data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'transfers' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls as never[];
             }
 
             const vehicle = await TransferModel.createVehicle(data);
-            res.status(201).json(vehicle);
+            created(res, vehicle);
         } catch (error: any) {
             console.error('Error in createVehicle:', error);
-            res.status(500).json({ error: 'Error creating vehicle' });
+            serverError(res, 'Error creating vehicle');
         }
     }
 
@@ -86,27 +93,27 @@ export default class TransferController {
 
             const result = validatePartialVehicle(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid vehicle data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid vehicle data', result.error.flatten());
                 return;
             }
 
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'transfers' });
                 if (!uploadResult.success) {
-                    res.status(400).json({ error: 'Error uploading images', details: uploadResult.errors });
+                    badRequest(res, 'Error uploading images', uploadResult.errors);
                     return;
                 }
                 data.images = uploadResult.urls;
             }
 
             const vehicle = await TransferModel.updateVehicle(id, data);
-            res.status(200).json(vehicle);
+            ok(res, vehicle);
         } catch (error: any) {
             if (error.message === 'Vehicle not found') {
-                res.status(404).json({ message: 'Vehicle not found' });
+                notFound(res, 'Vehicle not found');
             } else {
                 console.error('Error in updateVehicle:', error);
-                res.status(500).json({ error: 'Error updating vehicle' });
+                serverError(res, 'Error updating vehicle');
             }
         }
     }
@@ -116,7 +123,7 @@ export default class TransferController {
             const id = Number(req.params.id);
             const vehicle = await TransferModel.getVehicleById(id);
             if (!vehicle) {
-                res.status(404).json({ message: 'Vehicle not found' });
+                notFound(res, 'Vehicle not found');
                 return;
             }
 
@@ -128,10 +135,10 @@ export default class TransferController {
             }
 
             await TransferModel.deleteVehicle(id);
-            res.status(200).json({ message: 'Vehicle and associated images deleted successfully' });
+            ok(res, { message: 'Vehicle and associated images deleted successfully' });
         } catch (error: any) {
             console.error('Error in deleteVehicle:', error);
-            res.status(500).json({ error: 'Error deleting vehicle' });
+            serverError(res, 'Error deleting vehicle');
         }
     }
 
@@ -157,12 +164,12 @@ export default class TransferController {
 
             const result = validateInquiry(data);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid inquiry data', errors: result.error.flatten() });
+                badRequest(res, 'Invalid inquiry data', result.error.flatten());
                 return;
             }
 
             const inquiry = await TransferModel.createInquiry(result.data);
-            res.status(201).json(inquiry);
+            created(res, inquiry);
 
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
@@ -172,16 +179,21 @@ export default class TransferController {
             }
         } catch (error: any) {
             console.error('Error in createTransferInquiry:', error);
-            res.status(500).json({ error: 'Error creating inquiry' });
+            serverError(res, 'Error creating inquiry');
         }
     }
 
     static async getAllInquiries(req: Request, res: Response): Promise<void> {
         try {
-            const inquiries = await TransferModel.getAllInquiries();
-            res.status(200).json(inquiries);
+            const pagination = parsePagination(req.query);
+            const { rows, total } = await TransferModel.getAllInquiries(pagination ?? undefined);
+            if (pagination) {
+                ok(res, paginatedResponse(rows, total, pagination));
+            } else {
+                ok(res, rows);
+            }
         } catch (error: any) {
-            res.status(500).json({ error: 'Error fetching inquiries' });
+            serverError(res, 'Error fetching inquiries');
         }
     }
 
@@ -190,18 +202,18 @@ export default class TransferController {
             const id = Number(req.params.id);
             const result = validateInquiryStatus(req.body);
             if (!result.success) {
-                res.status(400).json({ message: 'Invalid status', errors: result.error.flatten() });
+                badRequest(res, 'Invalid status', result.error.flatten());
                 return;
             }
 
             const inquiry = await TransferModel.updateInquiryStatus(id, result.data.status);
-            res.status(200).json(inquiry);
+            ok(res, inquiry);
         } catch (error: any) {
             if (error.message === 'Inquiry not found') {
-                res.status(404).json({ message: 'Inquiry not found' });
+                notFound(res, 'Inquiry not found');
             } else {
                 console.error('Error in updateInquiryStatus:', error);
-                res.status(500).json({ error: 'Error updating inquiry status' });
+                serverError(res, 'Error updating inquiry status');
             }
         }
     }

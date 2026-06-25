@@ -4,13 +4,13 @@ import { NextFunction, Request, Response } from 'express';
 
 vi.mock('../../models/experience.js', () => ({
   default: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     getById: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue(undefined),
     createInquiry: vi.fn().mockResolvedValue({}),
-    getAllInquiries: vi.fn().mockResolvedValue([]),
+    getAllInquiries: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     updateInquiryStatus: vi.fn().mockResolvedValue({}),
   }
 }));
@@ -70,14 +70,14 @@ describe('Rutas de Experiences', () => {
 
   describe('GET /api/experiences', () => {
     it('devuelve lista vacía cuando no hay experiences', async () => {
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce([]);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: [], total: 0 });
       const res = await request(app).get('/api/experiences').expect(200);
       expect(res.body).toEqual([]);
     });
 
     it('devuelve la lista de experiences', async () => {
       const mock = [{ id: 1, title: 'Deep Sea Fishing', description: null, capacity: 8, price: 350, images: [], created_at: '2026-06-01T00:00:00.000Z' }];
-      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce(mock);
+      vi.mocked(ExperienceModel.getAll).mockResolvedValueOnce({ rows: mock, total: mock.length });
       const res = await request(app).get('/api/experiences').expect(200);
       expect(res.body).toEqual(mock);
       expect(ExperienceModel.getAll).toHaveBeenCalledOnce();
@@ -96,7 +96,7 @@ describe('Rutas de Experiences', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(ExperienceModel.getById).mockResolvedValueOnce(null);
       const res = await request(app).get('/api/experiences/999').expect(404);
-      expect(res.body).toHaveProperty('message', 'Experience not found');
+      expect(res.body).toHaveProperty('error', 'Experience not found');
     });
   });
 
@@ -114,7 +114,7 @@ describe('Rutas de Experiences', () => {
         error: { flatten: () => ({ fieldErrors: { title: ['Title is required'] } }) }
       } as any);
       const res = await request(app).post('/api/experiences').send({}).expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid experience data');
+      expect(res.body).toHaveProperty('error', 'Invalid experience data');
     });
   });
 
@@ -130,7 +130,7 @@ describe('Rutas de Experiences', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(ExperienceModel.update).mockRejectedValueOnce(new Error('Experience not found'));
       const res = await request(app).put('/api/experiences/999').send({ title: 'X' }).expect(404);
-      expect(res.body).toHaveProperty('message', 'Experience not found');
+      expect(res.body).toHaveProperty('error', 'Experience not found');
     });
 
     it('devuelve 400 si la validación falla', async () => {
@@ -139,7 +139,7 @@ describe('Rutas de Experiences', () => {
         error: { flatten: () => ({ fieldErrors: { price: ['Price must be a positive number'] } }) }
       } as any);
       const res = await request(app).put('/api/experiences/1').send({ price: -1 }).expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid experience data');
+      expect(res.body).toHaveProperty('error', 'Invalid experience data');
     });
   });
 
@@ -156,7 +156,7 @@ describe('Rutas de Experiences', () => {
     it('devuelve 404 si no existe', async () => {
       vi.mocked(ExperienceModel.getById).mockResolvedValueOnce(null);
       const res = await request(app).delete('/api/experiences/999').expect(404);
-      expect(res.body).toHaveProperty('message', 'Experience not found');
+      expect(res.body).toHaveProperty('error', 'Experience not found');
       expect(ExperienceModel.delete).not.toHaveBeenCalled();
     });
   });
@@ -194,7 +194,7 @@ describe('Rutas de Experiences', () => {
         .post('/api/experiences/inquiries')
         .send({ name: 'John', lastname: 'Doe', email: 'not-an-email' })
         .expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid inquiry data');
+      expect(res.body).toHaveProperty('error', 'Invalid inquiry data');
     });
   });
 
@@ -204,7 +204,7 @@ describe('Rutas de Experiences', () => {
         { id: 1, experience_id: 1, experience_title: 'Deep Sea Fishing', name: 'John', lastname: 'Doe', email: 'john@example.com', phone: null, status: 'pending', created_at: '2026-06-01T00:00:00.000Z' },
         { id: 2, experience_id: null, experience_title: null, name: 'Jane', lastname: 'Smith', email: 'jane@example.com', phone: null, status: 'contacted', created_at: '2026-06-01T01:00:00.000Z' },
       ];
-      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce(mock);
+      vi.mocked(ExperienceModel.getAllInquiries).mockResolvedValueOnce({ rows: mock, total: mock.length });
       const res = await request(app).get('/api/experiences/inquiries').expect(200);
       expect(res.body).toEqual(mock);
       expect(ExperienceModel.getAllInquiries).toHaveBeenCalledOnce();
@@ -232,7 +232,7 @@ describe('Rutas de Experiences', () => {
         .patch('/api/experiences/inquiries/1')
         .send({ status: 'invalid_status' })
         .expect(400);
-      expect(res.body).toHaveProperty('message', 'Invalid status');
+      expect(res.body).toHaveProperty('error', 'Invalid status');
     });
 
     it('devuelve 404 si el inquiry no existe', async () => {
@@ -241,7 +241,7 @@ describe('Rutas de Experiences', () => {
         .patch('/api/experiences/inquiries/999')
         .send({ status: 'contacted' })
         .expect(404);
-      expect(res.body).toHaveProperty('message', 'Inquiry not found');
+      expect(res.body).toHaveProperty('error', 'Inquiry not found');
     });
   });
 });

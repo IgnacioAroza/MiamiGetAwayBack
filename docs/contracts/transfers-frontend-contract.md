@@ -64,6 +64,14 @@ interface TransferInquiry {
 ### GET /api/transfers/vehicles
 Lista todos los vehículos de la flota. **Público.**
 
+**Query params opcionales:**
+| Param | Tipo | Default | Notas |
+|---|---|---|---|
+| `page` | number | — | número de página (base 1) |
+| `limit` | number | — | ítems por página (máx 20) |
+
+Sin params devuelve array directo. Con `?page=1&limit=10` devuelve `{ data: [...], pagination: { page, limit, total, totalPages } }`.
+
 **Response 200:**
 ```json
 [
@@ -116,7 +124,7 @@ Detalle de un vehículo. **Público.**
 
 **Response 404:**
 ```json
-{ "message": "Vehicle not found" }
+{ "error": "Vehicle not found" }
 ```
 
 ---
@@ -285,6 +293,8 @@ Lista todos los inquiries. **Requiere JWT.**
 ```
 Authorization: Bearer <token>
 ```
+
+**Query params opcionales:** `?page=N&limit=N` — mismo comportamiento que `/api/transfers/vehicles`.
 
 **Response 200:**
 ```json

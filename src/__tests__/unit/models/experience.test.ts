@@ -37,17 +37,23 @@ describe('ExperienceModel', () => {
 
   describe('getAll', () => {
     it('devuelve todas las experiences', async () => {
-      vi.mocked(db.query).mockResolvedValueOnce({ rows: [mockExperience], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows: [mockExperience], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await ExperienceModel.getAll();
       expect(db.query).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM experiences'));
-      expect(result).toHaveLength(1);
-      expect(result[0].title).toBe('Deep Sea Fishing');
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].title).toBe('Deep Sea Fishing');
+      expect(result.total).toBe(1);
     });
 
     it('devuelve array vacío si no hay registros', async () => {
-      vi.mocked(db.query).mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await ExperienceModel.getAll();
-      expect(result).toEqual([]);
+      expect(result.rows).toEqual([]);
+      expect(result.total).toBe(0);
     });
   });
 
@@ -134,10 +140,13 @@ describe('ExperienceModel', () => {
   describe('getAllInquiries', () => {
     it('devuelve todos los inquiries con JOIN a experiences', async () => {
       const rows = [{ ...mockInquiry, experience_title: 'Deep Sea Fishing' }];
-      vi.mocked(db.query).mockResolvedValueOnce({ rows, rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
+      vi.mocked(db.query)
+        .mockResolvedValueOnce({ rows, rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] });
       const result = await ExperienceModel.getAllInquiries();
       expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN experiences'));
-      expect(result[0]).toHaveProperty('experience_title', 'Deep Sea Fishing');
+      expect(result.rows[0]).toHaveProperty('experience_title', 'Deep Sea Fishing');
+      expect(result.total).toBe(1);
     });
   });
 

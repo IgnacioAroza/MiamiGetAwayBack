@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import db from '../utils/db_render.js'
 import { Admin } from '../types/index.js'
+import { ok, badRequest, unauthorized, serverError } from '../utils/response.js'
 
 interface LoginRequest {
     username: string;
@@ -15,14 +16,14 @@ class AuthController {
             const { username, password } = req.body as LoginRequest
 
             if (!username || !password) {
-                res.status(400).json({ message: 'Username and password are required' })
+                badRequest(res, 'Username and password are required')
                 return
             }
 
             const { rows } = await db.query('SELECT * FROM admins WHERE username = $1;', [username])
 
             if (rows.length === 0) {
-                res.status(401).json({ message: 'Invalid credentials' })
+                unauthorized(res, 'Invalid credentials')
                 return
             }
 
@@ -31,7 +32,7 @@ class AuthController {
             const isPasswordValid = await bcrypt.compare(password, admin.password)
 
             if (!isPasswordValid) {
-                res.status(401).json({ message: 'Invalid credentials' })
+                unauthorized(res, 'Invalid credentials')
                 return
             }
 
@@ -46,10 +47,10 @@ class AuthController {
                 { expiresIn: '1h' }
             )
 
-            res.json({ token, admin: { id: admin.id, username: admin.username } })
+            ok(res, { token, admin: { id: admin.id, username: admin.username } })
         } catch (error: any) {
             console.error('Login error:', error)
-            res.status(500).json({ message: 'An error occurred during login' })
+            serverError(res, 'An error occurred during login')
         }
     }
 }
