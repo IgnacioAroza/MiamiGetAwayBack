@@ -1,7 +1,7 @@
 import db from '../utils/db_render.js';
 import { Cars, CarFilters } from '../types/index.js';
 import { validateCar } from '../schemas/carSchema.js';
-import { PaginationParams } from '../utils/pagination.js';
+import { PaginationParams, SortOrder } from '../utils/pagination.js';
 import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class CarModel {
@@ -19,9 +19,9 @@ export default class CarModel {
         });
     }
 
-    static async getAll(pagination?: PaginationParams): Promise<{ rows: Cars[], total: number }> {
+    static async getAll(pagination?: PaginationParams, sortOrder: SortOrder = 'ASC'): Promise<{ rows: Cars[], total: number }> {
         try {
-            const base = 'SELECT * FROM cars ORDER BY id ASC';
+            const base = `SELECT * FROM cars ORDER BY id ${sortOrder}`;
             if (pagination) {
                 const [data, count] = await Promise.all([
                     db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),
@@ -36,7 +36,7 @@ export default class CarModel {
         }
     }
 
-    static async getCarsWithFilters(filters: CarFilters, pagination?: PaginationParams): Promise<{ rows: Cars[], total: number }> {
+    static async getCarsWithFilters(filters: CarFilters, pagination?: PaginationParams, sortOrder: SortOrder = 'ASC'): Promise<{ rows: Cars[], total: number }> {
         try {
             const conditions: string[] = [];
             const queryParams: any[] = [];
@@ -58,12 +58,12 @@ export default class CarModel {
 
             if (pagination) {
                 const [data, count] = await Promise.all([
-                    db.query(`SELECT * FROM cars${whereClause} ORDER BY id ASC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`, [...queryParams, pagination.limit, pagination.offset]),
+                    db.query(`SELECT * FROM cars${whereClause} ORDER BY id ${sortOrder} LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`, [...queryParams, pagination.limit, pagination.offset]),
                     db.query(`SELECT COUNT(*) FROM cars${whereClause}`, queryParams),
                 ]);
                 return { rows: this.processCarImages(data.rows), total: parseInt(count.rows[0].count) };
             }
-            const { rows } = await db.query(`SELECT * FROM cars${whereClause} ORDER BY id ASC`, queryParams);
+            const { rows } = await db.query(`SELECT * FROM cars${whereClause} ORDER BY id ${sortOrder}`, queryParams);
             return { rows: this.processCarImages(rows), total: rows.length };
         } catch (error) {
             throw error;

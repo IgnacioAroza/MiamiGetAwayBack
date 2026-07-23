@@ -1,7 +1,7 @@
 import db from '../utils/db_render.js';
 import { Apartment } from '../types/index.js';
 import { validateApartment } from '../schemas/apartmentSchema.js';
-import { PaginationParams } from '../utils/pagination.js';
+import { PaginationParams, SortOrder } from '../utils/pagination.js';
 import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export interface ApartmentFilters {
@@ -12,7 +12,7 @@ export interface ApartmentFilters {
 }
 
 export default class ApartmentModel {
-    static async getAll(filters?: ApartmentFilters, pagination?: PaginationParams): Promise<{ rows: Apartment[], total: number }> {
+    static async getAll(filters?: ApartmentFilters, pagination?: PaginationParams, sortOrder: SortOrder = 'ASC'): Promise<{ rows: Apartment[], total: number }> {
         try {
             const conditions: string[] = []
             const values: any[] = []
@@ -38,12 +38,12 @@ export default class ApartmentModel {
 
             if (pagination) {
                 const [data, count] = await Promise.all([
-                    db.query(`SELECT * FROM apartments${whereClause} ORDER BY id ASC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pagination.limit, pagination.offset]),
+                    db.query(`SELECT * FROM apartments${whereClause} ORDER BY id ${sortOrder} LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pagination.limit, pagination.offset]),
                     db.query(`SELECT COUNT(*) FROM apartments${whereClause}`, values),
                 ]);
                 return { rows: data.rows.map(row => this.mapDatabaseToApartment(row)), total: parseInt(count.rows[0].count) };
             }
-            const { rows } = await db.query(`SELECT * FROM apartments${whereClause} ORDER BY id ASC`, values)
+            const { rows } = await db.query(`SELECT * FROM apartments${whereClause} ORDER BY id ${sortOrder}`, values)
             return { rows: rows.map(row => this.mapDatabaseToApartment(row)), total: rows.length };
         } catch (error) {
             throw error;

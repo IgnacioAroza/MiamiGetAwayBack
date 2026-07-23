@@ -3,14 +3,15 @@ import YachtModel from '../models/yacht.js'
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js'
 import ImageService from '../services/imageService.js'
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js'
-import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { parsePagination, paginatedResponse, parseSortOrder } from '../utils/pagination.js'
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class YachtController {
     static async getAllYachts(req: Request, res: Response): Promise<void> {
         try {
             const pagination = parsePagination(req.query);
-            const { rows, total } = await YachtModel.getAll(pagination ?? undefined);
+            const sortOrder = parseSortOrder(req.query);
+            const { rows, total } = await YachtModel.getAll(pagination ?? undefined, sortOrder);
             const optimized = rows.map(yacht => {
                 if (yacht.images && Array.isArray(yacht.images)) {
                     return { ...yacht, images: ImageService.optimizeForContext(yacht.images, 'list').images };

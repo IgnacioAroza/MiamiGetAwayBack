@@ -3,14 +3,15 @@ import VillaModel from '../models/villa.js'
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js'
 import ImageService from '../services/imageService.js'
 import { CreateVillaDTO } from '../types/index.js'
-import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { parsePagination, paginatedResponse, parseSortOrder } from '../utils/pagination.js'
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class VillaController {
     static async getAllVillas(req: Request, res: Response): Promise<void> {
         try {
             const pagination = parsePagination(req.query);
-            const { rows, total } = await VillaModel.getAll(pagination ?? undefined);
+            const sortOrder = parseSortOrder(req.query);
+            const { rows, total } = await VillaModel.getAll(pagination ?? undefined, sortOrder);
             const optimized = rows.map(villa => {
                 if (villa.images && Array.isArray(villa.images)) {
                     return { ...villa, images: ImageService.optimizeForContext(villa.images, 'list').images };

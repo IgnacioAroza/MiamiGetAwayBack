@@ -104,19 +104,50 @@ Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index
 
 ## Estado de ramas y features
 
-> Última sesión: `docs/memory/2026-06-24.md`
+> Última sesión: `docs/memory/2026-07-23.md`
 > Documentos de referencia:
-> - `docs/api-frontend-contract.md` — contrato general API ↔ Frontend
-> - `docs/investments-frontend-contract.md` — contrato investments
-> - `docs/experiences-frontend-contract.md` — contrato experiences
-> - `docs/transfers-frontend-contract.md` — contrato transfers
+> - `docs/contracts/api-frontend-contract.md` — contrato general API ↔ Frontend
+> - `docs/contracts/investments-frontend-contract.md` — contrato investments
+> - `docs/contracts/experiences-frontend-contract.md` — contrato experiences
+> - `docs/contracts/transfers-frontend-contract.md` — contrato transfers
 
 | Feature | Rama | Estado |
 |---|---|---|
 | Investments | `main` | ✅ en producción |
 | Experiences | `main` | ✅ en producción |
 | Transfers | `main` | ✅ en producción |
-| GET /supplier-payments | PR #43 `development → main` | ✅ pendiente merge |
+| GET /supplier-payments | `main` | ✅ en producción (PR #43) |
+| ImageService.syncImages (borrado/orden real de imágenes) | `main` | ✅ en producción (PR #46, 2026-07-23) |
+| `?sort=recent` opcional en apartments/cars/yachts/villas | `development` | Sin PR aún (2026-07-23) |
+
+**Al 2026-07-23:** `main` y `development` sincronizados en el mismo commit (`de29f05`). Migraciones hasta 026.
+
+---
+
+## ⚠️ Advertencia operativa — dev local apunta a producción
+
+El servidor local (`npm run dev:demo`, puerto 3001) usa la `DATABASE_URL` y las credenciales `CLOUDINARY_*` de **producción** — no hay ambiente aislado. Cualquier prueba de borrado/creación/edición desde el admin panel local (o contra este backend en `localhost:3001`) afecta datos reales del cliente. Probar siempre con entidades de prueba propias y limpiar después. Ver detalle en `docs/memory/2026-07-23.md`.
+
+---
+
+## Imágenes — sync en updates (2026-07-23)
+
+`ImageService.syncImages({ currentImages, existingImagesRaw, files, entityType })` (`src/services/imageService.ts`) centraliza el manejo de imágenes en los updates de `apartment.ts`, `car.ts`, `yacht.ts`, `villa.ts`:
+
+- `existingImagesRaw` = `req.body.existingImages`, un **JSON string** (no campos repetidos) con el array final de URLs a conservar, en el orden que decide el front.
+- Mergea `[...keptImages, ...newUploadedUrls]` — las nuevas siempre van al final.
+- Borra de Cloudinary las URLs que estaban en `currentImages` pero no en `keptImages`.
+- Si no llega `existingImages` ni hay archivos nuevos, no toca el campo `images`.
+
+Los 4 controllers fetchean la entidad (`getXById`) antes de actualizar para poder diffear contra `currentImages`.
+
+---
+
+## Orden de listados — `?sort=recent` (2026-07-23)
+
+Los 4 modelos de listado (`apartment.ts`, `car.ts`, `yacht.ts`, `villa.ts`) aceptan un `sortOrder` opcional (`'ASC' | 'DESC'`, default `'ASC'` — sin cambios si no se pide). Los controllers lo obtienen con `parseSortOrder(req.query)` (`src/utils/pagination.ts`): `?sort=recent` → `DESC`, cualquier otro valor o ausente → `ASC`.
+
+Pensado para que el admin de `MiamiGetAwayFront` pueda pedir los últimos cargados primero (`/admin/apartments`) sin afectar al listado público ni a nada que no mande el parámetro explícitamente.
 
 ---
 
