@@ -3,7 +3,7 @@ import ApartmentModel, { ApartmentFilters } from '../models/apartment.js'
 import { validateApartment, validatePartialApartment, validateApartmentFilters } from '../schemas/apartmentSchema.js'
 import ImageService from '../services/imageService.js'
 import { Apartment, CreateApartmentDTO, UpdateApartmentDTO } from '../types/index.js'
-import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { parsePagination, paginatedResponse, parseSortOrder } from '../utils/pagination.js'
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class ApartmentController {
@@ -37,7 +37,8 @@ class ApartmentController {
             }
 
             const pagination = parsePagination(req.query);
-            const { rows, total } = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined, pagination ?? undefined);
+            const sortOrder = parseSortOrder(req.query);
+            const { rows, total } = await ApartmentModel.getAll(Object.keys(filters).length ? filters : undefined, pagination ?? undefined, sortOrder);
             const optimizedApartments = rows.map(apartment => {
                 if (apartment.images && Array.isArray(apartment.images)) {
                     return { ...apartment, images: ImageService.optimizeForContext(apartment.images, 'list').images };

@@ -1,7 +1,7 @@
 import db from '../utils/db_render.js';
 import { Villa, CreateVillaDTO, UpdateVillaDTO } from '../types/index.js';
 import { validateVilla, validatePartialVilla } from '../schemas/villaSchema.js';
-import { PaginationParams } from '../utils/pagination.js';
+import { PaginationParams, SortOrder } from '../utils/pagination.js';
 import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class VillaModel {
@@ -19,9 +19,9 @@ export default class VillaModel {
         });
     }
 
-    static async getAll(pagination?: PaginationParams): Promise<{ rows: Villa[], total: number }> {
+    static async getAll(pagination?: PaginationParams, sortOrder: SortOrder = 'ASC'): Promise<{ rows: Villa[], total: number }> {
         try {
-            const base = 'SELECT * FROM villas ORDER BY id ASC';
+            const base = `SELECT * FROM villas ORDER BY id ${sortOrder}`;
             if (pagination) {
                 const [data, count] = await Promise.all([
                     db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),

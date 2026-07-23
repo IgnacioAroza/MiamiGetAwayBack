@@ -1,7 +1,7 @@
 import db from '../utils/db_render.js';
 import { Yacht, CreateYachtDTO, UpdateYachtDTO } from '../types/index.js';
 import { validateYacht, validatePartialYacht } from '../schemas/yachtSchema.js';
-import { PaginationParams } from '../utils/pagination.js';
+import { PaginationParams, SortOrder } from '../utils/pagination.js';
 import { normalizeImageArray } from '../utils/imageUtils.js';
 
 export default class YachtModel {
@@ -19,9 +19,9 @@ export default class YachtModel {
         });
     }
 
-    static async getAll(pagination?: PaginationParams): Promise<{ rows: Yacht[], total: number }> {
+    static async getAll(pagination?: PaginationParams, sortOrder: SortOrder = 'ASC'): Promise<{ rows: Yacht[], total: number }> {
         try {
-            const base = 'SELECT * FROM yachts ORDER BY id ASC';
+            const base = `SELECT * FROM yachts ORDER BY id ${sortOrder}`;
             if (pagination) {
                 const [data, count] = await Promise.all([
                     db.query(base + ' LIMIT $1 OFFSET $2', [pagination.limit, pagination.offset]),

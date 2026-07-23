@@ -3,7 +3,7 @@ import CarModel from '../models/car.js'
 import { validateCar, validatePartialCar, validateCarFilters } from '../schemas/carSchema.js'
 import ImageService from '../services/imageService.js'
 import { Cars, CreateCarsDTO, UpdateCarsDTO, CarFilters } from '../types/index.js'
-import { parsePagination, paginatedResponse } from '../utils/pagination.js'
+import { parsePagination, paginatedResponse, parseSortOrder } from '../utils/pagination.js'
 import { ok, created, badRequest, notFound, serverError } from '../utils/response.js'
 
 class CarController {
@@ -38,9 +38,10 @@ class CarController {
             }
 
             const pagination = parsePagination(req.query);
+            const sortOrder = parseSortOrder(req.query);
             const { rows, total } = Object.keys(cleanFilters).length > 0
-                ? await CarModel.getCarsWithFilters(cleanFilters, pagination ?? undefined)
-                : await CarModel.getAll(pagination ?? undefined);
+                ? await CarModel.getCarsWithFilters(cleanFilters, pagination ?? undefined, sortOrder)
+                : await CarModel.getAll(pagination ?? undefined, sortOrder);
 
             const optimizedCars = rows.map(car => {
                 if (car.images && Array.isArray(car.images)) {

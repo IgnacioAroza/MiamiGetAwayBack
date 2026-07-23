@@ -1,3 +1,9 @@
+export type SortOrder = 'ASC' | 'DESC';
+
+export function parseSortOrder(query: Record<string, any>): SortOrder {
+    return query.sort === 'recent' ? 'DESC' : 'ASC';
+}
+
 export interface PaginationParams {
     page: number;
     limit: number;
