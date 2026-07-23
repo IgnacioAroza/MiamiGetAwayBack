@@ -9,6 +9,7 @@ vi.mock('../../../services/imageService.js', () => ({
   default: {
     uploadImages: vi.fn().mockResolvedValue({ success: true, urls: ['https://test-url.com/image.jpg'], errors: [] }),
     deleteImages: vi.fn().mockResolvedValue({ success: true, errors: [] }),
+    syncImages: vi.fn().mockResolvedValue({ images: undefined }),
     optimizeForContext: vi.fn().mockImplementation((images: string[]) => ({ images, responsiveImages: [] }))
   }
 }));
@@ -303,7 +304,8 @@ describe('ApartmentController', () => {
         images: [],
         unitNumber: '1A'
       };
-      
+
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({ ...updatedApartment, name: 'Apartment', price: 1000 });
       vi.mocked(validatePartialApartment).mockReturnValueOnce({ success: true } as any);
       vi.mocked(ApartmentModel.updateApartment).mockResolvedValueOnce(updatedApartment);
 
@@ -326,6 +328,10 @@ describe('ApartmentController', () => {
       req.body = {
         price: 'invalid-price' // Precio inválido
       };
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({
+        id: 1, name: 'Apartment', address: '123 Main St', capacity: 4, bathrooms: 2,
+        rooms: 2, price: 1000, description: 'Nice apartment', images: [], unitNumber: '1A'
+      });
 
       // Ejecución del método
       await ApartmentController.updateApartment(req as Request, res as Response);
@@ -341,6 +347,10 @@ describe('ApartmentController', () => {
       req.body = {
         capacity: 'invalid-capacity' // Capacidad inválida
       };
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({
+        id: 1, name: 'Apartment', address: '123 Main St', capacity: 4, bathrooms: 2,
+        rooms: 2, price: 1000, description: 'Nice apartment', images: [], unitNumber: '1A'
+      });
 
       // Ejecución del método
       await ApartmentController.updateApartment(req as Request, res as Response);

@@ -121,24 +121,20 @@ class VillaController {
             }
             const villaData: any = { ...validationResult.data };
 
-            if (req.files) {
-                const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-                if (files.length > 0) {
-                    const uploadResult = await ImageService.uploadImages(files, {
-                        entityType: 'villas'
-                    });
+            const syncResult = await ImageService.syncImages({
+                currentImages: existingVilla.images || [],
+                existingImagesRaw: req.body.existingImages,
+                files: Array.isArray(req.files) ? req.files : (req.files ? Object.values(req.files).flat() : undefined),
+                entityType: 'villas'
+            });
 
-                    if (!uploadResult.success) {
-                        badRequest(res, 'Error uploading images', uploadResult.errors);
-                        return;
-                    }
+            if (syncResult.errors) {
+                badRequest(res, 'Error uploading images', syncResult.errors);
+                return;
+            }
 
-                    if (existingVilla && existingVilla.images) {
-                        villaData.images = [...existingVilla.images, ...uploadResult.urls];
-                    } else {
-                        villaData.images = uploadResult.urls;
-                    }
-                }
+            if (syncResult.images !== undefined) {
+                villaData.images = syncResult.images;
             }
 
             const updatedVilla = await VillaModel.updateVilla(id, villaData);

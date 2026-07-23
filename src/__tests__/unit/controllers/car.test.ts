@@ -9,6 +9,7 @@ vi.mock('../../../services/imageService.js', () => ({
   default: {
     uploadImages: vi.fn().mockResolvedValue({ success: true, urls: ['https://test-url.com/image.jpg'], errors: [] }),
     deleteImages: vi.fn().mockResolvedValue({ success: true, errors: [] }),
+    syncImages: vi.fn().mockResolvedValue({ images: undefined }),
     optimizeForContext: vi.fn().mockImplementation((images: string[]) => ({ images, responsiveImages: [] }))
   }
 }));
@@ -315,6 +316,7 @@ describe('CarController', () => {
         images: []
       };
 
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
       vi.mocked(validatePartialCar).mockReturnValueOnce({ success: true, data: {} });
       vi.mocked(CarModel.updateCar).mockResolvedValueOnce(updatedCar);
 
@@ -333,6 +335,7 @@ describe('CarController', () => {
       req.body = {
         price: 'invalid'
       };
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
 
       // Ejecución
       await CarController.updateCar(req as Request, res as Response);
@@ -348,6 +351,7 @@ describe('CarController', () => {
       req.body = {
         brand: '', // Inválido para el esquema
       };
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
 
       vi.mocked(validatePartialCar).mockReturnValueOnce({
         success: false,
@@ -380,8 +384,12 @@ describe('CarController', () => {
         { buffer: Buffer.from('test') } as Express.Multer.File
       ];
 
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
       vi.mocked(validatePartialCar).mockReturnValueOnce({ success: true, data: {} });
-      
+
+      const { default: ImageService } = await import('../../../services/imageService.js');
+      vi.mocked(ImageService.syncImages).mockResolvedValueOnce({ images: ['https://test-url.com/image.jpg'] });
+
       const updatedCar = {
         id: 1,
         brand: 'BMW',
@@ -390,7 +398,7 @@ describe('CarController', () => {
         price: 150,
         images: ['https://test-url.com/image.jpg']
       };
-      
+
       vi.mocked(CarModel.updateCar).mockResolvedValueOnce(updatedCar);
 
       // Ejecución
@@ -407,7 +415,8 @@ describe('CarController', () => {
         brand: 'BMW',
         model: 'X7',
       };
-      
+
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
       vi.mocked(validatePartialCar).mockReturnValueOnce({ success: true, data: {} });
       vi.mocked(CarModel.updateCar).mockRejectedValueOnce(new Error('Database error'));
 
