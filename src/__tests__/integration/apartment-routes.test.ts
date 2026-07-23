@@ -245,6 +245,7 @@ describe('Rutas de Apartamentos', () => {
         unitNumber: '1A'
       };
       
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({ ...updatedApartment, name: 'Apartment', price: 250 });
       vi.mocked(ApartmentModel.updateApartment).mockResolvedValueOnce(updatedApartment);
 
       // Realizar la petición
@@ -258,9 +259,15 @@ describe('Rutas de Apartamentos', () => {
       expect(response.body).toEqual(updatedApartment);
       expect(ApartmentModel.updateApartment).toHaveBeenCalledWith(1, expect.any(Object));
     });
-    
+
     // Tests de validación de campos inválidos
     it('debería validar correctamente los datos de actualización', async () => {
+      const mockExistingApartment = {
+        id: 1, name: 'Apartment', address: 'Address 1', capacity: 2, bathrooms: 1,
+        rooms: 1, price: 250, description: 'Description', images: [], unitNumber: '1A'
+      };
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValue(mockExistingApartment);
+
       // Comprobamos que los diferentes casos de validación de errores funcionan
       // Test 1: Precio inválido
       const response1 = await request(app)
@@ -269,7 +276,7 @@ describe('Rutas de Apartamentos', () => {
 
       expect(response1.status).toBe(400);
       expect(response1.body).toHaveProperty('error', 'Invalid price value');
-      
+
       // Test 2: Capacidad inválida - necesitamos un nuevo request para evitar errores de cabecera
       const response2 = await request(app)
         .put('/api/apartments/2')
@@ -277,7 +284,7 @@ describe('Rutas de Apartamentos', () => {
 
       expect(response2.status).toBe(400);
       expect(response2.body).toHaveProperty('error', 'Valor inválido para capacity');
-      
+
       // Test 3: Baños inválidos
       const response3 = await request(app)
         .put('/api/apartments/3')
@@ -285,7 +292,7 @@ describe('Rutas de Apartamentos', () => {
 
       expect(response3.status).toBe(400);
       expect(response3.body).toHaveProperty('error', 'Valor inválido para bathrooms');
-      
+
       // Test 4: Habitaciones inválidas
       const response4 = await request(app)
         .put('/api/apartments/4')

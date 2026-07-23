@@ -115,21 +115,20 @@ class YachtController {
             }
             const yachtData: any = { ...validationResult.data };
 
-            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadResult = await ImageService.uploadImages(req.files, {
-                    entityType: 'yachts'
-                });
+            const syncResult = await ImageService.syncImages({
+                currentImages: existingYacht.images || [],
+                existingImagesRaw: req.body.existingImages,
+                files: Array.isArray(req.files) ? req.files : undefined,
+                entityType: 'yachts'
+            });
 
-                if (!uploadResult.success) {
-                    badRequest(res, 'Error uploading images', uploadResult.errors);
-                    return;
-                }
+            if (syncResult.errors) {
+                badRequest(res, 'Error uploading images', syncResult.errors);
+                return;
+            }
 
-                if (existingYacht && existingYacht.images) {
-                    yachtData.images = [...existingYacht.images, ...uploadResult.urls];
-                } else {
-                    yachtData.images = uploadResult.urls;
-                }
+            if (syncResult.images !== undefined) {
+                yachtData.images = syncResult.images;
             }
 
             const updatedYacht = await YachtModel.updateYacht(id, yachtData);

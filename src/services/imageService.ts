@@ -27,6 +27,22 @@ export interface UploadOptions {
     publicIdPrefix?: string;
 }
 
+export interface SyncImagesOptions {
+    /** Imágenes actualmente guardadas en la entidad (antes del update) */
+    currentImages: string[];
+    /** req.body.existingImages tal cual llega (JSON string con el array final de URLs a conservar, o undefined si el cliente no gestiona imágenes) */
+    existingImagesRaw: unknown;
+    /** Archivos nuevos subidos en este request (req.files) */
+    files?: Express.Multer.File[];
+    entityType: keyof typeof IMAGE_CONFIGS;
+}
+
+export interface SyncImagesResult {
+    /** Array final a persistir. undefined si no hay que tocar el campo images */
+    images?: string[];
+    errors?: string[];
+}
+
 /**
  * Servicio centralizado para el manejo de imágenes con Cloudinary
  */
@@ -150,6 +166,58 @@ class ImageService {
                 errors: [`Error interno del servidor: ${error instanceof Error ? error.message : 'Error desconocido'}`]
             };
         }
+    }
+
+    /**
+     * Resuelve el array final de imágenes para un update: combina las imágenes
+     * existentes que el cliente decidió conservar (existingImagesRaw, en el orden
+     * que envía) con las nuevas subidas (files), y borra de Cloudinary las que
+     * quedaron afuera. Devuelve `images: undefined` cuando el cliente no mandó
+     * existingImages ni archivos nuevos, para no tocar el campo en ese caso.
+     */
+    static async syncImages(options: SyncImagesOptions): Promise<SyncImagesResult> {
+        const { currentImages, existingImagesRaw, files, entityType } = options;
+
+        let keptImages: string[] | undefined;
+        if (existingImagesRaw !== undefined) {
+            try {
+                const parsed = typeof existingImagesRaw === 'string'
+                    ? JSON.parse(existingImagesRaw)
+                    : existingImagesRaw;
+                keptImages = Array.isArray(parsed)
+                    ? parsed.filter((url: any): url is string => typeof url === 'string')
+                    : [];
+            } catch {
+                return { errors: ['El valor de existingImages no es un JSON válido'] };
+            }
+        }
+
+        let newUrls: string[] = [];
+        if (files && files.length > 0) {
+            const uploadResult = await this.uploadImages(files, { entityType });
+            if (!uploadResult.success) {
+                return { errors: uploadResult.errors };
+            }
+            newUrls = uploadResult.urls;
+        }
+
+        if (keptImages === undefined && newUrls.length === 0) {
+            return {};
+        }
+
+        const finalImages = [...(keptImages ?? currentImages), ...newUrls];
+
+        if (keptImages !== undefined) {
+            const removedImages = currentImages.filter(url => !keptImages!.includes(url));
+            if (removedImages.length > 0) {
+                const deleteResult = await this.deleteImages(removedImages, entityType);
+                if (!deleteResult.success && deleteResult.errors.length > 0) {
+                    console.warn(`Algunas imágenes de ${entityType} no pudieron eliminarse de Cloudinary:`, deleteResult.errors);
+                }
+            }
+        }
+
+        return { images: finalImages };
     }
 
     /**

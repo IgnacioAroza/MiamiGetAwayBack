@@ -128,6 +128,12 @@ class CarController {
         try {
             const { id } = req.params
 
+            const existingCar = await CarModel.getCarById(Number(id))
+            if (!existingCar) {
+                notFound(res, 'Car not found')
+                return
+            }
+
             const carData: UpdateCarsDTO = {
                 brand: req.body.brand,
                 model: req.body.model,
@@ -163,17 +169,20 @@ class CarController {
                 return
             }
 
-            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadResult = await ImageService.uploadImages(req.files, {
-                    entityType: 'cars'
-                });
+            const syncResult = await ImageService.syncImages({
+                currentImages: existingCar.images || [],
+                existingImagesRaw: req.body.existingImages,
+                files: Array.isArray(req.files) ? req.files : undefined,
+                entityType: 'cars'
+            });
 
-                if (!uploadResult.success) {
-                    badRequest(res, 'Error uploading images', uploadResult.errors);
-                    return;
-                }
+            if (syncResult.errors) {
+                badRequest(res, 'Error uploading images', syncResult.errors);
+                return;
+            }
 
-                carData.images = uploadResult.urls;
+            if (syncResult.images !== undefined) {
+                carData.images = syncResult.images;
             }
 
             const updatedCar = await CarModel.updateCar(parseInt(id), carData);

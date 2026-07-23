@@ -193,15 +193,16 @@ describe('Rutas de Autos', () => {
   describe('PUT /api/cars/:id', () => {
     it('debería actualizar un auto existente con datos válidos', async () => {
       // Mock para actualización
-      const updatedCar = { 
-        id: 1, 
-        brand: 'BMW', 
-        model: 'X7', 
-        description: 'Updated luxury SUV', 
-        price: 200, 
-        images: [] 
+      const updatedCar = {
+        id: 1,
+        brand: 'BMW',
+        model: 'X7',
+        description: 'Updated luxury SUV',
+        price: 200,
+        images: []
       };
-      
+
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
       vi.mocked(CarModel.updateCar).mockResolvedValueOnce(updatedCar);
 
       // Realizar la petición
@@ -221,6 +222,7 @@ describe('Rutas de Autos', () => {
     });
 
     it('debería retornar 400 con precio inválido', async () => {
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
       // Realizar la petición
       await request(app)
         .put('/api/cars/1')
@@ -242,6 +244,7 @@ describe('Rutas de Autos', () => {
           flatten: () => ({ formErrors: ['Brand cannot be empty'], fieldErrors: {} })
         }
       } as any);
+      vi.mocked(CarModel.getCarById).mockResolvedValueOnce({ id: 1, brand: 'BMW', model: 'X5', price: 150, images: [] });
 
       // Realizar la petición
       await request(app)

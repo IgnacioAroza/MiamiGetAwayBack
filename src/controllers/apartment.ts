@@ -122,6 +122,13 @@ class ApartmentController {
     static async updateApartment(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params
+
+            const existingApartment = await ApartmentModel.getApartmentById(Number(id))
+            if (!existingApartment) {
+                notFound(res, 'Apartment not found')
+                return
+            }
+
             const apartmentData: UpdateApartmentDTO = {}
 
             const updatableFields = ['name', 'unitNumber', 'description', 'address', 'capacity', 'bathrooms', 'rooms', 'price'];
@@ -163,17 +170,20 @@ class ApartmentController {
                 return
             }
 
-            if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-                const uploadResult = await ImageService.uploadImages(req.files, {
-                    entityType: 'apartments'
-                });
+            const syncResult = await ImageService.syncImages({
+                currentImages: existingApartment.images || [],
+                existingImagesRaw: req.body.existingImages,
+                files: Array.isArray(req.files) ? req.files : undefined,
+                entityType: 'apartments'
+            });
 
-                if (!uploadResult.success) {
-                    badRequest(res, 'Error uploading images', uploadResult.errors);
-                    return;
-                }
+            if (syncResult.errors) {
+                badRequest(res, 'Error uploading images', syncResult.errors);
+                return;
+            }
 
-                apartmentData.images = uploadResult.urls;
+            if (syncResult.images !== undefined) {
+                apartmentData.images = syncResult.images;
             }
 
             const updatedApartment = await ApartmentModel.updateApartment(Number(id), apartmentData)
