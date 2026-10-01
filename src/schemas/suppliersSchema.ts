@@ -1,10 +1,14 @@
 import { z } from 'zod';
 
+// El front manda '' en los campos vacíos: tratarlos como ausentes
+const optionalText = <T extends z.ZodTypeAny>(schema: T) =>
+    z.preprocess(v => (typeof v === 'string' && v.trim() === '' ? undefined : v), schema.optional());
+
 export const supplierSchema = z.object({
     name: z.string().min(1),
-    company: z.string().optional(),
-    email: z.string().email().optional(),
-    phone: z.string().optional()
+    company: optionalText(z.string()),
+    email: optionalText(z.string().email()),
+    phone: optionalText(z.string())
 });
 
 export const partialSupplierSchema = supplierSchema.partial();
