@@ -119,7 +119,7 @@ export class ReservationPaymentController {
                 receiptImage = result.urls[0];
             }
 
-            const newReservationPayment = await ReservationPaymentsService.createPayment({ ...body, receiptImage });
+            const newReservationPayment = await ReservationPaymentsService.createPayment({ ...body, receiptImage }, Boolean(req.file));
             created(res, newReservationPayment);
         } catch (error) {
             serverError(res, 'Error creating reservation payment');
@@ -160,7 +160,7 @@ export class ReservationPaymentController {
                 ? { ...transformedData, receiptImage }
                 : transformedData;
 
-            const updatedReservationPayment = await ReservationPaymentsService.updatePayment(parseInt(id), dataToUpdate);
+            const updatedReservationPayment = await ReservationPaymentsService.updatePayment(parseInt(id), dataToUpdate, Boolean(req.file));
             ok(res, updatedReservationPayment);
         } catch (error) {
             serverError(res, 'Error updating reservation payment');

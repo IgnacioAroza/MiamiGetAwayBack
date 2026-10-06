@@ -24,5 +24,5 @@ export const conflict = (res: Response, message: string, details?: unknown) =>
 export const serverError = (res: Response, message: string, details?: unknown) =>
   res.status(500).json(details !== undefined ? { error: message, details } : { error: message });
 
-export const sendError = (res: Response, status: number, message: string) =>
-  res.status(status).json({ error: message });
+export const sendError = (res: Response, status: number, message: string, details?: unknown) =>
+  res.status(status).json(details !== undefined ? { error: message, details } : { error: message });

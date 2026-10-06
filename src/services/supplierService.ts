@@ -138,11 +138,16 @@ export default class SupplierService {
 
         if (files && files.length > 0) {
             const uploadResult = await ImageService.uploadImages(files, { entityType: 'supplier_payments' });
-            if (!uploadResult.success) throw Object.assign(new Error('Error uploading receipt images'), { status: 500 });
+            if (!uploadResult.success) throw Object.assign(new Error('Error uploading receipt images'), { status: 400, details: uploadResult.errors });
             receiptImages = uploadResult.urls;
         }
 
-        return SupplierPaymentModel.create({ ...data, receiptImages });
+        try {
+            return await SupplierPaymentModel.create({ ...data, receiptImages });
+        } catch (error) {
+            if (receiptImages.length) await ImageService.deleteImages(receiptImages, 'supplier_payments');
+            throw error;
+        }
     }
 
     static async updateSupplierPayment(id: number, data: UpdateSupplierPaymentDTO, files?: Express.Multer.File[]): Promise<SupplierPayment> {
@@ -152,16 +157,26 @@ export default class SupplierService {
         let receiptImages = data.receiptImages;
 
         if (files && files.length > 0) {
-            if (existing.receiptImages?.length > 0) {
-                await ImageService.deleteImages(existing.receiptImages, 'supplier_payments');
-            }
             const uploadResult = await ImageService.uploadImages(files, { entityType: 'supplier_payments' });
-            if (!uploadResult.success) throw Object.assign(new Error('Error uploading receipt images'), { status: 500 });
+            if (!uploadResult.success) throw Object.assign(new Error('Error uploading receipt images'), { status: 400, details: uploadResult.errors });
             receiptImages = uploadResult.urls;
         }
 
-        const updated = await SupplierPaymentModel.update(id, { ...data, receiptImages });
-        if (!updated) throw Object.assign(new Error('Supplier payment not found'), { status: 404 });
+        let updated;
+        try {
+            updated = await SupplierPaymentModel.update(id, { ...data, receiptImages });
+            if (!updated) throw Object.assign(new Error('Supplier payment not found'), { status: 404 });
+        } catch (error) {
+            if (files?.length && receiptImages?.length) await ImageService.deleteImages(receiptImages, 'supplier_payments');
+            throw error;
+        }
+        if (receiptImages !== undefined && existing.receiptImages?.length) {
+            const removed = existing.receiptImages.filter(url => !receiptImages?.includes(url));
+            if (removed.length) {
+                const cleanup = await ImageService.deleteImages(removed, 'supplier_payments');
+                if (!cleanup.success) console.warn('Could not delete replaced receipts:', cleanup.errors);
+            }
+        }
         return updated;
     }
 
