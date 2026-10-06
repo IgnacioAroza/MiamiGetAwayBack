@@ -828,8 +828,9 @@ export default class PdfService {
             doc.fillOpacity(0.12);
             // Ruta, no Buffer: pdfkit cachea por ruta en cada documento y la marca de agua se incrusta una vez
             doc.image(imagePath, x, y, {
-                width: logoW,
-                height: logoH
+                fit: [logoW, logoH],
+                align: 'center',
+                valign: 'center'
             });
             doc.fillOpacity(1);
             doc.restore();
