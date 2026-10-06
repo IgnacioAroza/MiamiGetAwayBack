@@ -47,6 +47,7 @@ vi.mock('../../../utils/cloudinaryConfig.js', () => ({
 
 import ExperienceController from '../../../controllers/experience.js';
 import ExperienceModel from '../../../models/experience.js';
+import ImageService from '../../../services/imageService.js';
 import EmailService from '../../../services/emailService.js';
 import * as schema from '../../../schemas/experienceSchema.js';
 
@@ -136,7 +137,16 @@ describe('ExperienceController', () => {
   });
 
   describe('update', () => {
+    it('conserva imágenes viejas si falla la escritura tras subir reemplazos', async () => {
+      vi.mocked(ExperienceModel.getById).mockResolvedValueOnce({ ...mockExperience, images: ['old.jpg'] } as any);
+      vi.mocked(ExperienceModel.update).mockRejectedValueOnce(new Error('DB failed'));
+      const req = mockReq({ params: { id: '1' }, body: {}, files: [{ originalname: 'new.jpg' }] as any });
+      await ExperienceController.update(req, mockRes());
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['https://test-url.com/img.jpg'], 'experiences');
+      expect(ImageService.deleteImages).not.toHaveBeenCalledWith(['old.jpg'], 'experiences');
+    });
     it('devuelve 200 al actualizar', async () => {
+      vi.mocked(ExperienceModel.getById).mockResolvedValueOnce(mockExperience as any);
       vi.mocked(ExperienceModel.update).mockResolvedValueOnce({ ...mockExperience, title: 'New Title' } as any);
       const req = mockReq({ params: { id: '1' }, body: { title: 'New Title' } });
       const res = mockRes();

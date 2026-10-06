@@ -99,6 +99,9 @@ export default class InvestmentController {
                 return;
             }
 
+            const current = await InvestmentModel.getById(id);
+            if (!current) { notFound(res, 'Investment not found'); return; }
+
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'investments' });
                 if (!uploadResult.success) {
@@ -108,7 +111,17 @@ export default class InvestmentController {
                 data.images = uploadResult.urls;
             }
 
-            const investment = await InvestmentModel.update(id, data);
+            let investment;
+            try {
+                investment = await InvestmentModel.update(id, data);
+            } catch (error) {
+                if (data.images?.length) await ImageService.deleteImages(data.images, 'investments');
+                throw error;
+            }
+            if (data.images?.length && current.images?.length) {
+                const cleanup = await ImageService.deleteImages(current.images, 'investments');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            }
             ok(res, investment);
         } catch (error: any) {
             if (error.message === 'Investment not found') {

@@ -120,6 +120,7 @@ describe('Rutas de Experiences', () => {
 
   describe('PUT /api/experiences/:id', () => {
     it('actualiza una experience y devuelve 200', async () => {
+      vi.mocked(ExperienceModel.getById).mockResolvedValueOnce({ id: 1, images: [] } as any);
       const updated = { id: 1, title: 'Updated Title', description: null, capacity: 10, price: 400, images: [], created_at: '2026-06-01T00:00:00.000Z' };
       vi.mocked(ExperienceModel.update).mockResolvedValueOnce(updated);
       const res = await request(app).put('/api/experiences/1').send({ title: 'Updated Title' }).expect(200);

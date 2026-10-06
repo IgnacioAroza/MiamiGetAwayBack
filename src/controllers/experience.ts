@@ -94,6 +94,9 @@ export default class ExperienceController {
                 return;
             }
 
+            const current = await ExperienceModel.getById(id);
+            if (!current) { notFound(res, 'Experience not found'); return; }
+
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'experiences' });
                 if (!uploadResult.success) {
@@ -103,7 +106,17 @@ export default class ExperienceController {
                 data.images = uploadResult.urls;
             }
 
-            const experience = await ExperienceModel.update(id, data);
+            let experience;
+            try {
+                experience = await ExperienceModel.update(id, data);
+            } catch (error) {
+                if (data.images?.length) await ImageService.deleteImages(data.images, 'experiences');
+                throw error;
+            }
+            if (data.images?.length && current.images?.length) {
+                const cleanup = await ImageService.deleteImages(current.images, 'experiences');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            }
             ok(res, experience);
         } catch (error: any) {
             if (error.message === 'Experience not found') {
