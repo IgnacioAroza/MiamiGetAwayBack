@@ -3,7 +3,6 @@ import { Reservation, ReservationWithClient } from '../types/reservations.js';
 import { ExperienceInquiry } from '../types/experiences.js';
 import { TransferInquiry } from '../types/transfers.js';
 import PdfService from '../services/pdfService.js';
-import fs from 'fs';
 
 export default class EmailService {
     private static formatTime12h(time: string): string {
@@ -43,7 +42,7 @@ export default class EmailService {
     static async sendConfirmationEmail(to: string, reservation: ReservationWithClient): Promise<void> {
         try {
             // Generar el PDF
-            const pdfPath = await PdfService.generateInvoicePdf(reservation);
+            const pdf = await PdfService.generatePdfForDownload(reservation);
             
             const mailOptions = {
                 from: `"Miami Get Away" <${process.env.EMAIL_USER}>`,
@@ -65,20 +64,12 @@ export default class EmailService {
                 `,
                 attachments: [{
                     filename: `reservation-${reservation.id}-${reservation.clientName}-${reservation.clientLastname}.pdf`,
-                    path: pdfPath,
+                    content: pdf,
                     contentType: 'application/pdf',
                 }]
             };
 
-            const info = await this.transporter.sendMail(mailOptions);
-
-            // Eliminar el archivo PDF después de enviar el correo
-            try {
-                fs.unlinkSync(pdfPath);
-            } catch (error) {
-                console.error('Error deleting temporary PDF file:', error);
-                // No lanzamos el error para no interrumpir el flujo principal
-            }
+            await this.transporter.sendMail(mailOptions);
         } catch (error) {
             console.error('Error sending confirmation email:', error);
             throw error;
