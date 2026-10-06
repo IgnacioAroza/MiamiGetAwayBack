@@ -8,6 +8,21 @@ import {
     ImageValidationResult 
 } from '../utils/imageUtils.js';
 
+let activeUploads = 0;
+const waitingUploads: Array<() => void> = [];
+
+async function withUploadSlot<T>(work: () => Promise<T>): Promise<T> {
+    if (activeUploads >= 3) await new Promise<void>(resolve => waitingUploads.push(resolve));
+    else activeUploads++;
+    try {
+        return await work();
+    } finally {
+        const next = waitingUploads.shift();
+        if (next) next();
+        else activeUploads--;
+    }
+}
+
 export interface UploadResult {
     success: boolean;
     urls: string[];
@@ -70,7 +85,7 @@ class ImageService {
 
             const config = IMAGE_CONFIGS[entityType];
             const errors: string[] = [];
-            const uploadedUrls: string[] = [];
+            const uploadedUrls: string[] = new Array(files.length);
 
             // Configurar transformaciones
             let transformations = config.transformations || {};
@@ -81,26 +96,29 @@ class ImageService {
                 transformations = { ...transformations, ...customTransformations };
             }
 
-            // Subir archivos en paralelo
-            const uploadPromises = files.map((file, index) => 
-                this.uploadSingleImage(file, config.folder, transformations, publicIdPrefix, index)
-            );
-
-            const results = await Promise.allSettled(uploadPromises);
-
-            // Procesar resultados
-            results.forEach((result, index) => {
-                if (result.status === 'fulfilled') {
-                    uploadedUrls.push(result.value);
-                } else {
-                    errors.push(`Error subiendo imagen ${index + 1}: ${result.reason}`);
-                    console.error(`Error uploading image ${index + 1}:`, result.reason);
+            let nextIndex = 0;
+            await Promise.all(Array.from({ length: Math.min(3, files.length) }, async () => {
+                while (nextIndex < files.length) {
+                    const index = nextIndex++;
+                    const file = files[index];
+                    try {
+                        uploadedUrls[index] = await withUploadSlot(() =>
+                            this.uploadSingleImage(file, config.folder, transformations, publicIdPrefix));
+                    } catch (error) {
+                        errors.push(`UPLOAD_FAILED: ${file.originalname} (${index + 1}): ${error instanceof Error ? error.message : String(error)}`);
+                    }
                 }
-            });
+            }));
+
+            const completedUrls = uploadedUrls.filter(Boolean);
+            if (errors.length > 0 && completedUrls.length > 0) {
+                const rollback = await this.deleteImages(completedUrls, entityType);
+                if (!rollback.success) console.error('Cloudinary rollback incomplete:', rollback.errors);
+            }
 
             return {
                 success: errors.length === 0,
-                urls: uploadedUrls,
+                urls: errors.length ? [] : completedUrls,
                 errors
             };
 
@@ -240,14 +258,12 @@ class ImageService {
     /**
      * Sube una sola imagen a Cloudinary
      */
-    private static uploadSingleImage(
+    private static async uploadSingleImage(
         file: Express.Multer.File, 
         folder: string, 
         transformations: any,
         publicIdPrefix?: string,
-        index?: number
     ): Promise<string> {
-        return new Promise((resolve, reject) => {
             const uploadOptions: any = {
                 folder,
                 resource_type: 'image',
@@ -261,21 +277,9 @@ class ImageService {
                 uploadOptions.public_id = `${publicIdPrefix}_${timestamp}_${randomSuffix}`;
             }
 
-            const uploadStream = cloudinary.uploader.upload_stream(
-                uploadOptions,
-                (error, result) => {
-                    if (error) {
-                        reject(new Error(`Error de Cloudinary: ${error.message}`));
-                    } else if (result) {
-                        resolve(result.secure_url);
-                    } else {
-                        reject(new Error('No se recibió resultado de Cloudinary'));
-                    }
-                }
-            );
-
-            uploadStream.end(file.buffer);
-        });
+            const result = await cloudinary.uploader.upload(file.path, uploadOptions);
+            if (!result?.secure_url) throw new Error('No se recibió resultado de Cloudinary');
+            return result.secure_url;
     }
 
     /**

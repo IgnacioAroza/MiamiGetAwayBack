@@ -149,11 +149,6 @@ export function validateImageFiles(
 
     // Validar cada archivo
     files.forEach((file, index) => {
-        // Validar formato
-        if (!config.allowedFormats.includes(file.mimetype)) {
-            errors.push(`Archivo ${index + 1}: Formato no permitido. Formatos aceptados: ${config.allowedFormats.join(', ')}`);
-        }
-
         // Validar tamaño
         if (file.size > config.maxFileSize) {
             const maxSizeMB = config.maxFileSize / (1024 * 1024);
