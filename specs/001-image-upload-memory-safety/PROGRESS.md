@@ -37,10 +37,8 @@ Gates: `NODE_ENV=test npm test` = 428 pasados, 5 `todo`; `npm run build` verde. 
 - Confirmar que el start command sea `npm start` para aplicar `--max-old-space-size=256`.
 - Confirmar espacio temporal para dos tandas de hasta 300 MiB antes del despliegue.
 
-## Próxima tarea pendiente y dudas
+## Estado final
 
-**Próximo:** acordar si el criterio de pico <400 MB de la spec se mide por RSS del proceso o memoria total del cgroup/Render; si es cgroup, reducir el pico y repetir la carga. No arrancar hasta que Ignacio retome después del reinicio.
+Criterio de memoria acordado con Ignacio: 0 OOM kills con límite de 512 MiB y memoria no reclamable (anon + kernel + shmem) < 400 MiB. Medido en Docker (2 × 30 JPEG de 10 MiB): 202–210 MiB no reclamables, `oom_kill` 0, RSS pico ~262 MiB, RSS posterior 198–210 MiB, temporales 0. `/tmp` del contenedor no es tmpfs. Se descartó `dropFileCache` (`fadvise`): no bajó el pico de forma útil. Detalle en `results.md`.
 
-Carga con 2 requests simultáneas de 30 JPEG de 10 MiB, 4000×4000, PostgreSQL 18 local y Cloudinary simulado: ambos HTTP 200; RSS pico 255 MiB, RSS posterior 198 MiB, cero OOM y cero temporales. Pico cgroup 513 MiB por caché de archivos: **no cumple <400 MB si esa es la métrica**. Detalle en `results.md`.
-
-Pendientes de aceptación posteriores: demo manual en producción con 30 fotos tras el Front y 7 días en Render sin `server_failed` por OOM. Quedan 19 alertas high y 3 critical de `npm audit` fuera de las dependencias del camino de subida auditado. El borrado remoto ante falla de red no es transaccional; un rollback fallido se registra para limpieza manual.
+Pendientes fuera del código: verificar si `/tmp` en Render es tmpfs; demo manual en producción con 30 fotos tras el Front; 7 días en Render sin `server_failed` por OOM. Quedan 19 alertas high y 3 critical de `npm audit` fuera del camino de subida. El borrado remoto ante falla de red no es transaccional; un rollback fallido se registra para limpieza manual.

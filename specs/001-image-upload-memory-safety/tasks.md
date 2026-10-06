@@ -1,6 +1,6 @@
 # Tareas — spec 001 backend
 
-Plan aprobado. T01–T12 ejecutadas y commiteadas; T12 detectó un pico de memoria de cgroup mayor a 400 MB. Próximo trabajo pendiente: resolver ese criterio antes de dar por cerrada la spec. Demo en producción y 7 días sin OOM quedan a cargo del despliegue posterior.
+Plan aprobado. T01–T12 ejecutadas y commiteadas. El criterio de memoria se redefinió (0 OOM kills y anon+kernel+shmem < 400 MiB; medido 202–210 MiB) y se descartó el experimento `dropFileCache`. Spec cerrada localmente. Demo en producción y 7 días sin OOM quedan a cargo del despliegue posterior.
 
 | ID | Tarea | RF | Verificación |
 |---|---|---|---|
@@ -15,4 +15,4 @@ Plan aprobado. T01–T12 ejecutadas y commiteadas; T12 detectó un pico de memor
 | T09 ✅ | Hacer reemplazo seguro en inversión/experiencia/traslado | RF-12, RF-13, RF-14 | Tests por controller: éxito, sin archivos y fallas de upload/DB |
 | T10 ✅ | Hacer reemplazo seguro en pagos a proveedor y pago de reserva | RF-3, RF-13, RF-14 | Tests por service/controller con fallas de subida y escritura |
 | T11 ✅ | Adjuntar PDF en memoria al mail de confirmación | RF-15 | Test `sendMail` éxito/error; ningún archivo temporal creado |
-| T12 ✅ | Prueba de carga, auditoría final y matriz RF | RF-1..RF-15 | 2 × 30 × 10 MiB, RSS pico/reposo, `npm test`, `npm run build`, auditoría |
+| T12 ✅ | Prueba de carga, auditoría final y matriz RF | RF-1..RF-15 | 2 × 30 × 10 MiB, memoria no reclamable del cgroup/RSS reposo, `npm test`, `npm run build`, auditoría |

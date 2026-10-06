@@ -70,8 +70,10 @@ imágenes en el panel y **se despliega primero**.
   sin dejar archivos en el disco del servidor, haya funcionado o fallado el envío.
 
 ## Requisitos no funcionales
-- Memoria pico: con 2 cargas simultáneas de 30 imágenes de 10 MB, el uso de memoria se
-  mantiene por debajo de 400 MB.
+- Memoria pico: con límite de 512 MiB y 2 cargas simultáneas de 30 imágenes de 10 MB,
+  0 OOM kills y memoria no reclamable (anon + kernel + shmem de `memory.stat` del cgroup)
+  por debajo de 400 MiB. No se mide el cgroup total: incluye page cache de los temporales,
+  que el kernel reclama bajo presión.
 - Memoria en reposo: dentro de los 10 minutos posteriores a una carga, el uso vuelve a
   menos de 250 MB.
 - El entorno de ejecución usa una versión de runtime fija y límites de memoria
@@ -106,7 +108,7 @@ imágenes en el panel y **se despliega primero**.
 ## Criterios de finalización
 - Todos los RF con test en verde.
 - Prueba de carga local con límite de 512 MB, base local y almacenamiento simulado:
-  2 cargas simultáneas de 30 imágenes de 10 MB sin OOM y con pico < 400 MB.
+  2 cargas simultáneas de 30 imágenes de 10 MB con 0 OOM kills y memoria no reclamable < 400 MiB.
 - Auditoría de dependencias sin high/critical en el camino de subida.
 - Demo manual en producción: alta y edición de una villa con 30 fotos de celular.
 - 7 días en producción sin eventos `server_failed` por OOM en Render.

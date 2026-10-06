@@ -20,7 +20,7 @@
 1. Baseline de `npm test` con `NODE_ENV=test` y `.env.test` local apuntando **solo** a PostgreSQL local y Cloudinary ficticio. Ningún test debe tocar servicios reales. Revisar fallos preexistentes antes de cambiar código.
 2. Dependencias y runtime; luego recepción a disco, validación y cleanup; después cola/rollback; después persistencia segura por entidad; al final PDF.
 3. Tras cada tarea: tests enfocados, `npm test`, commit conventional en español. Build y auditoría tras los cambios de dependencias y al cierre.
-4. Prueba de carga local con proceso limitado a 512 MiB, dos requests de 30 × 10 MiB, DB local y Cloudinary simulado; medir RSS pico y RSS luego de hasta 10 minutos. Verificar <400 MiB pico, <250 MiB reposo, sin OOM, 60 temporales borrados. La prueba no carga en producción.
+4. Prueba de carga local con proceso limitado a 512 MiB, dos requests de 30 × 10 MiB, DB local y Cloudinary simulado; medir RSS pico y RSS luego de hasta 10 minutos. Verificar 0 OOM kills y memoria no reclamable (anon+kernel+shmem del cgroup) <400 MiB en el pico, <250 MiB reposo, sin OOM, 60 temporales borrados. La prueba no carga en producción.
 5. Despliegue: primero Front spec 001. Ignacio configura en Render `MALLOC_ARENA_MAX=2` y Node 22.x (`NODE_VERSION=22.23.3` si Render no respeta `engines`). Revisar que Render use `npm start` y espacio temporal suficiente para dos tandas de 300 MiB. No modificaré Render.
 
 ## Riesgos y límites
