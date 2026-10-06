@@ -12,16 +12,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default class PdfService {
-    private static readonly _imgCache = new Map<string, Buffer>();
-
-    private static getImageBuffer(imagePath: string): Buffer | null {
-        if (this._imgCache.has(imagePath)) return this._imgCache.get(imagePath)!;
-        if (!fs.existsSync(imagePath)) return null;
-        const buf = fs.readFileSync(imagePath);
-        this._imgCache.set(imagePath, buf);
-        return buf;
-    }
-
     static async generateInvoicePdf(reservation: ReservationWithClient, payments: ReservationPayment[] = []): Promise<string> {
         // Comentamos la parte de logs
         /*const logFile = path.join(process.cwd(), 'pdf-debug.log');
@@ -131,9 +121,9 @@ export default class PdfService {
 
         // Logo centrado
         const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo_negro.png');
-        const logoBuf = PdfService.getImageBuffer(logoPath);
-        if (logoBuf) {
-            doc.image(logoBuf, 100, 30, {
+        if (fs.existsSync(logoPath)) {
+            // Se pasa la ruta (no un Buffer) para que pdfkit incruste la imagen una sola vez por documento
+            doc.image(logoPath, 100, 30, {
                 fit: [400, 100],
                 align: 'center'
             });
@@ -667,9 +657,8 @@ export default class PdfService {
         try {
             // Logo y encabezado
             const logoPath = path.join(process.cwd(), 'src', 'assets', 'images', 'logo_texto_negro.png');
-            const summaryLogoBuf = PdfService.getImageBuffer(logoPath);
-            if (summaryLogoBuf) {
-                doc.image(summaryLogoBuf, 100, 30, {
+            if (fs.existsSync(logoPath)) {
+                doc.image(logoPath, 100, 30, {
                     fit: [400, 100],
                     align: 'center'
                 });
@@ -828,7 +817,6 @@ export default class PdfService {
                 return;
             }
 
-            const imageBuffer = PdfService.getImageBuffer(imagePath)!;
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
             const logoW = 440;
@@ -838,9 +826,11 @@ export default class PdfService {
 
             doc.save();
             doc.fillOpacity(0.12);
-            doc.image(imageBuffer, x, y, {
-                width: logoW,
-                height: logoH
+            // Ruta, no Buffer: pdfkit cachea por ruta en cada documento y la marca de agua se incrusta una vez
+            doc.image(imagePath, x, y, {
+                fit: [logoW, logoH],
+                align: 'center',
+                valign: 'center'
             });
             doc.fillOpacity(1);
             doc.restore();
