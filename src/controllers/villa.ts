@@ -138,7 +138,18 @@ class VillaController {
                 villaData.images = syncResult.images;
             }
 
-            const updatedVilla = await VillaModel.updateVilla(id, villaData);
+            let updatedVilla;
+            try {
+                updatedVilla = await VillaModel.updateVilla(id, villaData);
+                if (!updatedVilla) throw new Error('Entity not found');
+            } catch (error) {
+                if (syncResult.newUrls?.length) await ImageService.deleteImages(syncResult.newUrls, 'villas');
+                throw error;
+            }
+            if (syncResult.removedImages?.length) {
+                const cleanup = await ImageService.deleteImages(syncResult.removedImages, 'villas');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            };
             ok(res, updatedVilla);
         } catch (error) {
             console.error('Error updating villa:', error);

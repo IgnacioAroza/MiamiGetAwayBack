@@ -56,6 +56,8 @@ export interface SyncImagesResult {
     /** Array final a persistir. undefined si no hay que tocar el campo images */
     images?: string[];
     errors?: string[];
+    newUrls?: string[];
+    removedImages?: string[];
 }
 
 /**
@@ -226,17 +228,8 @@ class ImageService {
 
         const finalImages = [...(keptImages ?? currentImages), ...newUrls];
 
-        if (keptImages !== undefined) {
-            const removedImages = currentImages.filter(url => !keptImages!.includes(url));
-            if (removedImages.length > 0) {
-                const deleteResult = await this.deleteImages(removedImages, entityType);
-                if (!deleteResult.success && deleteResult.errors.length > 0) {
-                    console.warn(`Algunas imágenes de ${entityType} no pudieron eliminarse de Cloudinary:`, deleteResult.errors);
-                }
-            }
-        }
-
-        return { images: finalImages };
+        const removedImages = keptImages === undefined ? [] : currentImages.filter(url => !keptImages!.includes(url));
+        return { images: finalImages, newUrls, removedImages };
     }
 
     /**

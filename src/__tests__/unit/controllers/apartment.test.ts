@@ -58,6 +58,7 @@ import ApartmentModel from '../../../models/apartment.js';
 import { validateApartment, validatePartialApartment } from '../../../schemas/apartmentSchema.js';
 // Importar el mock de cloudinary para poder espiarlo
 import cloudinary from '../../../utils/cloudinaryConfig.js';
+import ImageService from '../../../services/imageService.js';
 
 describe('ApartmentController', () => {
   let req: Partial<Request>;
@@ -284,6 +285,26 @@ describe('ApartmentController', () => {
   });
 
   describe('updateApartment', () => {
+    it('borra imágenes anteriores solo después de guardar', async () => {
+      req.params = { id: '1' };
+      req.body = { existingImages: '[]' };
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({ images: ['old.jpg'] } as any);
+      vi.mocked(ImageService.syncImages).mockResolvedValueOnce({ images: [], newUrls: [], removedImages: ['old.jpg'] });
+      vi.mocked(ApartmentModel.updateApartment).mockResolvedValueOnce({ id: 1 } as any);
+      await ApartmentController.updateApartment(req as Request, res as Response);
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['old.jpg'], 'apartments');
+      expect(vi.mocked(ApartmentModel.updateApartment).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(ImageService.deleteImages).mock.invocationCallOrder[0]);
+    });
+
+    it('borra imágenes nuevas si falla la escritura y conserva las anteriores', async () => {
+      req.params = { id: '1' };
+      vi.mocked(ApartmentModel.getApartmentById).mockResolvedValueOnce({ images: ['old.jpg'] } as any);
+      vi.mocked(ImageService.syncImages).mockResolvedValueOnce({ images: ['new.jpg'], newUrls: ['new.jpg'], removedImages: ['old.jpg'] });
+      vi.mocked(ApartmentModel.updateApartment).mockRejectedValueOnce(new Error('DB failed'));
+      await ApartmentController.updateApartment(req as Request, res as Response);
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['new.jpg'], 'apartments');
+      expect(ImageService.deleteImages).not.toHaveBeenCalledWith(['old.jpg'], 'apartments');
+    });
     it('debería actualizar un apartamento existente y devolver status 200', async () => {
       // Configuración del mock
       req.params = { id: '1' };
