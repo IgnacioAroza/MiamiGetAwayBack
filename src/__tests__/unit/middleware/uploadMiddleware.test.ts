@@ -3,8 +3,9 @@ import express from 'express';
 import multer from 'multer';
 import request from 'supertest';
 import sharp from 'sharp';
-import { readdirSync } from 'node:fs';
-import upload, { uploadRoot } from '../../../middleware/uploadMiddleware.js';
+import { existsSync, mkdirSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import upload, { cleanupAbandonedUploads, uploadRoot } from '../../../middleware/uploadMiddleware.js';
 
 const app = express();
 app.post('/images', upload.array('images', 2), (req, res) => res.json({ paths: (req.files as Express.Multer.File[]).map(file => file.path) }));
@@ -63,5 +64,17 @@ describe('uploadMiddleware', () => {
         const response = await request(app).post('/images').attach('images', image, { filename: 'image.png', contentType: 'image/png' });
         expect(response.status).toBe(400);
         expect(response.body.code).toBe('INVALID_IMAGE');
+    });
+
+    it('limpia cargas interrumpidas al arrancar sin tocar directorios ajenos', () => {
+        const abandoned = join(uploadRoot, '11111111-1111-1111-1111-111111111111');
+        const foreign = join(uploadRoot, 'other-app');
+        mkdirSync(abandoned, { recursive: true });
+        mkdirSync(foreign);
+        writeFileSync(join(abandoned, 'image'), 'x');
+        cleanupAbandonedUploads();
+        expect(existsSync(abandoned)).toBe(false);
+        expect(existsSync(foreign)).toBe(true);
+        rmSync(foreign, { recursive: true });
     });
 });
