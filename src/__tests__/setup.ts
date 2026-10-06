@@ -2,6 +2,9 @@
 import { vi, afterEach } from 'vitest';
 import dotenv from 'dotenv';
 
+const admins = new Map<number, { id: number; username: string; email: string; password: string }>();
+let nextAdminId = 1;
+
 // Cargar variables de entorno para pruebas
 dotenv.config({ path: '.env.test' });
 
@@ -9,6 +12,29 @@ dotenv.config({ path: '.env.test' });
 vi.mock('../utils/db_render.js', () => ({
   default: {
     query: vi.fn().mockImplementation((text: string, params: any[] = []) => {
+      if (text.includes('DELETE FROM admins') && !text.includes('WHERE')) {
+        admins.clear();
+        return Promise.resolve({ rows: [] });
+      }
+      if (text.includes('INSERT INTO admins')) {
+        const admin = { id: nextAdminId++, username: params[0], email: params[1], password: params[2] };
+        admins.set(admin.id, admin);
+        return Promise.resolve({ rows: [{ id: admin.id, username: admin.username, email: admin.email }] });
+      }
+      if (text.includes('UPDATE admins SET')) {
+        const admin = admins.get(Number(params.at(-1)));
+        if (admin) admin.username = params[0];
+        return Promise.resolve({ rows: [] });
+      }
+      if (text.includes('DELETE FROM admins WHERE')) {
+        const admin = admins.get(Number(params[0]));
+        admins.delete(Number(params[0]));
+        return Promise.resolve({ rows: admin ? [admin] : [] });
+      }
+      if (text.includes('SELECT id, username, email FROM admins')) {
+        const selected = params.length ? [admins.get(Number(params[0]))] : [...admins.values()];
+        return Promise.resolve({ rows: selected.filter(Boolean).map(({ id, username, email }) => ({ id, username, email })) });
+      }
       if (text.includes('INSERT INTO villas')) {
         return Promise.resolve({ 
           rows: [{ 
