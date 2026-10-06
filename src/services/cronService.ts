@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import cron, { type ScheduledTask } from 'node-cron';
 import { ReservationModel } from '../models/reservation.js';
 import db from '../utils/db_render.js';
 import { QueryResult } from 'pg';
@@ -10,7 +10,7 @@ import { parseReservationDate } from '../schemas/reservationSchema.js';
  */
 export class CronService {
   private static instance: CronService;
-  private reservationUpdateJob: cron.ScheduledTask | null = null;
+  private reservationUpdateJob: ScheduledTask | null = null;
 
   private constructor() {}
 

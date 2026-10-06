@@ -56,7 +56,7 @@ describe('ReservationPaymentController', () => {
             await ReservationPaymentController.createReservationPayment(mockRequest as Request, mockResponse as Response);
 
             expect(ReservationPaymentsService.createPayment).toHaveBeenCalledWith(
-                expect.objectContaining({ receiptImage: null })
+                expect.objectContaining({ receiptImage: null }), false
             );
             expect(statusCode).toBe(201);
             expect(responseBody).toEqual(MOCK_PAYMENT);
@@ -76,7 +76,7 @@ describe('ReservationPaymentController', () => {
                 { entityType: 'reservation_payments' }
             );
             expect(ReservationPaymentsService.createPayment).toHaveBeenCalledWith(
-                expect.objectContaining({ receiptImage: imageUrl })
+                expect.objectContaining({ receiptImage: imageUrl }), true
             );
             expect(statusCode).toBe(201);
         });
@@ -139,7 +139,7 @@ describe('ReservationPaymentController', () => {
             );
             expect(ReservationPaymentsService.updatePayment).toHaveBeenCalledWith(
                 1,
-                expect.objectContaining({ receiptImage: imageUrl })
+                expect.objectContaining({ receiptImage: imageUrl }), true
             );
             expect(statusCode).toBe(200);
         });
@@ -152,7 +152,7 @@ describe('ReservationPaymentController', () => {
             expect(ImageService.uploadImages).not.toHaveBeenCalled();
             expect(ReservationPaymentsService.updatePayment).toHaveBeenCalledWith(
                 1,
-                expect.objectContaining({ receiptImage: null })
+                expect.objectContaining({ receiptImage: null }), false
             );
             expect(statusCode).toBe(200);
         });

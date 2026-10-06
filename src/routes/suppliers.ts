@@ -23,6 +23,6 @@ supplierPaymentsRouter.get(
     authMiddleware,
     SupplierPaymentController.getByReservationSupplier
 );
-supplierPaymentsRouter.post('/', authMiddleware, upload.array('receipt_images', 10), SupplierPaymentController.create);
-supplierPaymentsRouter.put('/:id', authMiddleware, upload.array('receipt_images', 10), SupplierPaymentController.update);
+supplierPaymentsRouter.post('/', authMiddleware, upload.array('receipt_images', 5), SupplierPaymentController.create);
+supplierPaymentsRouter.put('/:id', authMiddleware, upload.array('receipt_images', 5), SupplierPaymentController.update);
 supplierPaymentsRouter.delete('/:id', authMiddleware, SupplierPaymentController.remove);

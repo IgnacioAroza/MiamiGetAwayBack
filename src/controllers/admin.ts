@@ -70,7 +70,7 @@ class AdminController {
             const { id } = req.params
             const result = await AdminModel.deleteAdmin(Number(id))
 
-            if (result && typeof result === 'object' && 'success' in result && result.success) {
+            if (result?.message === 'Admin deleted successfully') {
                 ok(res, { message: result.message })
             } else {
                 notFound(res, result && typeof result === 'object' ? result.message : 'Admin not found')

@@ -1,5 +1,6 @@
 import express from 'express'
 import multer from 'multer'
+import { cleanupAbandonedUploads, lastUploadFile, UploadValidationError } from './middleware/uploadMiddleware.js'
 import cors from 'cors'
 import helmet from 'helmet'
 import { rateLimit } from 'express-rate-limit'
@@ -117,11 +118,14 @@ app.use('*', (req, res) => {
 
 // Manejo de errores global
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof UploadValidationError) {
+        res.status(400).json({ error: err.code, details: [{ code: err.code, file: err.file, message: err.message }] })
+        return
+    }
     if (err instanceof multer.MulterError) {
-        const message = err.code === 'LIMIT_FILE_SIZE'
-            ? 'File too large. Maximum size is 10MB'
-            : err.message
-        res.status(400).json({ error: message })
+        const code = err.code === 'LIMIT_FILE_SIZE' ? 'FILE_TOO_LARGE' : 'TOO_MANY_FILES'
+        const file = lastUploadFile(req)
+        res.status(400).json({ error: code, details: [{ code, file, message: err.message }] })
         return
     }
     res.status(500).json({
@@ -132,6 +136,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 // Iniciar el servidor (no en test — supertest maneja el binding)
 if (process.env.NODE_ENV !== 'test') {
+    cleanupAbandonedUploads()
     app.listen(PORT, () => {
         if (['development', 'demo'].includes(process.env.NODE_ENV || '')) {
             console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || 'development'} mode)`);
