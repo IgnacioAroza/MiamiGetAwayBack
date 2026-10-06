@@ -10,7 +10,7 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 
 - **Stack**: Node.js + TypeScript (ESM) + Express + PostgreSQL
 - **Autenticación**: JWT (`/api/auth/login`)
-- **Imágenes**: Cloudinary (multipart/form-data, campo `images`, máx. 30)
+- **Imágenes**: Cloudinary (multipart/form-data, campo `images`, máx. 30; traslados 20; comprobantes de proveedor 5; pago de reserva 1; 10 MiB por archivo). Se reciben a disco, no en RAM — ver sección "Memoria y subida de imágenes"
 - **Email**: Nodemailer + Zoho SMTP (`ADMIN_EMAIL` env var para notificaciones al admin)
 - **PDF**: PDFKit
 - **Validación**: Zod
@@ -62,6 +62,8 @@ Backend REST API para **MiamiGetAway**, plataforma de alquiler de propiedades y 
 - Migraciones locales individuales: `npx cross-env NODE_ENV=test ENV_FILE=.env.test node migrations/runSingle.js <archivo.sql>`
 - Migraciones producción individuales: `npx cross-env NODE_ENV=production node migrations/runSingle.js <archivo.sql>`
 - `.env.test` tiene credenciales falsas de Cloudinary — para probar uploads reales en dev, copiar las credenciales del `.env`
+- `npm run dev` y `dev:demo` usan `tsx watch` (nodemon se sacó el 2026-10-06)
+- Tests: `NODE_ENV=test npx vitest run` (usa `.env.test`, base local y Cloudinary falso)
 
 ---
 
@@ -104,7 +106,7 @@ Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index
 
 ## Estado de ramas y features
 
-> Última sesión: `docs/memory/2026-07-23.md`
+> Última sesión: `docs/memory/2026-10-06.md`
 > Documentos de referencia:
 > - `docs/contracts/api-frontend-contract.md` — contrato general API ↔ Frontend
 > - `docs/contracts/investments-frontend-contract.md` — contrato investments
@@ -118,15 +120,31 @@ Scripts SQL en `migrations/scripts/`. Usar `runSingle.js` de a una, nunca `index
 | Transfers | `main` | ✅ en producción |
 | GET /supplier-payments | `main` | ✅ en producción (PR #43) |
 | ImageService.syncImages (borrado/orden real de imágenes) | `main` | ✅ en producción (PR #46, 2026-07-23) |
-| `?sort=recent` opcional en apartments/cars/yachts/villas | `development` | Sin PR aún (2026-07-23) |
+| `?sort=recent` opcional en apartments/cars/yachts/villas | `main` | ✅ en producción (PR #47) |
+| Spec 001 — subida de imágenes sin agotar la memoria | `main` | ✅ en producción (PR #50, 2026-10-06) |
+| Fix memoria nativa de `sharp` | `main` | ✅ en producción (PR #51/#52, 2026-10-06) |
+| Fix PDF: imágenes incrustadas una vez + achicadas | `main` | ✅ en producción (PR #53/#54, 2026-10-06) |
 
-**Al 2026-07-23:** `main` y `development` sincronizados en el mismo commit (`de29f05`). Migraciones hasta 026.
+**Al 2026-10-06:** `main` = `15d5ef8` (release #54). Migraciones hasta 026 (sin cambios).
 
 ---
 
 ## ⚠️ Advertencia operativa — dev local apunta a producción
 
-El servidor local (`npm run dev:demo`, puerto 3001) usa la `DATABASE_URL` y las credenciales `CLOUDINARY_*` de **producción** — no hay ambiente aislado. Cualquier prueba de borrado/creación/edición desde el admin panel local (o contra este backend en `localhost:3001`) afecta datos reales del cliente. Probar siempre con entidades de prueba propias y limpiar después. Ver detalle en `docs/memory/2026-07-23.md`.
+El servidor local (`npm run dev:demo`, puerto 3001) usa la `DATABASE_URL` y las credenciales `CLOUDINARY_*` de **producción** — no hay ambiente aislado. (Verificado el 2026-10-06: el `.env` local apunta a la cuenta de Cloudinary `dcxa0ozit`, no a la de producción `dbvpwfh07`. La base no se verificó: tratarla como producción.) Cualquier prueba de borrado/creación/edición desde el admin panel local (o contra este backend en `localhost:3001`) afecta datos reales del cliente. Probar siempre con entidades de prueba propias y limpiar después. Ver detalle en `docs/memory/2026-07-23.md`.
+
+---
+
+## Memoria y subida de imágenes (2026-10-06)
+
+Render Starter tiene **512 MiB**. Hubo OOM kills por imágenes en RAM y, sobre todo, por el PDF de reserva. Detalle completo en `docs/memory/2026-10-06.md` y `specs/001-image-upload-memory-safety/`.
+
+- **Uploads:** multer a disco (`os.tmpdir()`), validación del contenido real con `sharp` (miniatura con `failOn: 'truncated'`), subida a Cloudinary desde la ruta con cola global de 3, limpieza de temporales al terminar y al arrancar.
+- **Reemplazos:** las imágenes y comprobantes viejos se borran recién después de guardar los nuevos. Si falla una subida parcial, se borran de Cloudinary las que sí subieron.
+- **`sharp`:** `cache(false)` y `concurrency(1)`.
+- **Runtime:** `start` con `--max-old-space-size=256`, `engines.node: 22.x`, y `MALLOC_ARENA_MAX=2` en las variables de Render.
+- **PDF (`pdfService.ts`):** pasar **rutas** a `doc.image()`, nunca Buffers, para que pdfkit incruste cada imagen una sola vez. Imágenes de `src/assets/images/`: `logo_texto_negro.png` (1300 × 452, marca de agua) y `logo_negro.png` (600 × 338, cabecera). No agregar imágenes grandes ahí.
+- **Diagnóstico:** en la Shell de Render, `egrep '^(anon|file|shmem|kernel) ' /sys/fs/cgroup/memory.stat` — `anon` es lo que causa OOM, `file` es caché reclamable.
 
 ---
 
