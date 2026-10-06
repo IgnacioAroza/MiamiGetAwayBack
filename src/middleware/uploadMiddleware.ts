@@ -7,6 +7,10 @@ import { open } from 'node:fs/promises';
 import sharp from 'sharp';
 import type { RequestHandler } from 'express';
 
+// Limita la memoria nativa de libvips: sin caché de operaciones y un solo hilo.
+sharp.cache(false);
+sharp.concurrency(1);
+
 export const uploadRoot = join(tmpdir(), 'miamigetaway-uploads');
 const requestDirs = new WeakMap<object, string>();
 const lastFiles = new WeakMap<object, string>();
@@ -33,10 +37,10 @@ async function validateFile(file: Express.Multer.File): Promise<void> {
     if (!format) throw new UploadValidationError('INVALID_IMAGE', file.originalname, 'Unsupported image content');
 
     try {
-        const image = sharp(file.path, { limitInputPixels: 24_000_000 });
+        const image = sharp(file.path, { limitInputPixels: 24_000_000, failOn: 'truncated' });
         const metadata = await image.metadata();
         if (metadata.format !== format) throw new Error('Image signature does not match content');
-        await image.stats();
+        await image.resize(64).toBuffer(); // miniatura: JPEG usa shrink-on-load y aun así detecta archivos truncados
     } catch {
         throw new UploadValidationError('INVALID_IMAGE', file.originalname, 'Corrupt or oversized image');
     }

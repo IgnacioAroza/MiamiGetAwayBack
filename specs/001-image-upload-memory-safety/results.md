@@ -39,3 +39,26 @@ Docker: Node 22, `--memory=512m`, `--max-old-space-size=256`, `MALLOC_ARENA_MAX=
 - `npm audit`: sin high/critical para `express`, `proxy-addr`, `multer`, `busboy`, `sharp` y `cloudinary`. Persisten 19 high y 3 critical en otras dependencias del proyecto; fuera del camino de subida auditado.
 - Verificar en Render si `/tmp` es tmpfs (en ese caso los temporales contarían como memoria no reclamable).
 - Demo en producción y 7 días sin `server_failed` por OOM: pendientes del despliegue posterior al Front.
+
+## Memoria nativa de sharp en validación — 2026-10-06
+
+Producción (Render, 8 CPUs, `MALLOC_ARENA_MAX=2`): tras cargas, anon ~334 MiB y la memoria no bajaba (145–150 MB tras el restart; 389 MB tras una edición). No se reproduce esa magnitud en Docker; sí se reproduce una retención nativa menor, que el fix elimina.
+
+Cambio: `sharp.cache(false)`, `sharp.concurrency(1)`, y `stats()` → `resize(64).toBuffer()` con `failOn: 'truncated'` (JPEG usa shrink-on-load). Los tests de truncado, corrupto y MIME falso siguen rechazando.
+
+Docker: Node 22, `--memory=512m`, `--cpuset-cpus=0-9` (10 CPUs), `--max-old-space-size=256`, 2 requests simultáneas de 21 JPEG sintéticos (12 MP o 24 MP, 2–6 MB), Cloudinary simulado, `memory.stat` cada 20 ms. MiB, anon+kernel:
+
+| Escenario | Reposo | Pico | Después (50 s) |
+|---|---|---|---|
+| Antes, 12 MP, arena sin setear | 86 | 185 | 140 |
+| Antes, 12 MP, arena=2 | 78 | 189 | 138 |
+| Antes, 24 MP, arena sin setear | 79 | 191 | 103 |
+| Antes, 24 MP, arena=2 | 70 | 212 | 94 |
+| **Después**, 12 MP, arena sin setear | 78 | 116 | 91 |
+| **Después**, 12 MP, arena=2 | 70 | 97 | 70 |
+| **Después**, 24 MP, arena sin setear | 92 | 126 | 105 |
+| **Después**, 24 MP, arena=2 | 75 | 97 | 71 |
+
+Edición (PUT villa, 2 en paralelo, 21 fotos nuevas y `existingImages=[]` que borra 21 anteriores, controller real y DB local): antes 69 → pico 187 → 134 (arena=2, 12 MP) y 82 → 196 → 103 (arena sin setear, 24 MP); después 75 → 98 → 72. `heapUsed` de JS: ~15 MB, o sea la retención era nativa. `syncImages` usa el mismo `uploadImages` que el alta; no hay un camino de memoria distinto en la edición.
+
+Limitaciones: JPEG sintéticos, no fotos de celular; no se ejecutó `dist/app.js` con el SDK real de Cloudinary; CPUs visibles 10 vs 8 en Render. La línea base de reposo de producción (~145 MB) es mayor que la de Docker (~70–90 MiB): falta separar heap JS de memoria nativa en la instancia real (ver PR).
