@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node --max-old-space-size=256 dist/app.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec tsx src/app.ts",
-    "dev:demo": "cross-env NODE_ENV=demo nodemon --watch 'src/**/*.ts' --exec tsx src/app.ts",
+    "dev": "tsx watch src/app.ts",
+    "dev:demo": "cross-env NODE_ENV=demo tsx watch src/app.ts",
     "build": "tsc && node -e \"const fs=require('fs');fs.cpSync('src/assets','dist/assets',{recursive:true,force:true});\"",
     "lint": "eslint . --ext .ts",
     "test": "vitest run",
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "axios": "^1.12.2",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
@@ -39,8 +39,8 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.4.0",
-    "node-cron": "^3.0.3",
-    "nodemailer": "^6.10.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.0.15",
     "pdfkit": "^0.16.0",
     "pg": "^8.13.0",
     "sharp": "^0.35.5",
@@ -54,17 +54,15 @@
     "@types/morgan": "^1.9.9",
     "@types/multer": "^2.3.0",
     "@types/node": "^22.13.10",
-    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.9",
     "@types/pg": "^8.11.11",
     "@types/sharp": "^0.31.1",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.22.0",
-    "nodemon": "^3.1.10",
     "supertest": "^7.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "vitest": "^5.0.3"
   }
 }
