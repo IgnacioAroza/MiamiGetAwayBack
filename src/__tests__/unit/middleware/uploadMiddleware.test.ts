@@ -50,4 +50,18 @@ describe('uploadMiddleware', () => {
         expect(response.body.code).toBe('INVALID_IMAGE');
         expect(readdirSync(uploadRoot)).toEqual([]);
     });
+
+    it('acepta WebP válido aunque declare otro MIME', async () => {
+        const image = await sharp({ create: { width: 2, height: 2, channels: 3, background: '#ffffff' } }).webp().toBuffer();
+        const response = await request(app).post('/images').attach('images', image, { filename: 'image.bin', contentType: 'application/octet-stream' });
+        expect(response.status).toBe(200);
+        expect(readdirSync(uploadRoot)).toEqual([]);
+    });
+
+    it('rechaza GIF aunque declare image/png', async () => {
+        const image = await sharp({ create: { width: 2, height: 2, channels: 3, background: '#ffffff' } }).gif().toBuffer();
+        const response = await request(app).post('/images').attach('images', image, { filename: 'image.png', contentType: 'image/png' });
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe('INVALID_IMAGE');
+    });
 });

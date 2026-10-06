@@ -26,15 +26,16 @@ async function validateFile(file: Express.Multer.File): Promise<void> {
     } finally {
         await handle.close();
     }
-    const jpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
-    const png = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-    const webp = header.toString('ascii', 0, 4) === 'RIFF' && header.toString('ascii', 8, 12) === 'WEBP';
-    if (!jpeg && !png && !webp) throw new UploadValidationError('INVALID_IMAGE', file.originalname, 'Unsupported image content');
+    const format = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff ? 'jpeg'
+        : header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? 'png'
+        : header.toString('ascii', 0, 4) === 'RIFF' && header.toString('ascii', 8, 12) === 'WEBP' ? 'webp'
+        : null;
+    if (!format) throw new UploadValidationError('INVALID_IMAGE', file.originalname, 'Unsupported image content');
 
     try {
         const image = sharp(file.path, { limitInputPixels: 24_000_000 });
         const metadata = await image.metadata();
-        if (!['jpeg', 'png', 'webp'].includes(metadata.format ?? '')) throw new Error('Unsupported image format');
+        if (metadata.format !== format) throw new Error('Image signature does not match content');
         await image.stats();
     } catch {
         throw new UploadValidationError('INVALID_IMAGE', file.originalname, 'Corrupt or oversized image');
