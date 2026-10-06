@@ -84,7 +84,7 @@ class ImageService {
             }
 
             const config = IMAGE_CONFIGS[entityType];
-            const errors: string[] = [];
+            const uploadErrors: string[] = new Array(files.length);
             const uploadedUrls: string[] = new Array(files.length);
 
             // Configurar transformaciones
@@ -105,11 +105,12 @@ class ImageService {
                         uploadedUrls[index] = await withUploadSlot(() =>
                             this.uploadSingleImage(file, config.folder, transformations, publicIdPrefix));
                     } catch (error) {
-                        errors.push(`UPLOAD_FAILED: ${file.originalname} (${index + 1}): ${error instanceof Error ? error.message : String(error)}`);
+                        uploadErrors[index] = `UPLOAD_FAILED: ${file.originalname} (${index + 1}): ${error instanceof Error ? error.message : String(error)}`;
                     }
                 }
             }));
 
+            const errors = uploadErrors.filter(Boolean);
             const completedUrls = uploadedUrls.filter(Boolean);
             if (errors.length > 0 && completedUrls.length > 0) {
                 const rollback = await this.deleteImages(completedUrls, entityType);

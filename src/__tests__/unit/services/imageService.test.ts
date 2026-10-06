@@ -42,6 +42,8 @@ describe('ImageService upload', () => {
         expect(result.success).toBe(false);
         expect(result.urls).toEqual([]);
         expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('image-1.jpg'), expect.stringContaining('image-3.jpg')]));
+        expect(result.errors[0]).toContain('image-1.jpg');
+        expect(result.errors[1]).toContain('image-3.jpg');
         expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('villas/image-0');
         expect(cloudinary.uploader.destroy).toHaveBeenCalledWith('villas/image-2');
     });
