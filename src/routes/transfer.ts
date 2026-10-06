@@ -8,8 +8,8 @@ const router = Router();
 // Vehicles CRUD
 router.get('/vehicles', TransferController.getAllVehicles);
 router.get('/vehicles/:id', TransferController.getVehicleById);
-router.post('/vehicles', authMiddleware, upload.array('images', 30), TransferController.createVehicle);
-router.put('/vehicles/:id', authMiddleware, upload.array('images', 30), TransferController.updateVehicle);
+router.post('/vehicles', authMiddleware, upload.array('images', 20), TransferController.createVehicle);
+router.put('/vehicles/:id', authMiddleware, upload.array('images', 20), TransferController.updateVehicle);
 router.delete('/vehicles/:id', authMiddleware, TransferController.deleteVehicle);
 
 // Inquiries
