@@ -187,7 +187,18 @@ class ApartmentController {
                 apartmentData.images = syncResult.images;
             }
 
-            const updatedApartment = await ApartmentModel.updateApartment(Number(id), apartmentData)
+            let updatedApartment;
+            try {
+                updatedApartment = await ApartmentModel.updateApartment(Number(id), apartmentData);
+                if (!updatedApartment) throw new Error('Entity not found');
+            } catch (error) {
+                if (syncResult.newUrls?.length) await ImageService.deleteImages(syncResult.newUrls, 'apartments');
+                throw error;
+            }
+            if (syncResult.removedImages?.length) {
+                const cleanup = await ImageService.deleteImages(syncResult.removedImages, 'apartments');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            }
             ok(res, updatedApartment)
         } catch (error: any) {
             console.error('Error in updateApartment:', error)

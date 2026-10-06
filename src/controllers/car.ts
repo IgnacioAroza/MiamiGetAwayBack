@@ -186,7 +186,18 @@ class CarController {
                 carData.images = syncResult.images;
             }
 
-            const updatedCar = await CarModel.updateCar(parseInt(id), carData);
+            let updatedCar;
+            try {
+                updatedCar = await CarModel.updateCar(parseInt(id), carData);
+                if (!updatedCar) throw new Error('Entity not found');
+            } catch (error) {
+                if (syncResult.newUrls?.length) await ImageService.deleteImages(syncResult.newUrls, 'cars');
+                throw error;
+            }
+            if (syncResult.removedImages?.length) {
+                const cleanup = await ImageService.deleteImages(syncResult.removedImages, 'cars');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            };
 
             if (updatedCar) {
                 ok(res, updatedCar);

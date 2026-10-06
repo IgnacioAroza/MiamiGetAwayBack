@@ -97,6 +97,9 @@ export default class TransferController {
                 return;
             }
 
+            const current = await TransferModel.getVehicleById(id);
+            if (!current) { notFound(res, 'Vehicle not found'); return; }
+
             if (req.files && Array.isArray(req.files) && req.files.length > 0) {
                 const uploadResult = await ImageService.uploadImages(req.files, { entityType: 'transfers' });
                 if (!uploadResult.success) {
@@ -106,7 +109,17 @@ export default class TransferController {
                 data.images = uploadResult.urls;
             }
 
-            const vehicle = await TransferModel.updateVehicle(id, data);
+            let vehicle;
+            try {
+                vehicle = await TransferModel.updateVehicle(id, data);
+            } catch (error) {
+                if (data.images?.length) await ImageService.deleteImages(data.images, 'transfers');
+                throw error;
+            }
+            if (data.images?.length && current.images?.length) {
+                const cleanup = await ImageService.deleteImages(current.images, 'transfers');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            }
             ok(res, vehicle);
         } catch (error: any) {
             if (error.message === 'Vehicle not found') {

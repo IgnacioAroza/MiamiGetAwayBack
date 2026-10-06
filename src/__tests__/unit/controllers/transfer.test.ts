@@ -47,6 +47,7 @@ vi.mock('../../../utils/cloudinaryConfig.js', () => ({
 
 import TransferController from '../../../controllers/transfer.js';
 import TransferModel from '../../../models/transfer.js';
+import ImageService from '../../../services/imageService.js';
 import EmailService from '../../../services/emailService.js';
 import * as schema from '../../../schemas/transferSchema.js';
 
@@ -138,7 +139,16 @@ describe('TransferController', () => {
   });
 
   describe('updateVehicle', () => {
+    it('borra imágenes anteriores después de guardar el reemplazo', async () => {
+      vi.mocked(TransferModel.getVehicleById).mockResolvedValueOnce({ ...mockVehicle, images: ['old.jpg'] } as any);
+      vi.mocked(TransferModel.updateVehicle).mockResolvedValueOnce({ ...mockVehicle, images: ['https://test-url.com/img.jpg'] } as any);
+      const req = mockReq({ params: { id: '1' }, body: {}, files: [{ originalname: 'new.jpg' }] as any });
+      await TransferController.updateVehicle(req, mockRes());
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['old.jpg'], 'transfers');
+      expect(vi.mocked(TransferModel.updateVehicle).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(ImageService.deleteImages).mock.invocationCallOrder[0]);
+    });
     it('devuelve 200 al actualizar', async () => {
+      vi.mocked(TransferModel.getVehicleById).mockResolvedValueOnce(mockVehicle as any);
       vi.mocked(TransferModel.updateVehicle).mockResolvedValueOnce({ ...mockVehicle, name: 'Cadillac Escalade' } as any);
       const req = mockReq({ params: { id: '1' }, body: { name: 'Cadillac Escalade' } });
       const res = mockRes();

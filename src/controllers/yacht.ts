@@ -132,7 +132,18 @@ class YachtController {
                 yachtData.images = syncResult.images;
             }
 
-            const updatedYacht = await YachtModel.updateYacht(id, yachtData);
+            let updatedYacht;
+            try {
+                updatedYacht = await YachtModel.updateYacht(id, yachtData);
+                if (!updatedYacht) throw new Error('Entity not found');
+            } catch (error) {
+                if (syncResult.newUrls?.length) await ImageService.deleteImages(syncResult.newUrls, 'yachts');
+                throw error;
+            }
+            if (syncResult.removedImages?.length) {
+                const cleanup = await ImageService.deleteImages(syncResult.removedImages, 'yachts');
+                if (!cleanup.success) console.warn('Could not delete replaced images:', cleanup.errors);
+            };
             ok(res, updatedYacht);
         } catch (error) {
             console.error('Error updating yacht:', error);

@@ -21,6 +21,30 @@ describe('SupplierService', () => {
         vi.clearAllMocks();
     });
 
+    describe('updateSupplierPayment', () => {
+        const data = { amount: 300 } as any;
+        const file = { originalname: 'new.jpg' } as Express.Multer.File;
+
+        it('borra comprobantes viejos después de guardar nuevos', async () => {
+            vi.mocked(SupplierPaymentModel.getById).mockResolvedValue({ ...MOCK_SUPPLIER_PAYMENT, receiptImages: ['old.jpg'] });
+            vi.mocked(ImageService.uploadImages).mockResolvedValue({ success: true, urls: ['new.jpg'], errors: [] });
+            vi.mocked(SupplierPaymentModel.update).mockResolvedValue({ ...MOCK_SUPPLIER_PAYMENT, receiptImages: ['new.jpg'] });
+            vi.mocked(ImageService.deleteImages).mockResolvedValue({ success: true, deletedCount: 1, errors: [] });
+            await SupplierService.updateSupplierPayment(1, data, [file]);
+            expect(ImageService.deleteImages).toHaveBeenCalledWith(['old.jpg'], 'supplier_payments');
+            expect(vi.mocked(SupplierPaymentModel.update).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(ImageService.deleteImages).mock.invocationCallOrder[0]);
+        });
+
+        it('conserva comprobantes viejos si falla la escritura', async () => {
+            vi.mocked(SupplierPaymentModel.getById).mockResolvedValue({ ...MOCK_SUPPLIER_PAYMENT, receiptImages: ['old.jpg'] });
+            vi.mocked(ImageService.uploadImages).mockResolvedValue({ success: true, urls: ['new.jpg'], errors: [] });
+            vi.mocked(SupplierPaymentModel.update).mockRejectedValue(new Error('DB failed'));
+            await expect(SupplierService.updateSupplierPayment(1, data, [file])).rejects.toThrow('DB failed');
+            expect(ImageService.deleteImages).toHaveBeenCalledWith(['new.jpg'], 'supplier_payments');
+            expect(ImageService.deleteImages).not.toHaveBeenCalledWith(['old.jpg'], 'supplier_payments');
+        });
+    });
+
     // --- Suppliers CRUD ---
 
     describe('getAllSuppliers', () => {
@@ -153,7 +177,7 @@ describe('SupplierService', () => {
             );
         });
 
-        it('throws 500 when Cloudinary upload fails', async () => {
+        it('throws 400 with image details when Cloudinary upload fails', async () => {
             const file = { buffer: Buffer.from('img'), mimetype: 'image/jpeg' } as Express.Multer.File;
             vi.mocked(ImageService.uploadImages).mockResolvedValue({ success: false, urls: [], errors: ['Upload failed'] });
 
@@ -162,7 +186,7 @@ describe('SupplierService', () => {
                     { reservationSupplierId: 1, amount: 300, method: 'wire', date: '2026-05-26' },
                     [file]
                 )
-            ).rejects.toMatchObject({ status: 500 });
+            ).rejects.toMatchObject({ status: 400, details: ['Upload failed'] });
             expect(SupplierPaymentModel.create).not.toHaveBeenCalled();
         });
     });

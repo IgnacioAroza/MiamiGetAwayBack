@@ -31,7 +31,7 @@ export default class ReservationPaymentsService {
         }
     }
 
-    static async createPayment(paymentData: CreateReservationPaymentDTO): Promise<ReservationPayment> {
+    static async createPayment(paymentData: CreateReservationPaymentDTO, uploadedReceipt = false): Promise<ReservationPayment> {
         // Validar los datos de entrada
         if (!paymentData.reservationId || paymentData.reservationId <= 0) {
             throw new Error('Valid reservation ID is required');
@@ -56,8 +56,14 @@ export default class ReservationPaymentsService {
             receiptImage: paymentData.receiptImage ?? null
         };
 
+        let payment;
         try {
-            const payment = await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+            payment = await ReservationPaymentModel.createReservationPayment(paymentForModel as ReservationPayment);
+        } catch (error) {
+            if (uploadedReceipt && paymentData.receiptImage) await ImageService.deleteImages([paymentData.receiptImage], 'reservation_payments');
+            throw error;
+        }
+        try {
             await this.recalculateReservationPayments(paymentData.reservationId);
             return payment;
         } catch (error) {
@@ -86,15 +92,20 @@ export default class ReservationPaymentsService {
         return ReservationPaymentModel.getReservationPaymentById(paymentId);
     }
 
-    static async updatePayment(paymentId: number, data: Partial<ReservationPayment>): Promise<ReservationPayment> {
-        // Si viene imagen nueva, borrar la anterior de Cloudinary
-        if (data.receiptImage !== undefined) {
-            const existing = await ReservationPaymentModel.getReservationPaymentById(paymentId);
-            if (existing?.receiptImage && existing.receiptImage !== data.receiptImage) {
-                await ImageService.deleteImages([existing.receiptImage], 'reservation_payments');
-            }
+    static async updatePayment(paymentId: number, data: Partial<ReservationPayment>, uploadedReceipt = false): Promise<ReservationPayment> {
+        const existing = data.receiptImage !== undefined
+            ? await ReservationPaymentModel.getReservationPaymentById(paymentId) : null;
+        let payment;
+        try {
+            payment = await ReservationPaymentModel.updateReservationPayment(paymentId, data);
+        } catch (error) {
+            if (uploadedReceipt && data.receiptImage) await ImageService.deleteImages([data.receiptImage], 'reservation_payments');
+            throw error;
         }
-        const payment = await ReservationPaymentModel.updateReservationPayment(paymentId, data);
+        if (existing?.receiptImage && existing.receiptImage !== data.receiptImage) {
+            const cleanup = await ImageService.deleteImages([existing.receiptImage], 'reservation_payments');
+            if (!cleanup.success) console.warn('Could not delete replaced receipt:', cleanup.errors);
+        }
         const updatedPayment = await ReservationPaymentModel.getReservationPaymentById(paymentId);
         if (updatedPayment?.reservationId) {
             await this.recalculateReservationPayments(updatedPayment.reservationId);

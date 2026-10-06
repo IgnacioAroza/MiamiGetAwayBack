@@ -33,7 +33,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     cars: {
         folder: 'cars',
-        maxFiles: 20,
+        maxFiles: 30,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -42,7 +42,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     villas: {
         folder: 'villas',
-        maxFiles: 50,
+        maxFiles: 30,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -51,7 +51,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     yachts: {
         folder: 'yachts',
-        maxFiles: 40,
+        maxFiles: 30,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -60,7 +60,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     reservation_payments: {
         folder: 'reservation_payments',
-        maxFiles: 5,
+        maxFiles: 1,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -69,7 +69,7 @@ export const IMAGE_CONFIGS: Record<string, ImageConfig> = {
     },
     supplier_payments: {
         folder: 'supplier_payments',
-        maxFiles: 10,
+        maxFiles: 5,
         maxFileSize: 10 * 1024 * 1024, // 10MB
         allowedFormats: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
         transformations: {
@@ -149,11 +149,6 @@ export function validateImageFiles(
 
     // Validar cada archivo
     files.forEach((file, index) => {
-        // Validar formato
-        if (!config.allowedFormats.includes(file.mimetype)) {
-            errors.push(`Archivo ${index + 1}: Formato no permitido. Formatos aceptados: ${config.allowedFormats.join(', ')}`);
-        }
-
         // Validar tamaño
         if (file.size > config.maxFileSize) {
             const maxSizeMB = config.maxFileSize / (1024 * 1024);

@@ -4,6 +4,7 @@ import { ReservationPaymentModel } from '../../../models/reservationPayment.js';
 import { ReservationModel } from '../../../models/reservation.js';
 import { Reservation } from '../../../types/reservations.js';
 import { ReservationPayment } from '../../../types/reservationPayments.js';
+import ImageService from '../../../services/imageService.js';
 
 vi.mock('../../../models/reservationPayment.js');
 vi.mock('../../../models/reservation.js');
@@ -12,6 +13,27 @@ vi.mock('../../../services/imageService.js');
 describe('ReservationPaymentsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('updatePayment receipt', () => {
+    it('borra el comprobante viejo después de guardar el nuevo', async () => {
+      const recalc = vi.spyOn(ReservationPaymentsService, 'recalculateReservationPayments').mockResolvedValue();
+      vi.mocked(ReservationPaymentModel.getReservationPaymentById).mockResolvedValue({ receiptImage: 'old.jpg', reservationId: 1 } as any);
+      vi.mocked(ReservationPaymentModel.updateReservationPayment).mockResolvedValue({ receiptImage: 'new.jpg' } as any);
+      vi.mocked(ImageService.deleteImages).mockResolvedValue({ success: true, deletedCount: 1, errors: [] });
+      await ReservationPaymentsService.updatePayment(1, { receiptImage: 'new.jpg' }, true);
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['old.jpg'], 'reservation_payments');
+      expect(vi.mocked(ReservationPaymentModel.updateReservationPayment).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(ImageService.deleteImages).mock.invocationCallOrder[0]);
+      recalc.mockRestore();
+    });
+
+    it('conserva el anterior y borra el nuevo si falla la DB', async () => {
+      vi.mocked(ReservationPaymentModel.getReservationPaymentById).mockResolvedValue({ receiptImage: 'old.jpg' } as any);
+      vi.mocked(ReservationPaymentModel.updateReservationPayment).mockRejectedValue(new Error('DB failed'));
+      await expect(ReservationPaymentsService.updatePayment(1, { receiptImage: 'new.jpg' }, true)).rejects.toThrow('DB failed');
+      expect(ImageService.deleteImages).toHaveBeenCalledWith(['new.jpg'], 'reservation_payments');
+      expect(ImageService.deleteImages).not.toHaveBeenCalledWith(['old.jpg'], 'reservation_payments');
+    });
   });
 
   describe('createPayment', () => {

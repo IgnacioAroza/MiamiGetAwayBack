@@ -123,6 +123,7 @@ describe('Rutas de Transfers', () => {
 
   describe('PUT /api/transfers/vehicles/:id', () => {
     it('actualiza un vehículo y devuelve 200', async () => {
+      vi.mocked(TransferModel.getVehicleById).mockResolvedValueOnce(mockVehicle as any);
       const updated = { ...mockVehicle, name: 'Cadillac Escalade' };
       vi.mocked(TransferModel.updateVehicle).mockResolvedValueOnce(updated as any);
       const res = await request(app).put('/api/transfers/vehicles/1').send({ name: 'Cadillac Escalade' }).expect(200);

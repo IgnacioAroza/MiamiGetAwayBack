@@ -34,7 +34,7 @@ export class SupplierController {
             const supplier = await SupplierService.getSupplierById(id);
             ok(res, supplier);
         } catch (error: any) {
-            sendError(res, error.status ?? 500, error.message);
+            sendError(res, error.status ?? 500, error.message, error.details);
         }
     }
 
@@ -64,7 +64,7 @@ export class SupplierController {
             const supplier = await SupplierService.updateSupplier(id, result.data);
             ok(res, supplier);
         } catch (error: any) {
-            sendError(res, error.status ?? 500, error.message);
+            sendError(res, error.status ?? 500, error.message, error.details);
         }
     }
 
@@ -182,7 +182,7 @@ export class ReservationSupplierController {
             const payment = await SupplierService.createSupplierPayment(result.data, files);
             created(res, payment);
         } catch (error: any) {
-            sendError(res, error.status ?? 500, error.message);
+            sendError(res, error.status ?? 500, error.message, error.details);
         }
     }
 }
@@ -279,7 +279,7 @@ export class SupplierPaymentController {
             const payment = await SupplierService.updateSupplierPayment(id, result.data, files);
             ok(res, payment);
         } catch (error: any) {
-            sendError(res, error.status ?? 500, error.message);
+            sendError(res, error.status ?? 500, error.message, error.details);
         }
     }
 
